@@ -1,7 +1,7 @@
 """Unit tests for environment variable handling."""
 
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -11,31 +11,26 @@ from data4ai.error_handler import check_environment_variables
 class TestEnvironmentVariables:
     """Test environment variable checking and messaging."""
 
-    def test_check_all_variables_set(self):
-        """Test when all environment variables are set."""
+    def test_check_with_all_variables_set(self):
+        """Test check when all variables are set."""
         with patch.dict(os.environ, {
             "OPENROUTER_API_KEY": "test-key",
             "OPENROUTER_MODEL": "test-model",
             "HF_TOKEN": "test-token"
         }):
             result = check_environment_variables()
+
             assert result["OPENROUTER_API_KEY"] is True
             assert result["OPENROUTER_MODEL"] is True
             assert result["HF_TOKEN"] is True
 
-    def test_check_missing_api_key(self):
-        """Test when API key is missing."""
+    def test_check_with_missing_variables(self):
+        """Test check when variables are missing."""
         with patch.dict(os.environ, {}, clear=True):
-            result = check_environment_variables(["OPENROUTER_API_KEY"])
-            assert result["OPENROUTER_API_KEY"] is False
-
-    def test_check_partial_variables(self):
-        """Test when some variables are set and others are not."""
-        with patch.dict(os.environ, {
-            "OPENROUTER_API_KEY": "test-key",
-        }, clear=True):
             result = check_environment_variables()
-            assert result["OPENROUTER_API_KEY"] is True
+
+            # Should not raise but return status
+            assert result["OPENROUTER_API_KEY"] is False
             assert result["OPENROUTER_MODEL"] is False
             assert result["HF_TOKEN"] is False
 
@@ -44,10 +39,10 @@ class TestEnvironmentVariables:
         """Test that missing variables produce helpful output."""
         with patch.dict(os.environ, {}, clear=True):
             check_environment_variables(["OPENROUTER_API_KEY"])
-            
+
             # Verify stderr output was called
             assert mock_stderr.write.called
-            
+
             # Check that helpful messages were printed
             calls_str = str(mock_stderr.write.call_args_list)
             assert "Missing environment variables" in calls_str
@@ -59,7 +54,7 @@ class TestEnvironmentVariables:
         """Test that terminal-specific guidance is provided."""
         with patch.dict(os.environ, {}, clear=True):
             check_environment_variables(["OPENROUTER_API_KEY", "HF_TOKEN"])
-            
+
             calls_str = str(mock_stderr.write.call_args_list)
             # Check for terminal-specific messages
             assert "Important: Environment variables" in calls_str or "temporary" in calls_str
@@ -67,15 +62,14 @@ class TestEnvironmentVariables:
 
     def test_required_for_operation_filter(self):
         """Test that only required variables are checked when specified."""
-        with patch.dict(os.environ, {}, clear=True):
-            with patch("sys.stderr") as mock_stderr:
-                # Only check for HF_TOKEN
-                check_environment_variables(["HF_TOKEN"])
-                
-                calls_str = str(mock_stderr.write.call_args_list)
-                # Should only show HF_TOKEN, not OPENROUTER_API_KEY
-                assert "export HF_TOKEN" in calls_str
-                assert "export OPENROUTER_API_KEY" not in calls_str
+        with patch.dict(os.environ, {}, clear=True), patch("sys.stderr") as mock_stderr:
+            # Only check for HF_TOKEN
+            check_environment_variables(["HF_TOKEN"])
+
+            calls_str = str(mock_stderr.write.call_args_list)
+            # Should only show HF_TOKEN, not OPENROUTER_API_KEY
+            assert "export HF_TOKEN" in calls_str
+            assert "export OPENROUTER_API_KEY" not in calls_str
 
     def test_no_output_when_all_set(self):
         """Test that no missing variable output when all are set."""
@@ -83,12 +77,11 @@ class TestEnvironmentVariables:
             "OPENROUTER_API_KEY": "test-key",
             "OPENROUTER_MODEL": "test-model",
             "HF_TOKEN": "test-token"
-        }):
-            with patch("sys.stderr") as mock_stderr:
-                result = check_environment_variables()
-                
-                # Should not print missing variables message
-                mock_stderr.write.assert_not_called()
+        }), patch("sys.stderr") as mock_stderr:
+            check_environment_variables()
+
+            # Should not print missing variables message
+            mock_stderr.write.assert_not_called()
 
 
 class TestEnvironmentIntegration:
@@ -98,30 +91,31 @@ class TestEnvironmentIntegration:
     def test_generator_checks_environment(self, mock_settings):
         """Test that DatasetGenerator checks environment on init."""
         from data4ai.exceptions import ConfigurationError
-        
+
         mock_settings.openrouter_api_key = ""
-        
+
         with patch("data4ai.generator.check_environment_variables") as mock_check:
             with pytest.raises(ConfigurationError):
                 from data4ai.generator import DatasetGenerator
                 DatasetGenerator()
-            
+
             # Verify environment check was called
             mock_check.assert_called_once_with(required_for_operation=["OPENROUTER_API_KEY"])
 
     @patch("data4ai.config.settings")
     def test_publisher_checks_environment(self, mock_settings):
         """Test that HuggingFacePublisher checks environment when publishing."""
+        from pathlib import Path
+
         from data4ai.exceptions import PublishingError
         from data4ai.publisher import HuggingFacePublisher
-        from pathlib import Path
-        
+
         publisher = HuggingFacePublisher(token=None)
-        
+
         with patch("data4ai.publisher.check_environment_variables") as mock_check:
             with pytest.raises(PublishingError):
                 publisher.push_dataset(Path("test"), "test-repo")
-            
+
             # Verify environment check was called
             mock_check.assert_called_once_with(required_for_operation=["HF_TOKEN"])
 
@@ -134,19 +128,19 @@ class TestNoEnvFileReading:
         # Create a .env file
         env_file = tmp_path / ".env"
         env_file.write_text('OPENROUTER_API_KEY="from-env-file"\n')
-        
+
         # Change to that directory
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            
+
             # Clear environment
             with patch.dict(os.environ, {}, clear=True):
                 from data4ai.config import Settings
-                
+
                 # Create new settings instance
                 settings = Settings()
-                
+
                 # Should NOT read from .env file
                 assert settings.openrouter_api_key == ""
                 assert settings.openrouter_api_key != "from-env-file"
@@ -156,12 +150,12 @@ class TestNoEnvFileReading:
     def test_only_reads_environment_variables(self):
         """Test that only actual environment variables are read."""
         test_value = "from-environment-variable"
-        
+
         with patch.dict(os.environ, {
             "OPENROUTER_API_KEY": test_value
         }):
             from data4ai.config import Settings
-            
+
             settings = Settings()
             assert settings.openrouter_api_key == test_value
 
@@ -172,9 +166,9 @@ class TestErrorMessages:
     def test_api_key_missing_message(self):
         """Test the API key missing error message."""
         from data4ai.error_handler import ErrorHandler
-        
+
         msg = ErrorHandler.get_message("api_key_missing")
-        
+
         # Check for terminal-specific content
         assert "export OPENROUTER_API_KEY" in msg
         assert "terminal" in msg.lower()
@@ -184,9 +178,9 @@ class TestErrorMessages:
     def test_hf_token_missing_message(self):
         """Test the HuggingFace token missing error message."""
         from data4ai.error_handler import ErrorHandler
-        
+
         msg = ErrorHandler.get_message("hf_token_missing")
-        
+
         # Check for terminal-specific content
         assert "export HF_TOKEN" in msg
         assert "terminal" in msg.lower()

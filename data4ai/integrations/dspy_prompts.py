@@ -38,8 +38,10 @@ class PromptOptimizer:
         """Setup DSPy with OpenRouter configuration."""
         try:
             # Import and use the new OpenRouter DSPy client
-            from data4ai.integrations.openrouter_dspy import configure_dspy_with_openrouter
-            
+            from data4ai.integrations.openrouter_dspy import (
+                configure_dspy_with_openrouter,
+            )
+
             configure_dspy_with_openrouter(
                 model=self.model_name,
                 api_key=os.getenv("OPENROUTER_API_KEY"),

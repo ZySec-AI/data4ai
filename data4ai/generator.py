@@ -12,7 +12,10 @@ import pandas as pd
 from data4ai.client import OpenRouterClient, OpenRouterConfig
 from data4ai.config import settings
 from data4ai.csv_handler import CSVHandler
-from data4ai.error_handler import ErrorHandler, async_error_handler, check_environment_variables
+from data4ai.error_handler import (
+    async_error_handler,
+    check_environment_variables,
+)
 from data4ai.excel_handler import ExcelHandler
 from data4ai.exceptions import ConfigurationError, GenerationError, ValidationError
 from data4ai.integrations.dspy_prompts import create_prompt_generator
@@ -71,7 +74,9 @@ class DatasetGenerator:
         if settings.use_dspy:
             try:
                 # Try to use the new OpenRouter DSPy integration
-                from data4ai.integrations.openrouter_dspy import create_openrouter_prompt_generator
+                from data4ai.integrations.openrouter_dspy import (
+                    create_openrouter_prompt_generator,
+                )
                 self.prompt_generator = create_openrouter_prompt_generator(
                     model=self.model,
                     api_key=self.api_key,
@@ -214,8 +219,8 @@ class DatasetGenerator:
 
             # Track if DSPy was actually used
             dspy_used = (
-                hasattr(self, "prompt_generator") and 
-                (hasattr(self.prompt_generator, "optimizer") or 
+                hasattr(self, "prompt_generator") and
+                (hasattr(self.prompt_generator, "optimizer") or
                  hasattr(self.prompt_generator, "use_dspy"))
             )
 
@@ -225,7 +230,7 @@ class DatasetGenerator:
 
             total_batches = (count + batch_size - 1) // batch_size
             logger.info(f"🚀 Starting concurrent processing of {total_batches} batches...")
-            
+
             # Create all batch tasks
             batch_tasks = []
             for batch_start in range(0, count, batch_size):
@@ -255,13 +260,13 @@ class DatasetGenerator:
             # Process all batches concurrently with rate limiting
             max_concurrent = min(5, len(batch_tasks))  # Limit to 5 concurrent requests
             logger.info(f"⚡ Running {len(batch_tasks)} batches in parallel (max {max_concurrent} concurrent)...")
-            
+
             semaphore = asyncio.Semaphore(max_concurrent)
-            
+
             async def run_with_semaphore(task):
                 async with semaphore:
                     return await task
-            
+
             limited_tasks = [run_with_semaphore(task) for task in batch_tasks]
             batch_results = await asyncio.gather(*limited_tasks, return_exceptions=True)
 
@@ -271,7 +276,7 @@ class DatasetGenerator:
                     logger.error(f"Batch {i+1} failed with exception: {result}")
                 else:
                     dataset.extend(result)
-                    
+
             logger.info(f"🎉 Concurrent processing complete! Generated {len(dataset)}/{count} examples ({(len(dataset)/count)*100:.1f}%)")
 
             # Write output
@@ -329,31 +334,31 @@ class DatasetGenerator:
     ) -> list[dict[str, Any]]:
         """Process a single batch concurrently with retry logic."""
         import time
-        
+
         max_retries = 3
-        
+
         for attempt in range(max_retries):
             try:
                 messages = [
                     {
-                        "role": "system", 
+                        "role": "system",
                         "content": "You are a dataset generator. You must respond with ONLY valid JSON arrays. Do not include any explanatory text, code examples, or markdown formatting. All fields must contain meaningful content - no empty strings."
                     },
                     {"role": "user", "content": f"{prompt}\n\nGenerate exactly {batch_count} examples."}
                 ]
-                
+
                 start_time = time.time()
                 logger.info(f"🔄 Batch {batch_num}/{total_batches}: Sending request (attempt {attempt + 1}/{max_retries})...")
-                
+
                 response = await self.client.chat_completion(
                     messages,
                     temperature=self.temperature,
                     max_tokens=2000 * batch_count,
                 )
-                
+
                 elapsed = time.time() - start_time
                 logger.info(f"⚡ Batch {batch_num}/{total_batches}: Response received in {elapsed:.1f}s")
-                
+
                 response_text = response["choices"][0]["message"]["content"]
 
                 # Parse response
@@ -367,11 +372,11 @@ class DatasetGenerator:
 
             except Exception as e:
                 logger.warning(f"❌ Batch {batch_num}/{total_batches}: Failed (attempt {attempt + 1}/{max_retries}): {e}")
-                
+
                 if attempt == max_retries - 1:
                     logger.error(f"💥 Batch {batch_num}/{total_batches}: Failed after {max_retries} attempts")
                     return []  # Return empty list on final failure
-        
+
         return []  # Fallback return
 
     async def _complete_partial_rows(
@@ -515,7 +520,7 @@ class DatasetGenerator:
                         count=count,
                         use_dspy=True,
                     )
-                
+
                 logger.info(
                     f"✅ Generated dynamic prompt using DSPy for {schema_name} schema with {count} examples per batch"
                 )
@@ -642,12 +647,12 @@ Return a JSON object with ONLY the missing fields and their values."""
                     instance = schema_class.from_dict(entry)
                     if instance.validate_content():
                         dataset.append(instance.to_jsonl_entry())
-                        
+
                         # Limit the number of entries if specified
                         if max_entries and len(dataset) >= max_entries:
                             logger.info(f"Limited to {max_entries} entries as requested")
                             break
-                            
+
                 except Exception as e:
                     logger.warning(f"Invalid entry: {e}")
                     continue

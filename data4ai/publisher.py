@@ -7,9 +7,9 @@ from typing import Optional
 from huggingface_hub import HfApi, create_repo, upload_file
 from huggingface_hub.utils import HfHubHTTPError
 
+from data4ai.error_handler import check_environment_variables
 from data4ai.exceptions import AuthenticationError, PublishingError
 from data4ai.utils import generate_dataset_card
-from data4ai.error_handler import check_environment_variables
 
 logger = logging.getLogger("data4ai")
 

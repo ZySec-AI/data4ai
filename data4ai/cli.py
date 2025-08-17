@@ -11,7 +11,11 @@ from data4ai import __version__
 from data4ai.client import OpenRouterConfig, SyncOpenRouterClient
 from data4ai.config import settings
 from data4ai.csv_handler import CSVHandler
-from data4ai.error_handler import ErrorHandler, error_handler, check_environment_variables
+from data4ai.error_handler import (
+    ErrorHandler,
+    check_environment_variables,
+    error_handler,
+)
 from data4ai.excel_handler import ExcelHandler
 from data4ai.generator import DatasetGenerator
 from data4ai.integrations.dspy_prompts import create_prompt_generator
@@ -561,7 +565,7 @@ def env(
 ):
     """Check environment variables and show setup instructions."""
     import os
-    
+
     env_vars = {
         "OPENROUTER_API_KEY": {
             "set": bool(os.getenv("OPENROUTER_API_KEY") or settings.openrouter_api_key),
@@ -588,7 +592,7 @@ def env(
             "required": False,
         },
     }
-    
+
     if check:
         # Show current status
         table = Table(title="Environment Status")
@@ -596,29 +600,29 @@ def env(
         table.add_column("Status", style="green")
         table.add_column("Value", style="yellow")
         table.add_column("Required", style="magenta")
-        
+
         for var_name, var_info in env_vars.items():
             status = "✅" if var_info["set"] else "❌"
             value = var_info["value"] if var_info["value"] else "Not set"
             required = "Yes" if var_info["required"] else "No"
             table.add_row(var_name, status, value, required)
-        
+
         console.print(table)
-    
+
     # Show missing variables
     missing_vars = [(k, v) for k, v in env_vars.items() if not v["set"]]
-    
+
     if missing_vars:
         console.print("\n📦 Missing environment variables:\n", style="yellow")
-        
+
         if export or not check:
             console.print("📋 Run these commands in your terminal:\n", style="cyan")
-            
-            for var_name, var_info in missing_vars:
+
+            for _var_name, var_info in missing_vars:
                 console.print(f"# {var_info['description']}", style="dim")
                 console.print(var_info["example"], style="green")
                 console.print(f"# Get your key from: {var_info['help_url']}\n", style="dim")
-            
+
             # Detect the user's shell
             shell = os.environ.get('SHELL', '').split('/')[-1]
             if shell == 'zsh':
@@ -627,7 +631,7 @@ def env(
                 config_file = '~/.bashrc'
             else:
                 config_file = '~/.profile'
-            
+
             console.print("⚠️  Note: These exports are temporary (current session only)", style="yellow")
             console.print(f"\n💡 To make them permanent in {shell or 'your shell'}:", style="cyan")
             console.print("\n   Option 1: Add to your shell config file", style="bright_cyan")
@@ -638,7 +642,7 @@ def env(
             console.print("   source setup_env.sh  # Interactive setup helper\n", style="dim")
         else:
             # In check mode, show guidance URLs but keep the original message
-            for var_name, var_info in missing_vars:
+            for _var_name, var_info in missing_vars:
                 console.print(f"{var_name}: {var_info['help_url']}", style="dim")
             console.print("\nRun 'data4ai env --export' to see setup commands\n", style="cyan")
     else:

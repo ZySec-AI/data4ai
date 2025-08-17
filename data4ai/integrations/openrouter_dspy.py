@@ -1,9 +1,8 @@
 """OpenRouter DSPy integration for data4ai."""
 
-import json
 import logging
 import os
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import dspy
 import httpx
@@ -33,18 +32,18 @@ class OpenRouterDSPyClient(dspy.LM):
         self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
         if not self.api_key:
             raise ValueError("OpenRouter API key is required")
-        
+
         self.base_url = base_url
         self.model = model
         self.extra_headers = extra_headers or {}
         self.site_url = site_url
         self.site_name = site_name
-        
+
         # DSPy LM configuration
         self.history = []
         self.provider = "openai"
         self.model = model  # DSPy expects this attribute
-        
+
         # Default parameters
         self.kwargs = {
             'temperature': 0.7,
@@ -71,17 +70,17 @@ class OpenRouterDSPyClient(dspy.LM):
     def basic_request(self, prompt: str, **kwargs) -> dict[str, Any]:
         """Make a basic request to OpenRouter API."""
         headers = self._get_headers()
-        
+
         # Merge default kwargs with provided kwargs
         request_kwargs = self.kwargs.copy()
         request_kwargs.update(kwargs)
-        
+
         data = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
             **request_kwargs
         }
-        
+
         try:
             with httpx.Client(timeout=30) as client:
                 response = client.post(
@@ -91,19 +90,19 @@ class OpenRouterDSPyClient(dspy.LM):
                 )
                 response.raise_for_status()
                 response_data = response.json()
-                
+
                 # Log successful response
                 logger.debug("OpenRouter API response received")
-                
+
                 # Store in history
                 self.history.append({
                     "prompt": prompt,
                     "response": response_data,
                     "kwargs": kwargs,
                 })
-                
+
                 return response_data
-                
+
         except httpx.HTTPError as e:
             logger.error(f"OpenRouter API request failed: {e}")
             raise
@@ -111,7 +110,7 @@ class OpenRouterDSPyClient(dspy.LM):
             logger.error(f"Unexpected error in OpenRouter request: {e}")
             raise
 
-    def __call__(self, prompt: str = None, **kwargs) -> List[str]:
+    def __call__(self, prompt: str = None, **kwargs) -> list[str]:
         """DSPy LM interface - call the model with a prompt."""
         try:
             # Handle case where prompt might be passed as a keyword argument
@@ -135,24 +134,24 @@ class OpenRouterDSPyClient(dspy.LM):
                     prompt = kwargs['prompt']
                 else:
                     # Try to find any string argument that could be the prompt
-                    for key, value in kwargs.items():
+                    for _key, value in kwargs.items():
                         if isinstance(value, str) and len(value) > 10:
                             prompt = value
                             break
-                    
+
                     if prompt is None:
                         raise ValueError("No prompt found in arguments")
-            
+
             response_data = self.basic_request(prompt, **kwargs)
-            
+
             # Extract completions from response
             completions = []
             for choice in response_data.get("choices", []):
                 if "message" in choice and "content" in choice["message"]:
                     completions.append(choice["message"]["content"])
-            
+
             return completions
-            
+
         except Exception as e:
             logger.error(f"Error in DSPy OpenRouter call: {e}")
             raise
@@ -174,10 +173,10 @@ def configure_dspy_with_openrouter(
             site_name=site_name,
             **kwargs
         )
-        
+
         dspy.configure(lm=client)
         logger.debug(f"DSPy configured with OpenRouter model: {model}")
-        
+
     except Exception as e:
         logger.error(f"Failed to configure DSPy with OpenRouter: {e}")
         raise
@@ -185,7 +184,7 @@ def configure_dspy_with_openrouter(
 
 class OpenRouterPromptOptimizer:
     """DSPy-based prompt optimizer using OpenRouter."""
-    
+
     def __init__(
         self,
         model: str = "openai/gpt-4o-mini",
@@ -195,20 +194,20 @@ class OpenRouterPromptOptimizer:
         """Initialize the prompt optimizer."""
         self.model = model
         self.api_key = api_key
-        
+
         # Add optimizer attribute for detection
         self.optimizer = True  # Indicates this is a DSPy optimizer
         self.use_dspy = True
-        
+
         # Configure DSPy with OpenRouter
         configure_dspy_with_openrouter(
             model=model,
             api_key=api_key,
             **kwargs
         )
-        
+
         self._setup_signatures()
-    
+
     def _setup_signatures(self):
         """Setup DSPy signatures for dataset generation."""
         class DatasetGenerationSignature(dspy.Signature):
@@ -223,15 +222,15 @@ class OpenRouterPromptOptimizer:
             examples = dspy.OutputField(
                 desc="List of high-quality dataset examples in JSON format"
             )
-        
+
         self.signature = DatasetGenerationSignature
-    
+
     def generate_dynamic_prompt(
         self,
         description: str,
         schema_name: str,
         count: int,
-        examples: Optional[List[dict[str, Any]]] = None,
+        examples: Optional[list[dict[str, Any]]] = None,
     ) -> str:
         """Generate a dynamic prompt using DSPy."""
         try:
@@ -242,38 +241,38 @@ class OpenRouterPromptOptimizer:
                 schema_name = dspy.InputField(desc="Dataset schema name (alpaca, dolly, sharegpt, etc.)")
                 count = dspy.InputField(desc="Number of examples to generate")
                 optimized_prompt = dspy.OutputField(desc="An optimized prompt that will generate high-quality examples")
-            
+
             # Create predictor with the prompt generation signature
             predictor = dspy.Predict(PromptGenerationSignature)
-            
+
             logger.debug(f"Generating optimized prompt for {schema_name}")
-            
+
             # Generate the optimized prompt
             result = predictor(
                 description=description,
                 schema_name=schema_name,
                 count=count
             )
-            
+
             # Check if we got a valid result
             if not hasattr(result, 'optimized_prompt') or not result.optimized_prompt:
                 logger.warning("DSPy returned empty result, falling back to static prompt")
                 return self._fallback_prompt(description, schema_name, count)
-            
+
             # Combine DSPy-generated insight with our structured template
             dspy_insight = result.optimized_prompt
             logger.debug("DSPy generated insight successfully")
-            
+
             structured_prompt = self._enhance_with_dspy_insight(dspy_insight, description, schema_name, count)
-            
+
             logger.debug("DSPy prompt optimization completed successfully")
             return structured_prompt
-            
+
         except Exception as e:
             logger.warning(f"DSPy prompt generation failed: {str(e)}")
-            logger.debug(f"DSPy error details", exc_info=True)
+            logger.debug("DSPy error details", exc_info=True)
             return self._fallback_prompt(description, schema_name, count)
-    
+
     def generate_schema_prompt(
         self,
         description: str,
@@ -286,13 +285,13 @@ class OpenRouterPromptOptimizer:
             return self.generate_dynamic_prompt(description, schema_name, count)
         else:
             return self._fallback_prompt(description, schema_name, count)
-    
+
     def generate_adaptive_prompt(
         self,
         description: str,
         schema_name: str,
         count: int,
-        previous_examples: Optional[List[dict[str, Any]]] = None,
+        previous_examples: Optional[list[dict[str, Any]]] = None,
     ) -> str:
         """Generate an adaptive prompt (compatibility method)."""
         if previous_examples and len(previous_examples) > 0:
@@ -301,7 +300,7 @@ class OpenRouterPromptOptimizer:
             return self.generate_dynamic_prompt(description, schema_name, count)
         else:
             return self.generate_schema_prompt(description, schema_name, count)
-    
+
     def _enhance_with_dspy_insight(self, dspy_insight: str, description: str, schema_name: str, count: int) -> str:
         """Enhance DSPy-generated insights with our structured template."""
         enhanced_prompt = f"""You are a dataset generator. Your task is to create instruction-tuning examples for a {schema_name} dataset.
@@ -313,7 +312,7 @@ DSPY OPTIMIZATION INSIGHT:
 
 CRITICAL REQUIREMENTS:
 1. You MUST respond with ONLY a valid JSON array
-2. Do NOT include any explanatory text, code examples, or other content  
+2. Do NOT include any explanatory text, code examples, or other content
 3. Do NOT use markdown formatting
 4. The response must be parseable JSON
 5. NEVER use empty strings ("") for required fields like instruction or output

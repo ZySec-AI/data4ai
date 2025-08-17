@@ -233,7 +233,7 @@ def generate_dataset_card(
 tags:
 {chr(10).join(f"  - {tag}" for tag in tags)}
 """
-    
+
     return f"""# {dataset_name}
 
 ## Dataset Description
@@ -333,14 +333,14 @@ def safe_json_parse(text: str) -> Optional[Any]:
 
 def extract_json_from_text(text: str) -> Optional[Any]:
     """Extract JSON from text that might contain other content."""
-    import re
     import logging
-    
+    import re
+
     logger = logging.getLogger(__name__)
-    
+
     # Clean the text - remove common prefixes/suffixes
     text = text.strip()
-    
+
     # Try to find JSON array first (most common for datasets)
     array_match = re.search(r"\[.*\]", text, re.DOTALL)
     if array_match:
@@ -358,7 +358,7 @@ def extract_json_from_text(text: str) -> Optional[Any]:
         try:
             result = safe_json_parse(object_match.group())
             if result is not None:
-                logger.debug(f"Successfully extracted JSON object")
+                logger.debug("Successfully extracted JSON object")
                 return result
         except Exception as e:
             logger.debug(f"Failed to parse JSON object: {e}")
@@ -367,13 +367,13 @@ def extract_json_from_text(text: str) -> Optional[Any]:
     try:
         result = safe_json_parse(text)
         if result is not None:
-            logger.debug(f"Successfully parsed entire text as JSON")
+            logger.debug("Successfully parsed entire text as JSON")
             return result
     except Exception as e:
         logger.debug(f"Failed to parse entire text as JSON: {e}")
-    
+
     # Log preview of failed parsing
     preview = text[:200] + "..." if len(text) > 200 else text
     logger.warning(f"Could not extract JSON from text. Preview: {preview}")
-    
+
     return None

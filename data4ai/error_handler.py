@@ -1,6 +1,7 @@
 """Comprehensive error handling for Data4AI."""
 
 import logging
+import os
 import sys
 from functools import wraps
 from typing import Any, Callable, Optional
@@ -14,7 +15,6 @@ from data4ai.exceptions import (
     GenerationError,
     ValidationError,
 )
-import os
 
 logger = logging.getLogger("data4ai")
 console = Console()
@@ -243,16 +243,16 @@ class UserFriendlyError(Exception):
 
 def check_environment_variables(required_for_operation: Optional[list[str]] = None) -> dict[str, bool]:
     """Check environment variables and provide helpful export commands.
-    
+
     Args:
         required_for_operation: List of required env vars for the current operation
-        
+
     Returns:
         Dict mapping variable names to whether they're set
     """
     import sys
-    import typer
-    
+
+
     env_vars = {
         "OPENROUTER_API_KEY": {
             "set": bool(os.getenv("OPENROUTER_API_KEY")),
@@ -261,7 +261,7 @@ def check_environment_variables(required_for_operation: Optional[list[str]] = No
             "description": "OpenRouter API key for model access"
         },
         "OPENROUTER_MODEL": {
-            "set": bool(os.getenv("OPENROUTER_MODEL")),  
+            "set": bool(os.getenv("OPENROUTER_MODEL")),
             "example": 'export OPENROUTER_MODEL="openai/gpt-4o-mini"',
             "help_url": "https://openrouter.ai/models",
             "description": "Model to use for generation (optional, defaults to openai/gpt-4o-mini)"
@@ -273,34 +273,32 @@ def check_environment_variables(required_for_operation: Optional[list[str]] = No
             "description": "HuggingFace token for dataset publishing (optional)"
         }
     }
-    
+
     missing_vars = []
     for var_name, var_info in env_vars.items():
-        if not var_info["set"]:
-            # Only include if it's required for the current operation
-            if required_for_operation is None or var_name in (required_for_operation or []):
-                missing_vars.append((var_name, var_info))
-    
+        if not var_info["set"] and (required_for_operation is None or var_name in (required_for_operation or [])):
+            missing_vars.append((var_name, var_info))
+
     if missing_vars:
         # Use sys.stderr.write directly for better compatibility with uv run
         sys.stderr.write("\n📦 Missing environment variables detected:\n\n")
         sys.stderr.write("📋 Run these commands in your terminal to set them:\n\n")
-        
-        for var_name, var_info in missing_vars:
+
+        for _var_name, var_info in missing_vars:
             sys.stderr.write(f"# {var_info['description']}\n")
             sys.stderr.write(f"{var_info['example']}\n")
             sys.stderr.write(f"# Get your key from: {var_info['help_url']}\n\n")
-        
+
         sys.stderr.write("⚠️  Important: Environment variables set with 'export' are temporary\n")
         sys.stderr.write("   They will be lost when you close your terminal\n\n")
         sys.stderr.write("💡 For permanent setup, add these exports to:\n")
         sys.stderr.write("   - ~/.bashrc (for Bash)\n")
         sys.stderr.write("   - ~/.zshrc (for Zsh/macOS)\n")
         sys.stderr.write("   - ~/.profile (for general shell)\n\n")
-        
+
         # Force flush to ensure output is visible before exit
         sys.stderr.flush()
-        
+
         return {var: info["set"] for var, info in env_vars.items()}
-    
+
     return {var: info["set"] for var, info in env_vars.items()}
