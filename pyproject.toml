@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "data4ai"
-version = "0.1.1"
+version = "0.2.0"
 description = "Production-ready AI-powered dataset generation for instruction tuning and model fine-tuning"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -49,9 +49,19 @@ excel = [
 hf = [
     "huggingface-hub>=0.19.0,<1.0.0",
 ]
+docs = [
+    "pypdf>=3.17.0,<5.0.0",
+    "pdfplumber>=0.10.0,<1.0.0",
+    "python-docx>=1.1.0,<2.0.0",
+    "markdown>=3.5.0,<4.0.0",
+]
 all = [
     "openpyxl>=3.1.0,<4.0.0",
     "huggingface-hub>=0.19.0,<1.0.0",
+    "pypdf>=3.17.0,<5.0.0",
+    "pdfplumber>=0.10.0,<1.0.0",
+    "python-docx>=1.1.0,<2.0.0",
+    "markdown>=3.5.0,<4.0.0",
 ]
 dev = [
     "pytest>=7.0.0",
@@ -69,10 +79,10 @@ dev = [
 data4ai = "data4ai.cli_wrapper:main"
 
 [project.urls]
-Homepage = "https://github.com/zysec/data4ai"
-Documentation = "https://github.com/zysec/data4ai/blob/main/README.md"
-Repository = "https://github.com/zysec/data4ai"
-Issues = "https://github.com/zysec/data4ai/issues"
+Homepage = "https://github.com/data4ai/data4ai"
+Documentation = "https://github.com/data4ai/data4ai/blob/main/README.md"
+Repository = "https://github.com/data4ai/data4ai"
+Issues = "https://github.com/data4ai/data4ai/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["data4ai"]

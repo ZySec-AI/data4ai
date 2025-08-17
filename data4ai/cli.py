@@ -11,6 +11,7 @@ from data4ai import __version__
 from data4ai.client import OpenRouterConfig, SyncOpenRouterClient
 from data4ai.config import settings
 from data4ai.csv_handler import CSVHandler
+from data4ai.document_handler import DocumentHandler
 from data4ai.error_handler import (
     ErrorHandler,
     check_environment_variables,
@@ -411,6 +412,99 @@ def validate(
         )
     else:
         console.print("✅ All examples are valid!", style="green")
+
+
+@app.command("doc-to-dataset")
+@error_handler
+def doc_to_dataset(
+    input_path: Path = typer.Argument(..., help="Input document (PDF, DOCX, MD, TXT)"),
+    repo: str = typer.Option(
+        ..., "--repo", "-r", help="Output directory and repo name"
+    ),
+    dataset: str = typer.Option("alpaca", "--dataset", "-d", help="Dataset schema"),
+    extraction_type: str = typer.Option(
+        "qa",
+        "--type",
+        "-t",
+        help="Extraction type: qa, summary, instruction",
+    ),
+    count: int = typer.Option(100, "--count", "-c", help="Number of examples"),
+    batch_size: int = typer.Option(
+        10, "--batch-size", "-b", help="Examples per batch"
+    ),
+    chunk_size: int = typer.Option(
+        1000, "--chunk-size", help="Document chunk size for processing"
+    ),
+    advanced: bool = typer.Option(
+        False, "--advanced", help="Use advanced extraction (slower but better)"
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Simulate generation"),
+    huggingface: bool = typer.Option(
+        False, "--huggingface", "-hf", help="Push to HuggingFace"
+    ),
+):
+    """Generate dataset from document (PDF, DOCX, Markdown, or text file)."""
+    console.print(
+        f"📄 Processing {input_path.suffix.upper()} document...", style="blue"
+    )
+    
+    # Validate document type
+    try:
+        doc_type = DocumentHandler.detect_document_type(input_path)
+        console.print(f"📋 Document type: {doc_type.upper()}", style="cyan")
+    except Exception as e:
+        console.print(f"❌ {str(e)}", style="red")
+        raise typer.Exit(1)
+    
+    # Initialize generator
+    generator = DatasetGenerator()
+    
+    # Generate dataset
+    output_path = settings.output_dir / repo
+    
+    with console.status(f"Generating dataset from {doc_type} document..."):
+        result = generator.generate_from_document_sync(
+            document_path=input_path,
+            output_dir=output_path,
+            schema_name=dataset,
+            extraction_type=extraction_type,
+            count=count,
+            batch_size=batch_size,
+            chunk_size=chunk_size,
+            use_advanced=advanced,
+            dry_run=dry_run,
+        )
+    
+    if dry_run:
+        console.print(
+            f"Would process {result.get('chunks', 0)} chunks from document",
+            style="cyan",
+        )
+    else:
+        console.print(f"✅ Generated {result['row_count']} examples", style="green")
+        console.print(f"💾 Saved to: {result['output_path']}", style="green")
+        console.print(
+            f"📊 Processed {result['chunks_processed']} document chunks", style="cyan"
+        )
+        
+        # Push to HuggingFace if requested
+        if huggingface:
+            hf_token = settings.hf_token
+            if not hf_token:
+                console.print(
+                    "⚠️  HF_TOKEN not set. Skipping HuggingFace upload.", style="yellow"
+                )
+            else:
+                with console.status("Pushing to HuggingFace Hub..."):
+                    publisher = HuggingFacePublisher(
+                        token=hf_token, organization=settings.hf_organization
+                    )
+                    hf_url = publisher.push_dataset(
+                        dataset_dir=output_path,
+                        repo_name=repo,
+                        description=f"Dataset generated from {doc_type} document using {extraction_type} extraction",
+                    )
+                console.print(f"🤗 Published to: {hf_url}", style="green")
 
 
 @app.command()

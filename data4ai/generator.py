@@ -12,6 +12,7 @@ import pandas as pd
 from data4ai.client import OpenRouterClient, OpenRouterConfig
 from data4ai.config import settings
 from data4ai.csv_handler import CSVHandler
+from data4ai.document_handler import DocumentHandler
 from data4ai.error_handler import (
     async_error_handler,
     check_environment_variables,
@@ -850,3 +851,260 @@ Return a JSON object with ONLY the missing fields and their values."""
                 dry_run,
             )
         )
+
+    @async_error_handler
+    async def generate_from_document(
+        self,
+        document_path: Path,
+        output_dir: Path,
+        schema_name: str,
+        extraction_type: str = "qa",
+        count: int = 100,
+        batch_size: int = 10,
+        chunk_size: int = 1000,
+        use_advanced: bool = False,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """Generate dataset from document (PDF, DOCX, MD, TXT).
+        
+        Args:
+            document_path: Path to document file
+            output_dir: Output directory for dataset
+            schema_name: Dataset schema (alpaca, dolly, sharegpt)
+            extraction_type: Type of extraction (qa, summary, instruction)
+            count: Number of examples to generate
+            batch_size: Number of examples per batch
+            chunk_size: Size of document chunks for processing
+            use_advanced: Use advanced extraction methods
+            dry_run: Simulate without generation
+            
+        Returns:
+            Generation results with metrics
+        """
+        try:
+            logger.info(f"Preparing document for dataset generation: {document_path}")
+            
+            # Prepare document for generation
+            doc_data = DocumentHandler.prepare_for_generation(
+                document_path,
+                extraction_type=extraction_type,
+                chunk_size=chunk_size,
+                use_advanced=use_advanced
+            )
+            
+            if dry_run:
+                logger.info(f"Dry run: Would process {doc_data['total_chunks']} chunks")
+                return {
+                    "document": doc_data["document_name"],
+                    "chunks": doc_data["total_chunks"],
+                    "dry_run": True,
+                }
+            
+            logger.info(
+                f"Processing {doc_data['total_chunks']} chunks from {doc_data['document_type']} document"
+            )
+            
+            # Generate examples from document chunks
+            dataset = []
+            chunks = doc_data["chunks"]
+            examples_per_chunk = max(1, count // len(chunks)) if chunks else 0
+            
+            for chunk_data in chunks[:min(len(chunks), count)]:
+                chunk_text = chunk_data["text"]
+                
+                # Build context-aware prompt based on extraction type
+                if extraction_type == "qa":
+                    prompt = self._build_document_qa_prompt(
+                        chunk_text, schema_name, min(examples_per_chunk, batch_size)
+                    )
+                elif extraction_type == "summary":
+                    prompt = self._build_document_summary_prompt(
+                        chunk_text, schema_name, min(examples_per_chunk, batch_size)
+                    )
+                elif extraction_type == "instruction":
+                    prompt = self._build_document_instruction_prompt(
+                        chunk_text, schema_name, min(examples_per_chunk, batch_size)
+                    )
+                else:
+                    prompt = self._build_document_general_prompt(
+                        chunk_text, schema_name, min(examples_per_chunk, batch_size)
+                    )
+                
+                # Generate examples for this chunk
+                messages = [
+                    {
+                        "role": "system",
+                        "content": "You are a dataset generator. Create training examples based on the provided document content. Respond with ONLY valid JSON arrays.",
+                    },
+                    {"role": "user", "content": prompt},
+                ]
+                
+                try:
+                    response = await self.client.chat_completion(
+                        messages,
+                        temperature=self.temperature,
+                        max_tokens=2000,
+                    )
+                    
+                    response_text = response["choices"][0]["message"]["content"]
+                    entries = self._parse_response(response_text, schema_name)
+                    dataset.extend(entries)
+                    
+                    if len(dataset) >= count:
+                        break
+                        
+                except Exception as e:
+                    logger.warning(f"Failed to generate from chunk {chunk_data['id']}: {e}")
+                    continue
+            
+            # Trim to exact count
+            dataset = dataset[:count]
+            
+            # Write output
+            output_dir.mkdir(parents=True, exist_ok=True)
+            jsonl_path = output_dir / "data.jsonl"
+            write_jsonl(dataset, jsonl_path)
+            
+            # Calculate metrics
+            metrics = calculate_metrics(dataset, schema_name)
+            
+            # Save metadata
+            parameters = {
+                "temperature": self.temperature,
+                "batch_size": batch_size,
+                "seed": self.seed,
+                "source": str(document_path),
+                "document_type": doc_data["document_type"],
+                "extraction_type": extraction_type,
+                "chunk_size": chunk_size,
+                "chunks_processed": min(len(chunks), count),
+            }
+            save_metadata(
+                output_dir, schema_name, self.model, len(dataset), parameters, metrics
+            )
+            
+            logger.info(f"Generated {len(dataset)} examples from document")
+            
+            return {
+                "row_count": len(dataset),
+                "output_path": str(jsonl_path),
+                "metrics": metrics,
+                "document_type": doc_data["document_type"],
+                "chunks_processed": min(len(chunks), count),
+            }
+            
+        except Exception as e:
+            logger.error(f"Generation from document failed: {e}")
+            raise GenerationError(f"Failed to generate from document: {str(e)}") from e
+
+    def generate_from_document_sync(self, *args, **kwargs) -> dict[str, Any]:
+        """Synchronous wrapper for document generation."""
+        return asyncio.run(self.generate_from_document(*args, **kwargs))
+
+    def _build_document_qa_prompt(
+        self, text: str, schema_name: str, count: int
+    ) -> str:
+        """Build prompt for Q&A generation from document."""
+        if schema_name == "alpaca":
+            return f"""Based on the following text, generate {count} question-answer pairs for instruction tuning.
+
+Text:
+{text}
+
+Generate {count} examples in this JSON format:
+[
+  {{
+    "instruction": "A question about the content",
+    "input": "Any additional context (optional)",
+    "output": "The answer based on the text"
+  }}
+]
+
+Focus on creating diverse questions that test understanding of the content."""
+
+        elif schema_name == "dolly":
+            return f"""Based on the following text, generate {count} question-answer pairs.
+
+Text:
+{text}
+
+Generate {count} examples in this JSON format:
+[
+  {{
+    "instruction": "A question about the content",
+    "context": "Relevant excerpt from the text",
+    "response": "The answer",
+    "category": "question_answering"
+  }}
+]"""
+
+        else:  # sharegpt
+            return f"""Based on the following text, generate {count} conversation examples where a human asks questions and an assistant answers based on the content.
+
+Text:
+{text}
+
+Generate {count} examples in this JSON format:
+[
+  {{
+    "conversations": [
+      {{"from": "human", "value": "Question about the text"}},
+      {{"from": "gpt", "value": "Answer based on the text"}}
+    ]
+  }}
+]"""
+
+    def _build_document_summary_prompt(
+        self, text: str, schema_name: str, count: int
+    ) -> str:
+        """Build prompt for summary generation from document."""
+        if schema_name == "alpaca":
+            return f"""Based on the following text, generate {count} summarization tasks.
+
+Text:
+{text}
+
+Generate {count} examples in this JSON format:
+[
+  {{
+    "instruction": "Summarize the following text" or similar instruction,
+    "input": "A portion of the text to summarize",
+    "output": "A concise summary"
+  }}
+]"""
+        else:
+            return self._build_document_general_prompt(text, schema_name, count)
+
+    def _build_document_instruction_prompt(
+        self, text: str, schema_name: str, count: int
+    ) -> str:
+        """Build prompt for instruction generation from document."""
+        if schema_name == "alpaca":
+            return f"""Based on the following text, generate {count} instruction-following examples that teach concepts from the content.
+
+Text:
+{text}
+
+Generate {count} examples in this JSON format:
+[
+  {{
+    "instruction": "An instruction related to the content",
+    "input": "Input data or context",
+    "output": "The expected output or explanation"
+  }}
+]
+
+Create diverse instructions like explanations, definitions, comparisons, and applications."""
+        else:
+            return self._build_document_general_prompt(text, schema_name, count)
+
+    def _build_document_general_prompt(
+        self, text: str, schema_name: str, count: int
+    ) -> str:
+        """Build general prompt for document-based generation."""
+        return f"""Based on the following text, generate {count} training examples.
+
+Text:
+{text}
+
+{self._build_static_prompt("Create diverse examples based on this content", schema_name, count)}"""

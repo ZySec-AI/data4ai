@@ -13,6 +13,7 @@ Generate high-quality synthetic datasets using state-of-the-art language models 
 - 🤖 **100+ AI Models** - Access to GPT-4, Claude, Llama, and more via OpenRouter
 - 📊 **Multiple Formats** - Support for Alpaca, Dolly, ShareGPT schemas
 - 🔮 **DSPy Integration** - Dynamic prompt optimization for better quality
+- 📄 **Document Support** - Generate datasets from PDFs, Word docs, Markdown, and text files
 - 💾 **Excel/CSV Support** - Start from templates or existing data
 - ☁️ **HuggingFace Hub** - Direct dataset publishing
 - ⚡ **Production Ready** - Rate limiting, checkpointing, deduplication
@@ -24,6 +25,7 @@ Generate high-quality synthetic datasets using state-of-the-art language models 
 ```bash
 pip install data4ai              # Core features
 pip install data4ai[excel]       # With Excel support
+pip install data4ai[docs]        # With document support (PDF, DOCX, etc.)
 pip install data4ai[all]         # All features
 ```
 
@@ -97,7 +99,29 @@ data4ai create-sample template.xlsx
 data4ai run template.xlsx --repo my-dataset --max-rows 100
 ```
 
-### 3. Publish to HuggingFace
+### 3. Generate from Documents
+
+```bash
+# From PDF document
+data4ai doc-to-dataset research-paper.pdf \
+  --repo paper-qa \
+  --type qa \
+  --count 100
+
+# From Word document with summaries
+data4ai doc-to-dataset manual.docx \
+  --repo manual-summaries \
+  --type summary \
+  --count 50
+
+# From Markdown with advanced extraction
+data4ai doc-to-dataset README.md \
+  --repo docs-dataset \
+  --type instruction \
+  --advanced
+```
+
+### 4. Publish to HuggingFace
 
 ```bash
 # Generate and publish
@@ -111,15 +135,24 @@ data4ai prompt \
 ## 🐍 Python API
 
 ```python
-from data4ai import generate_from_description
+from data4ai import generate_from_description, generate_from_document
 
+# Generate from description
 result = generate_from_description(
     description="Create Python interview questions",
     repo="python-interviews",
     count=50
 )
 
-print(f"Generated {result.row_count} examples")
+# Generate from document
+result = generate_from_document(
+    document_path="research-paper.pdf",
+    repo="paper-qa",
+    extraction_type="qa",
+    count=100
+)
+
+print(f"Generated {result['row_count']} examples")
 ```
 
 ## 📋 Supported Schemas

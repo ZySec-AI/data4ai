@@ -6,7 +6,7 @@ try:
     __version__ = version("data4ai")
 except Exception:
     # Fallback for development or when package is not installed
-    __version__ = "0.1.1"
+    __version__ = "0.2.0"
 
 __author__ = "ZySec AI"
 
@@ -16,6 +16,7 @@ from typing import Any, Optional
 
 from data4ai.config import settings
 from data4ai.csv_handler import CSVHandler
+from data4ai.document_handler import DocumentHandler
 from data4ai.excel_handler import ExcelHandler
 from data4ai.generator import DatasetGenerator
 from data4ai.publisher import HuggingFacePublisher
@@ -189,6 +190,92 @@ def create_sample_csv(path: str, dataset: str = "alpaca") -> None:
     CSVHandler.create_template(Path(path), dataset)
 
 
+def generate_from_document(
+    document_path: str,
+    repo: str,
+    dataset: str = "alpaca",
+    extraction_type: str = "qa",
+    count: int = 100,
+    model: Optional[str] = None,
+    temperature: float = 0.7,
+    seed: Optional[int] = None,
+    batch_size: int = 10,
+    chunk_size: int = 1000,
+    use_advanced: bool = False,
+    push_to_hf: bool = False,
+    private: bool = False,
+    hf_token: Optional[str] = None,
+) -> dict[str, Any]:
+    """Generate dataset from document (PDF, DOCX, Markdown, or text file).
+
+    Args:
+        document_path: Path to document file
+        repo: Repository/output directory name
+        dataset: Dataset schema (alpaca, dolly, sharegpt)
+        extraction_type: Type of extraction (qa, summary, instruction)
+        count: Number of examples to generate
+        model: Model to use (defaults to env var)
+        temperature: Sampling temperature (0.0-2.0)
+        seed: Random seed for reproducibility
+        batch_size: Batch size for generation
+        chunk_size: Size of document chunks for processing
+        use_advanced: Use advanced extraction methods
+        push_to_hf: Whether to push to HuggingFace Hub
+        private: Make HF dataset private
+        hf_token: HuggingFace token (defaults to env var)
+
+    Returns:
+        Dictionary with generation results including:
+        - row_count: Number of rows generated
+        - output_path: Path to output directory
+        - document_type: Type of document processed
+        - chunks_processed: Number of document chunks processed
+    """
+    generator = DatasetGenerator(
+        model=model,
+        temperature=temperature,
+        seed=seed,
+    )
+
+    output_dir = settings.output_dir / repo
+    result = generator.generate_from_document_sync(
+        document_path=Path(document_path),
+        output_dir=output_dir,
+        schema_name=dataset,
+        extraction_type=extraction_type,
+        count=count,
+        batch_size=batch_size,
+        chunk_size=chunk_size,
+        use_advanced=use_advanced,
+    )
+
+    # Add convenience fields
+    result["jsonl_path"] = output_dir / "data.jsonl"
+    result["schema"] = dataset
+    result["model"] = model or settings.openrouter_model
+    result["params"] = {
+        "temperature": temperature,
+        "seed": seed,
+        "batch_size": batch_size,
+        "chunk_size": chunk_size,
+        "extraction_type": extraction_type,
+    }
+
+    # Push to HuggingFace if requested
+    if push_to_hf:
+        token = hf_token or settings.hf_token
+        publisher = HuggingFacePublisher(token=token)
+        url = publisher.push_dataset(
+            dataset_dir=output_dir,
+            repo_name=repo,
+            private=private,
+            description=f"Dataset generated from {result['document_type']} document",
+        )
+        result["huggingface_url"] = url
+
+    return result
+
+
 def validate_dataset(repo: str, dataset: str = "alpaca") -> dict[str, Any]:
     """Validate dataset quality and schema compliance.
 
@@ -353,6 +440,19 @@ class Data4AI:
             **{k: v for k, v in kwargs.items() if k not in ["model", "temperature"]},
         )
 
+    def generate_from_document(
+        self, document_path: str, repo: str, dataset: str = "alpaca", **kwargs
+    ) -> dict[str, Any]:
+        """Generate dataset from document. See module-level function for details."""
+        return generate_from_document(
+            document_path=document_path,
+            repo=repo,
+            dataset=dataset,
+            model=kwargs.get("model", self.model),
+            temperature=kwargs.get("temperature", self.temperature),
+            **{k: v for k, v in kwargs.items() if k not in ["model", "temperature"]},
+        )
+
     def create_sample_excel(self, path: str, dataset: str = "alpaca") -> None:
         """Create Excel template. See module-level function for details."""
         return create_sample_excel(path, dataset)
@@ -369,6 +469,7 @@ class Data4AI:
 __all__ = [
     # Core classes
     "DatasetGenerator",
+    "DocumentHandler",
     "AlpacaSchema",
     "DollySchema",
     "ShareGPTSchema",
@@ -376,6 +477,7 @@ __all__ = [
     # High-level functions
     "generate_from_description",
     "generate_from_excel",
+    "generate_from_document",
     "create_sample_excel",
     "create_sample_csv",
     "validate_dataset",
