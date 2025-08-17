@@ -59,6 +59,9 @@ jobs:
         fi
     
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        timeout-minutes: 10
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -226,6 +229,9 @@ jobs:
         fi
     
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        timeout-minutes: 10
     
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
@@ -241,12 +247,21 @@ jobs:
     - name: Install package
       run: |
         echo "Installing package with type: ${{ matrix.install-type }}"
+        
+        # Find the wheel file
+        WHEEL_FILE=$(find dist -name "*.whl" | head -1)
+        if [ -z "$WHEEL_FILE" ]; then
+          echo "❌ No wheel file found in dist/"
+          exit 1
+        fi
+        echo "Found wheel file: $WHEEL_FILE"
+        
         if [ "${{ matrix.install-type }}" = "basic" ]; then
           echo "Installing basic package..."
-          pip install dist/*.whl
+          pip install "$WHEEL_FILE"
         else
           echo "Installing package with extras: ${{ matrix.install-type }}"
-          pip install "dist/*.whl[${{ matrix.install-type }}]"
+          pip install "$WHEEL_FILE[${{ matrix.install-type }}]"
         fi
     
     - name: Test import

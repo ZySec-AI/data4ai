@@ -149,14 +149,28 @@ jobs:
     
     - name: Install package
       run: |
+        echo "Installing package with type: ${{ matrix.install-type }}"
+        
+        # Find the wheel file
+        WHEEL_FILE=$(find dist -name "*.whl" | head -1)
+        if [ -z "$WHEEL_FILE" ]; then
+          echo "❌ No wheel file found in dist/"
+          exit 1
+        fi
+        echo "Found wheel file: $WHEEL_FILE"
+        
         if [ "${{ matrix.install-type }}" = "basic" ]; then
-          pip install dist/*.whl
+          echo "Installing basic package..."
+          pip install "$WHEEL_FILE"
         elif [ "${{ matrix.install-type }}" = "excel" ]; then
-          pip install "dist/*.whl[excel]"
+          echo "Installing package with excel extras..."
+          pip install "$WHEEL_FILE[excel]"
         elif [ "${{ matrix.install-type }}" = "hf" ]; then
-          pip install "dist/*.whl[hf]"
+          echo "Installing package with hf extras..."
+          pip install "$WHEEL_FILE[hf]"
         elif [ "${{ matrix.install-type }}" = "all" ]; then
-          pip install "dist/*.whl[all]"
+          echo "Installing package with all extras..."
+          pip install "$WHEEL_FILE[all]"
         fi
     
     - name: Test import
