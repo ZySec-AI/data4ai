@@ -221,8 +221,18 @@ def generate_dataset_card(
     row_count: int,
     model: str,
     description: Optional[str] = None,
+    tags: Optional[list[str]] = None,
 ) -> str:
     """Generate a README card for the dataset."""
+    # Add tags section if provided
+    tags_section = ""
+    if tags:
+        tags_section = f"""
+---
+tags:
+{chr(10).join(f"  - {tag}" for tag in tags)}
+"""
+    
     return f"""# {dataset_name}
 
 ## Dataset Description
@@ -236,7 +246,7 @@ This dataset was generated using Data4AI with the {schema} schema format.
 - **Format**: {schema}
 - **Size**: {row_count} examples
 - **Model**: {model}
-- **Generated**: {datetime.utcnow().strftime("%Y-%m-%d")}
+- **Generated**: {datetime.utcnow().strftime("%Y-%m-%d")}{tags_section}
 
 ## Schema Format
 

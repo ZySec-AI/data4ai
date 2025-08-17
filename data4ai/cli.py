@@ -341,6 +341,7 @@ def push(
     description: Optional[str] = typer.Option(
         None, "--description", help="Dataset description"
     ),
+
     token: Optional[str] = typer.Option(None, "--token", help="HuggingFace token"),
 ):
     """Upload dataset to HuggingFace Hub."""

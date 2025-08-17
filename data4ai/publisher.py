@@ -28,6 +28,7 @@ class HuggingFacePublisher:
         repo_name: str,
         private: bool = False,
         description: Optional[str] = None,
+
     ) -> str:
         """Push dataset to HuggingFace Hub."""
         try:
@@ -91,6 +92,7 @@ class HuggingFacePublisher:
                         row_count=metadata.get("row_count", 0),
                         model=metadata.get("model", "unknown"),
                         description=description,
+                        tags=["data4ai"],
                     )
                 else:
                     dataset_card = generate_dataset_card(
@@ -99,6 +101,7 @@ class HuggingFacePublisher:
                         row_count=0,
                         model="unknown",
                         description=description,
+                        tags=["data4ai"],
                     )
 
                 with open(readme_path, "w") as f:
@@ -131,6 +134,8 @@ class HuggingFacePublisher:
                         logger.warning(f"Failed to upload {file_name}: {e}")
 
             logger.info(f"Successfully uploaded {len(uploaded_files)} files")
+
+
 
             # Return the dataset URL
             dataset_url = f"https://huggingface.co/datasets/{full_repo_name}"
