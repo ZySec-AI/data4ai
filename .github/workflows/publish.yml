@@ -42,13 +42,19 @@ jobs:
       run: |
         python -c "
         import re
-        import toml
         
-        # Read pyproject.toml
+        # Read pyproject.toml and extract version
         with open('pyproject.toml', 'r') as f:
-            config = toml.load(f)
+            content = f.read()
         
-        version = config['project']['version']
+        # Find version using regex
+        version_match = re.search(r'version\s*=\s*[\"\\']([^\"\\']+)[\"\\']', content)
+        if version_match:
+            version = version_match.group(1)
+        else:
+            print('❌ Could not find version in pyproject.toml')
+            exit(1)
+        
         print(f'Package version: {version}')
         
         # Check if version matches tag (if this is a tag push)

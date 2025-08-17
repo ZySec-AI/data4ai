@@ -82,12 +82,20 @@ jobs:
     - name: Check version
       run: |
         python -c "
-        import toml
+        import re
         
+        # Read pyproject.toml and extract version
         with open('pyproject.toml', 'r') as f:
-            config = toml.load(f)
+            content = f.read()
         
-        current_version = config['project']['version']
+        # Find version using regex
+        version_match = re.search(r'version\s*=\s*[\"\\']([^\"\\']+)[\"\\']', content)
+        if version_match:
+            current_version = version_match.group(1)
+        else:
+            print('❌ Could not find version in pyproject.toml')
+            exit(1)
+        
         requested_version = '${{ needs.validate-inputs.outputs.version }}'
         
         print(f'Current version in pyproject.toml: {current_version}')
@@ -168,13 +176,22 @@ jobs:
         print(f'✅ Found wheel: {wheels[0]}')
         
         # Show package info
-        import toml
+        import re
         with open('pyproject.toml', 'r') as f:
-            config = toml.load(f)
+            content = f.read()
         
-        print(f'📦 Package: {config[\"project\"][\"name\"]}')
-        print(f'📋 Version: {config[\"project\"][\"version\"]}')
-        print(f'📝 Description: {config[\"project\"][\"description\"]}')
+        # Extract package info using regex
+        name_match = re.search(r'name\s*=\s*[\"\\']([^\"\\']+)[\"\\']', content)
+        version_match = re.search(r'version\s*=\s*[\"\\']([^\"\\']+)[\"\\']', content)
+        description_match = re.search(r'description\s*=\s*[\"\\']([^\"\\']+)[\"\\']', content)
+        
+        package_name = name_match.group(1) if name_match else 'unknown'
+        package_version = version_match.group(1) if version_match else 'unknown'
+        package_description = description_match.group(1) if description_match else 'No description'
+        
+        print(f'📦 Package: {package_name}')
+        print(f'📋 Version: {package_version}')
+        print(f'📝 Description: {package_description}')
         "
     
     - name: Upload artifacts
