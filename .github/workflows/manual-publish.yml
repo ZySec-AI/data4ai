@@ -106,14 +106,14 @@ jobs:
   build:
     needs: [validate-inputs, validate]
     runs-on: ubuntu-latest
-    if: always() && (needs.validate-inputs.result == 'success' && (needs.validate.result == 'success' || needs.validate.result == 'skipped'))
+    if: needs.validate-inputs.result == 'success' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
     steps:
     - name: Check build conditions
       run: |
         echo "🔍 Build Job Conditions:"
         echo "  - validate-inputs.result: ${{ needs.validate-inputs.result }}"
         echo "  - validate.result: ${{ needs.validate.result }}"
-        echo "  - Condition met: ${{ always() && (needs.validate-inputs.result == 'success' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')) }}"
+        echo "  - Condition met: ${{ needs.validate-inputs.result == 'success' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') }}"
         
         if [ "${{ needs.validate-inputs.result }}" != "success" ]; then
           echo "⏭️ Skipping build due to validate-inputs failure"
@@ -245,7 +245,7 @@ jobs:
   publish-pypi:
     needs: [validate-inputs, build]
     runs-on: ubuntu-latest
-    if: always() && (needs.validate-inputs.result == 'success' && needs.build.result == 'success')
+    if: needs.validate-inputs.result == 'success' && needs.build.result == 'success'
     
     steps:
     - name: Check publish conditions
@@ -253,7 +253,7 @@ jobs:
         echo "🔍 Publish Job Conditions:"
         echo "  - validate-inputs.result: ${{ needs.validate-inputs.result }}"
         echo "  - build.result: ${{ needs.build.result }}"
-        echo "  - Condition met: ${{ always() && (needs.validate-inputs.result == 'success' && needs.build.result == 'success') }}"
+        echo "  - Condition met: ${{ needs.validate-inputs.result == 'success' && needs.build.result == 'success' }}"
         
         if [ "${{ needs.validate-inputs.result }}" != "success" ]; then
           echo "⏭️ Skipping publish due to validate-inputs failure"
