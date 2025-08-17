@@ -8,8 +8,16 @@ from data4ai.generator import DatasetGenerator
 class TestDatasetGeneratorInitialization:
     """Test DatasetGenerator initialization."""
 
-    def test_generator_initialization_defaults(self):
+    @patch("data4ai.generator.settings")
+    def test_generator_initialization_defaults(self, mock_settings):
         """Test generator initialization with default parameters."""
+        # Mock API key to prevent ConfigurationError
+        mock_settings.openrouter_api_key = "test-key"
+        mock_settings.openrouter_model = "meta-llama/llama-3-8b-instruct"
+        mock_settings.temperature = 0.7
+        mock_settings.seed = None
+        mock_settings.use_dspy = True
+        
         generator = DatasetGenerator()
 
         assert generator.model == "meta-llama/llama-3-8b-instruct"
@@ -18,8 +26,16 @@ class TestDatasetGeneratorInitialization:
         # max_retries is a local variable, not an instance attribute
         assert hasattr(generator, "prompt_generator")
 
-    def test_generator_initialization_custom_params(self):
+    @patch("data4ai.generator.settings")
+    def test_generator_initialization_custom_params(self, mock_settings):
         """Test generator initialization with custom parameters."""
+        # Mock API key to prevent ConfigurationError
+        mock_settings.openrouter_api_key = "test-key"
+        mock_settings.openrouter_model = "meta-llama/llama-3-8b-instruct"
+        mock_settings.temperature = 0.7
+        mock_settings.seed = None
+        mock_settings.use_dspy = True
+        
         generator = DatasetGenerator(
             model="anthropic/claude-3-5-sonnet", temperature=0.9, seed=42
         )
@@ -29,8 +45,16 @@ class TestDatasetGeneratorInitialization:
         assert generator.seed == 42
 
     @patch("data4ai.generator.create_prompt_generator")
-    def test_generator_prompt_generator_setup(self, mock_create_prompt):
+    @patch("data4ai.generator.settings")
+    def test_generator_prompt_generator_setup(self, mock_settings, mock_create_prompt):
         """Test that prompt generator is set up correctly."""
+        # Mock API key to prevent ConfigurationError
+        mock_settings.openrouter_api_key = "test-key"
+        mock_settings.openrouter_model = "meta-llama/llama-3-8b-instruct"
+        mock_settings.temperature = 0.7
+        mock_settings.seed = None
+        mock_settings.use_dspy = True
+        
         mock_prompt_generator = Mock()
         mock_create_prompt.return_value = mock_prompt_generator
 
@@ -43,8 +67,16 @@ class TestDatasetGeneratorInitialization:
 class TestPromptBuilding:
     """Test prompt building functionality."""
 
-    def test_build_static_prompt_alpaca(self):
+    @patch("data4ai.generator.settings")
+    def test_build_static_prompt_alpaca(self, mock_settings):
         """Test building static prompt for Alpaca schema."""
+        # Mock API key to prevent ConfigurationError
+        mock_settings.openrouter_api_key = "test-key"
+        mock_settings.openrouter_model = "meta-llama/llama-3-8b-instruct"
+        mock_settings.temperature = 0.7
+        mock_settings.seed = None
+        mock_settings.use_dspy = True
+        
         generator = DatasetGenerator()
 
         prompt = generator._build_static_prompt(
@@ -58,8 +90,16 @@ class TestPromptBuilding:
         assert "input" in prompt
         assert "output" in prompt
 
-    def test_build_static_prompt_dolly(self):
+    @patch("data4ai.generator.settings")
+    def test_build_static_prompt_dolly(self, mock_settings):
         """Test building static prompt for Dolly schema."""
+        # Mock API key to prevent ConfigurationError
+        mock_settings.openrouter_api_key = "test-key"
+        mock_settings.openrouter_model = "meta-llama/llama-3-8b-instruct"
+        mock_settings.temperature = 0.7
+        mock_settings.seed = None
+        mock_settings.use_dspy = True
+        
         generator = DatasetGenerator()
 
         prompt = generator._build_static_prompt(
@@ -73,8 +113,16 @@ class TestPromptBuilding:
         assert "context" in prompt
         assert "response" in prompt
 
-    def test_build_static_prompt_sharegpt(self):
+    @patch("data4ai.generator.settings")
+    def test_build_static_prompt_sharegpt(self, mock_settings):
         """Test building static prompt for ShareGPT schema."""
+        # Mock API key to prevent ConfigurationError
+        mock_settings.openrouter_api_key = "test-key"
+        mock_settings.openrouter_model = "meta-llama/llama-3-8b-instruct"
+        mock_settings.temperature = 0.7
+        mock_settings.seed = None
+        mock_settings.use_dspy = True
+        
         generator = DatasetGenerator()
 
         prompt = generator._build_static_prompt(
@@ -87,8 +135,16 @@ class TestPromptBuilding:
         assert "conversations" in prompt
 
     @patch("data4ai.generator.create_prompt_generator")
-    def test_build_generation_prompt_with_dspy(self, mock_create_prompt):
+    @patch("data4ai.generator.settings")
+    def test_build_generation_prompt_with_dspy(self, mock_settings, mock_create_prompt):
         """Test building generation prompt with DSPy."""
+        # Mock API key to prevent ConfigurationError
+        mock_settings.openrouter_api_key = "test-key"
+        mock_settings.openrouter_model = "meta-llama/llama-3-8b-instruct"
+        mock_settings.temperature = 0.7
+        mock_settings.seed = None
+        mock_settings.use_dspy = True
+        
         mock_prompt_generator = Mock()
         mock_prompt_generator.generate_schema_prompt.return_value = (
             "Dynamic prompt content"
@@ -107,8 +163,16 @@ class TestPromptBuilding:
         )
 
     @patch("data4ai.generator.create_prompt_generator")
-    def test_build_generation_prompt_with_examples(self, mock_create_prompt):
+    @patch("data4ai.generator.settings")
+    def test_build_generation_prompt_with_examples(self, mock_settings, mock_create_prompt):
         """Test building generation prompt with previous examples."""
+        # Mock API key to prevent ConfigurationError
+        mock_settings.openrouter_api_key = "test-key"
+        mock_settings.openrouter_model = "meta-llama/llama-3-8b-instruct"
+        mock_settings.temperature = 0.7
+        mock_settings.seed = None
+        mock_settings.use_dspy = True
+        
         mock_prompt_generator = Mock()
         mock_prompt_generator.generate_adaptive_prompt.return_value = (
             "Adaptive prompt content"
@@ -141,8 +205,16 @@ class TestPromptBuilding:
         )
 
     @patch("data4ai.generator.create_prompt_generator")
-    def test_build_generation_prompt_fallback(self, mock_create_prompt):
+    @patch("data4ai.generator.settings")
+    def test_build_generation_prompt_fallback(self, mock_settings, mock_create_prompt):
         """Test that prompt building falls back to static prompt on error."""
+        # Mock API key to prevent ConfigurationError
+        mock_settings.openrouter_api_key = "test-key"
+        mock_settings.openrouter_model = "meta-llama/llama-3-8b-instruct"
+        mock_settings.temperature = 0.7
+        mock_settings.seed = None
+        mock_settings.use_dspy = True
+        
         mock_prompt_generator = Mock()
         mock_prompt_generator.generate_schema_prompt.side_effect = Exception(
             "DSPy error"
