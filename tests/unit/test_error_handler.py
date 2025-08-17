@@ -7,7 +7,7 @@ import pytest
 
 from data4ai.error_handler import (
     ErrorHandler,
-    UserFriendlyException,
+    UserFriendlyError,
     async_error_handler,
     error_handler,
 )
@@ -183,17 +183,17 @@ class TestAsyncErrorDecorator:
         assert result == "async success"
 
 
-class TestUserFriendlyException:
+class TestUserFriendlyError:
     """Test user-friendly exception class."""
 
     def test_basic_message(self):
         """Test basic exception message."""
-        exc = UserFriendlyException("Something went wrong")
+        exc = UserFriendlyError("Something went wrong")
         assert str(exc) == "Something went wrong"
 
     def test_error_key_message(self):
         """Test exception with error key."""
-        exc = UserFriendlyException(
+        exc = UserFriendlyError(
             "Fallback message",
             error_key="api_key_missing"
         )
@@ -201,7 +201,7 @@ class TestUserFriendlyException:
 
     def test_formatted_message(self):
         """Test exception with formatted message."""
-        exc = UserFriendlyException(
+        exc = UserFriendlyError(
             "Fallback",
             error_key="file_not_found",
             path="/test.txt"
@@ -211,7 +211,7 @@ class TestUserFriendlyException:
     @patch('data4ai.error_handler.console')
     def test_display_method(self, mock_console):
         """Test display method."""
-        exc = UserFriendlyException("Display this error")
+        exc = UserFriendlyError("Display this error")
         exc.display()
 
         mock_console.print.assert_called_with("Display this error", style="red")

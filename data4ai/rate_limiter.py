@@ -165,7 +165,7 @@ class AdaptiveRateLimiter:
         # Handle exceptions
         if exc_type is None:
             self.handle_success()
-        elif (hasattr(exc_val, 'response') and hasattr(exc_val.response, 'status_code') 
+        elif (hasattr(exc_val, 'response') and hasattr(exc_val.response, 'status_code')
               and exc_val.response.status_code == 429):
                 retry_after = exc_val.response.headers.get('Retry-After')
                 await self.handle_429(
