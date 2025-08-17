@@ -1,0 +1,191 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "data4ai"
+version = "0.1.1"
+description = "Production-ready AI-powered dataset generation for instruction tuning and model fine-tuning"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "ZySec AI", email = "support@zysec.ai"}
+]
+keywords = ["dataset", "ai", "machine-learning", "instruction-tuning", "llm", "training-data"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "typer>=0.9.0,<1.0.0",
+    "rich>=13.0.0,<14.0.0",
+    "httpx>=0.25.0,<1.0.0",
+    "pydantic>=2.0.0,<3.0.0",
+    "pydantic-settings>=2.0.0,<3.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "pyyaml>=6.0.0,<7.0.0",
+    "tenacity>=8.2.0,<9.0.0",
+    "pandas>=2.0.0,<3.0.0",
+    "dspy-ai>=2.6.27",
+]
+
+[project.optional-dependencies]
+excel = [
+    "openpyxl>=3.1.0,<4.0.0",
+]
+hf = [
+    "huggingface-hub>=0.19.0,<1.0.0",
+]
+all = [
+    "openpyxl>=3.1.0,<4.0.0",
+    "huggingface-hub>=0.19.0,<1.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "types-pyyaml>=6.0.0",
+    "types-requests>=2.31.0",
+    "pre-commit>=3.5.0",
+]
+
+[project.scripts]
+data4ai = "data4ai.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/zysec/data4ai"
+Documentation = "https://github.com/zysec/data4ai/blob/main/README.md"
+Repository = "https://github.com/zysec/data4ai"
+Issues = "https://github.com/zysec/data4ai/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["data4ai"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/data4ai",
+    "/tests",
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+    "B905",  # zip() without an explicit strict= parameter
+]
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "__pycache__",
+]
+
+[tool.ruff.per-file-ignores]
+"tests/*" = ["S101"]  # Allow assert in tests
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+no_implicit_reexport = true
+namespace_packages = true
+ignore_missing_imports = true
+show_error_codes = true
+show_column_numbers = true
+pretty = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = [
+    "--cov=data4ai",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["data4ai"]
+omit = [
+    "*/tests/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "ipython>=8.0.0",
+    "ipdb>=0.13.0",
+]
+
+[tool.uv.pip]
+index-url = "https://pypi.org/simple"
+extra-index-url = []
