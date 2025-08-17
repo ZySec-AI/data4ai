@@ -22,15 +22,16 @@ class TestCLIErrorFlows:
     def test_typer_exit_not_swallowed(self):
         """Ensure typer.Exit is not caught and stringified."""
         # Test with missing API key scenario
-        with patch.dict(os.environ, {}, clear=True), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
 
-            result = self.runner.invoke(app, [
-                "prompt",
-                "--repo", "test",
-                "--description", "test",
-                "--count", "1"
-            ])
+            result = self.runner.invoke(
+                app,
+                ["prompt", "--repo", "test", "--description", "test", "--count", "1"],
+            )
 
             # Should exit with code 1
             assert result.exit_code == 1
@@ -40,20 +41,23 @@ class TestCLIErrorFlows:
             assert "❌ Error: 1" not in result.output
 
             # Should contain helpful environment message
-            assert "Missing environment variables" in result.output or \
-                   "export OPENROUTER_API_KEY" in result.output
+            assert (
+                "Missing environment variables" in result.output
+                or "export OPENROUTER_API_KEY" in result.output
+            )
 
     def test_missing_api_key_message_quality(self):
         """Test that missing API key produces helpful message."""
-        with patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=False), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=False),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
 
-            result = self.runner.invoke(app, [
-                "prompt",
-                "--repo", "test",
-                "--description", "test",
-                "--count", "1"
-            ])
+            result = self.runner.invoke(
+                app,
+                ["prompt", "--repo", "test", "--description", "test", "--count", "1"],
+            )
 
             assert result.exit_code == 1
             # Check for actionable guidance
@@ -62,7 +66,10 @@ class TestCLIErrorFlows:
 
     def test_missing_hf_token_message_quality(self):
         """Test that missing HF token produces helpful message."""
-        with patch.dict(os.environ, {"HF_TOKEN": ""}, clear=False), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {"HF_TOKEN": ""}, clear=False),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.hf_token = None
             mock_settings.openrouter_api_key = "test-key"  # API key is set
 
@@ -72,32 +79,36 @@ class TestCLIErrorFlows:
             (test_dir / "data.jsonl").write_text('{"test": "data"}\n')
 
             try:
-                result = self.runner.invoke(app, [
-                    "push",
-                    "--repo", "test_dataset_for_push"
-                ])
+                result = self.runner.invoke(
+                    app, ["push", "--repo", "test_dataset_for_push"]
+                )
 
                 assert result.exit_code == 1
                 # Check for HF token guidance
                 assert "HF_TOKEN" in result.output or "HuggingFace" in result.output
-                assert "export HF_TOKEN" in result.output or "token" in result.output.lower()
+                assert (
+                    "export HF_TOKEN" in result.output
+                    or "token" in result.output.lower()
+                )
             finally:
                 # Clean up
                 import shutil
+
                 if test_dir.exists():
                     shutil.rmtree(test_dir)
 
     def test_file_not_found_error(self):
         """Test file not found error handling."""
         # Set API key so we get past that check
-        with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}, clear=False), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}, clear=False),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = "test-key"
 
-            result = self.runner.invoke(app, [
-                "run",
-                "nonexistent_file.xlsx",
-                "--repo", "test"
-            ])
+            result = self.runner.invoke(
+                app, ["run", "nonexistent_file.xlsx", "--repo", "test"]
+            )
 
             assert result.exit_code == 1
             # Error messages now go to stderr which is mixed into output by CliRunner
@@ -114,15 +125,22 @@ class TestCLIErrorFlows:
         test_file.write_text("instruction,output\ntest,test")
 
         try:
-            result = self.runner.invoke(app, [
-                "file-to-dataset",
-                str(test_file),
-                "--repo", "test",
-                "--dataset", "invalid_schema"
-            ])
+            result = self.runner.invoke(
+                app,
+                [
+                    "file-to-dataset",
+                    str(test_file),
+                    "--repo",
+                    "test",
+                    "--dataset",
+                    "invalid_schema",
+                ],
+            )
 
             assert result.exit_code == 1
-            assert "invalid" in result.output.lower() or "schema" in result.output.lower()
+            assert (
+                "invalid" in result.output.lower() or "schema" in result.output.lower()
+            )
             # Should not show generic "Error: 1"
             assert "Error: 1" not in result.output
         finally:
@@ -130,10 +148,7 @@ class TestCLIErrorFlows:
 
     def test_validation_command_error_flow(self):
         """Test validation command with missing dataset."""
-        result = self.runner.invoke(app, [
-            "validate",
-            "--repo", "nonexistent_dataset"
-        ])
+        result = self.runner.invoke(app, ["validate", "--repo", "nonexistent_dataset"])
 
         assert result.exit_code == 1
         assert "not found" in result.output.lower()
@@ -141,10 +156,7 @@ class TestCLIErrorFlows:
 
     def test_stats_command_error_flow(self):
         """Test stats command with missing dataset."""
-        result = self.runner.invoke(app, [
-            "stats",
-            "--repo", "nonexistent_dataset"
-        ])
+        result = self.runner.invoke(app, ["stats", "--repo", "nonexistent_dataset"])
 
         assert result.exit_code == 1
         assert "not found" in result.output.lower()
@@ -170,14 +182,28 @@ class TestCLIErrorFlows:
         # Get all command functions
         commands = []
         for name, obj in inspect.getmembers(cli):
-            if callable(obj) and hasattr(obj, "__wrapped__") and hasattr(obj, "__name__") and not name.startswith("_"):
-                    commands.append((name, obj))
+            if (
+                callable(obj)
+                and hasattr(obj, "__wrapped__")
+                and hasattr(obj, "__name__")
+                and not name.startswith("_")
+            ):
+                commands.append((name, obj))
 
         # Commands that should have error_handler
         expected_commands = [
-            "create_sample", "file_to_dataset", "excel_to_dataset",
-            "run", "prompt", "push", "validate", "stats",
-            "list_models", "config", "version", "env"
+            "create_sample",
+            "file_to_dataset",
+            "excel_to_dataset",
+            "run",
+            "prompt",
+            "push",
+            "validate",
+            "stats",
+            "list_models",
+            "config",
+            "version",
+            "env",
         ]
 
         for cmd_name in expected_commands:
@@ -190,12 +216,26 @@ class TestCLIErrorFlows:
 
     def test_error_handler_preserves_exit_codes(self):
         """Test that error handler preserves proper exit codes."""
-        with patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=False), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=False),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
 
             # Test various commands that should fail
             commands_to_test = [
-                (["prompt", "--repo", "test", "--description", "test", "--count", "1"], 1),
+                (
+                    [
+                        "prompt",
+                        "--repo",
+                        "test",
+                        "--description",
+                        "test",
+                        "--count",
+                        "1",
+                    ],
+                    1,
+                ),
                 (["run", "nonexistent.xlsx", "--repo", "test"], 1),
                 (["validate", "--repo", "nonexistent"], 1),
                 (["stats", "--repo", "nonexistent"], 1),
@@ -203,8 +243,9 @@ class TestCLIErrorFlows:
 
             for cmd_args, expected_code in commands_to_test:
                 result = self.runner.invoke(app, cmd_args)
-                assert result.exit_code == expected_code, \
-                    f"Command {cmd_args[0]} should exit with code {expected_code}"
+                assert (
+                    result.exit_code == expected_code
+                ), f"Command {cmd_args[0]} should exit with code {expected_code}"
 
 
 class TestErrorMessageContent:
@@ -220,37 +261,45 @@ class TestErrorMessageContent:
             (
                 {"OPENROUTER_API_KEY": ""},
                 ["prompt", "--repo", "test", "--description", "test"],
-                ["export OPENROUTER_API_KEY", "openrouter.ai/keys"]
+                ["export OPENROUTER_API_KEY", "openrouter.ai/keys"],
             ),
             (
                 {"HF_TOKEN": ""},
                 ["env", "--check"],
-                ["HF_TOKEN", "huggingface.co/settings/tokens"]
+                ["HF_TOKEN", "huggingface.co/settings/tokens"],
             ),
         ]
 
         for env_vars, cmd, expected_phrases in test_cases:
-            with patch.dict(os.environ, env_vars, clear=False), patch("data4ai.config.settings") as mock_settings:
-                mock_settings.openrouter_api_key = env_vars.get("OPENROUTER_API_KEY", "test")
+            with (
+                patch.dict(os.environ, env_vars, clear=False),
+                patch("data4ai.config.settings") as mock_settings,
+            ):
+                mock_settings.openrouter_api_key = env_vars.get(
+                    "OPENROUTER_API_KEY", "test"
+                )
                 mock_settings.hf_token = env_vars.get("HF_TOKEN")
 
                 result = self.runner.invoke(app, cmd)
 
                 for phrase in expected_phrases:
-                    assert phrase in result.output or phrase.lower() in result.output.lower(), \
-                        f"Expected '{phrase}' in output for command {cmd}"
+                    assert (
+                        phrase in result.output
+                        or phrase.lower() in result.output.lower()
+                    ), f"Expected '{phrase}' in output for command {cmd}"
 
     def test_no_double_error_messages(self):
         """Test that errors aren't printed twice."""
-        with patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=False), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {"OPENROUTER_API_KEY": ""}, clear=False),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
 
-            result = self.runner.invoke(app, [
-                "prompt",
-                "--repo", "test",
-                "--description", "test",
-                "--count", "1"
-            ])
+            result = self.runner.invoke(
+                app,
+                ["prompt", "--repo", "test", "--description", "test", "--count", "1"],
+            )
 
             # Count occurrences of key error indicators
             error_count = result.output.count("Missing environment variables")
@@ -264,11 +313,9 @@ class TestErrorMessageContent:
         test_file.write_text("")  # Empty file is fine for this test
 
         try:
-            result = self.runner.invoke(app, [
-                "excel-to-dataset",
-                str(test_file),
-                "--repo", "test"
-            ])
+            result = self.runner.invoke(
+                app, ["excel-to-dataset", str(test_file), "--repo", "test"]
+            )
 
             assert "deprecated" in result.output.lower()
             assert "file-to-dataset" in result.output

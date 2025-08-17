@@ -347,7 +347,9 @@ def extract_json_from_text(text: str) -> Optional[Any]:
         try:
             result = safe_json_parse(array_match.group())
             if result is not None:
-                logger.debug(f"Successfully extracted JSON array with {len(result)} items")
+                logger.debug(
+                    f"Successfully extracted JSON array with {len(result)} items"
+                )
                 return result
         except Exception as e:
             logger.debug(f"Failed to parse JSON array: {e}")

@@ -46,7 +46,9 @@ class DatasetGenerator:
         if not self.api_key:
             # Check environment variables and provide helpful messages
             check_environment_variables(required_for_operation=["OPENROUTER_API_KEY"])
-            raise ConfigurationError("OpenRouter API key is required for dataset generation")
+            raise ConfigurationError(
+                "OpenRouter API key is required for dataset generation"
+            )
 
         self.model = model or settings.openrouter_model
         self.temperature = temperature or settings.temperature
@@ -77,6 +79,7 @@ class DatasetGenerator:
                 from data4ai.integrations.openrouter_dspy import (
                     create_openrouter_prompt_generator,
                 )
+
                 self.prompt_generator = create_openrouter_prompt_generator(
                     model=self.model,
                     api_key=self.api_key,
@@ -84,7 +87,9 @@ class DatasetGenerator:
                 logger.info("Using OpenRouter DSPy integration")
             except ImportError:
                 # Fallback to original DSPy integration
-                logger.warning("OpenRouter DSPy not available, using fallback DSPy integration")
+                logger.warning(
+                    "OpenRouter DSPy not available, using fallback DSPy integration"
+                )
                 self.prompt_generator = create_prompt_generator(
                     model_name=self.model, use_dspy=True
                 )
@@ -218,10 +223,9 @@ class DatasetGenerator:
             )
 
             # Track if DSPy was actually used
-            dspy_used = (
-                hasattr(self, "prompt_generator") and
-                (hasattr(self.prompt_generator, "optimizer") or
-                 hasattr(self.prompt_generator, "use_dspy"))
+            dspy_used = hasattr(self, "prompt_generator") and (
+                hasattr(self.prompt_generator, "optimizer")
+                or hasattr(self.prompt_generator, "use_dspy")
             )
 
             # Generate in batches using the same master prompt (CONCURRENT)
@@ -229,7 +233,9 @@ class DatasetGenerator:
             prompts_used = []  # Track prompts for audit
 
             total_batches = (count + batch_size - 1) // batch_size
-            logger.info(f"🚀 Starting concurrent processing of {total_batches} batches...")
+            logger.info(
+                f"🚀 Starting concurrent processing of {total_batches} batches..."
+            )
 
             # Create all batch tasks
             batch_tasks = []
@@ -253,13 +259,15 @@ class DatasetGenerator:
                     total_batches=total_batches,
                     prompt=master_prompt,
                     batch_count=batch_count,
-                    schema_name=schema_name
+                    schema_name=schema_name,
                 )
                 batch_tasks.append(task)
 
             # Process all batches concurrently with rate limiting
             max_concurrent = min(5, len(batch_tasks))  # Limit to 5 concurrent requests
-            logger.info(f"⚡ Running {len(batch_tasks)} batches in parallel (max {max_concurrent} concurrent)...")
+            logger.info(
+                f"⚡ Running {len(batch_tasks)} batches in parallel (max {max_concurrent} concurrent)..."
+            )
 
             semaphore = asyncio.Semaphore(max_concurrent)
 
@@ -277,7 +285,9 @@ class DatasetGenerator:
                 else:
                     dataset.extend(result)
 
-            logger.info(f"🎉 Concurrent processing complete! Generated {len(dataset)}/{count} examples ({(len(dataset)/count)*100:.1f}%)")
+            logger.info(
+                f"🎉 Concurrent processing complete! Generated {len(dataset)}/{count} examples ({(len(dataset)/count)*100:.1f}%)"
+            )
 
             # Write output
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -342,13 +352,18 @@ class DatasetGenerator:
                 messages = [
                     {
                         "role": "system",
-                        "content": "You are a dataset generator. You must respond with ONLY valid JSON arrays. Do not include any explanatory text, code examples, or markdown formatting. All fields must contain meaningful content - no empty strings."
+                        "content": "You are a dataset generator. You must respond with ONLY valid JSON arrays. Do not include any explanatory text, code examples, or markdown formatting. All fields must contain meaningful content - no empty strings.",
                     },
-                    {"role": "user", "content": f"{prompt}\n\nGenerate exactly {batch_count} examples."}
+                    {
+                        "role": "user",
+                        "content": f"{prompt}\n\nGenerate exactly {batch_count} examples.",
+                    },
                 ]
 
                 start_time = time.time()
-                logger.info(f"🔄 Batch {batch_num}/{total_batches}: Sending request (attempt {attempt + 1}/{max_retries})...")
+                logger.info(
+                    f"🔄 Batch {batch_num}/{total_batches}: Sending request (attempt {attempt + 1}/{max_retries})..."
+                )
 
                 response = await self.client.chat_completion(
                     messages,
@@ -357,24 +372,36 @@ class DatasetGenerator:
                 )
 
                 elapsed = time.time() - start_time
-                logger.info(f"⚡ Batch {batch_num}/{total_batches}: Response received in {elapsed:.1f}s")
+                logger.info(
+                    f"⚡ Batch {batch_num}/{total_batches}: Response received in {elapsed:.1f}s"
+                )
 
                 response_text = response["choices"][0]["message"]["content"]
 
                 # Parse response
-                entries = self._parse_response(response_text, schema_name, max_entries=batch_count)
+                entries = self._parse_response(
+                    response_text, schema_name, max_entries=batch_count
+                )
 
                 if entries:
-                    logger.info(f"✅ Batch {batch_num}/{total_batches}: {len(entries)} valid entries generated")
+                    logger.info(
+                        f"✅ Batch {batch_num}/{total_batches}: {len(entries)} valid entries generated"
+                    )
                     return entries
                 else:
-                    logger.warning(f"⚠️ Batch {batch_num}/{total_batches}: No valid entries (attempt {attempt + 1}/{max_retries})")
+                    logger.warning(
+                        f"⚠️ Batch {batch_num}/{total_batches}: No valid entries (attempt {attempt + 1}/{max_retries})"
+                    )
 
             except Exception as e:
-                logger.warning(f"❌ Batch {batch_num}/{total_batches}: Failed (attempt {attempt + 1}/{max_retries}): {e}")
+                logger.warning(
+                    f"❌ Batch {batch_num}/{total_batches}: Failed (attempt {attempt + 1}/{max_retries}): {e}"
+                )
 
                 if attempt == max_retries - 1:
-                    logger.error(f"💥 Batch {batch_num}/{total_batches}: Failed after {max_retries} attempts")
+                    logger.error(
+                        f"💥 Batch {batch_num}/{total_batches}: Failed after {max_retries} attempts"
+                    )
                     return []  # Return empty list on final failure
 
         return []  # Fallback return
@@ -501,7 +528,10 @@ class DatasetGenerator:
         """Build dynamic prompt using DSPy for generating examples from description."""
         try:
             # Check if we have a DSPy-enabled prompt generator
-            if hasattr(self.prompt_generator, 'use_dspy') and self.prompt_generator.use_dspy:
+            if (
+                hasattr(self.prompt_generator, "use_dspy")
+                and self.prompt_generator.use_dspy
+            ):
                 logger.info(f"Using DSPy-enabled prompt generator for {schema_name}")
                 # Use DSPy to generate dynamic, high-quality prompts
                 if previous_examples:
@@ -650,7 +680,9 @@ Return a JSON object with ONLY the missing fields and their values."""
 
                         # Limit the number of entries if specified
                         if max_entries and len(dataset) >= max_entries:
-                            logger.info(f"Limited to {max_entries} entries as requested")
+                            logger.info(
+                                f"Limited to {max_entries} entries as requested"
+                            )
                             break
 
                 except Exception as e:

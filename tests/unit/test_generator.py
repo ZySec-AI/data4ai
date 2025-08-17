@@ -10,7 +10,9 @@ class TestDatasetGeneratorInitialization:
 
     @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
     @patch("data4ai.generator.settings")
-    def test_generator_initialization_defaults(self, mock_settings, mock_configure_dspy):
+    def test_generator_initialization_defaults(
+        self, mock_settings, mock_configure_dspy
+    ):
         """Test generator initialization with default parameters."""
         # Mock API key to prevent ConfigurationError
         mock_settings.openrouter_api_key = "test-key"
@@ -29,7 +31,9 @@ class TestDatasetGeneratorInitialization:
 
     @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
     @patch("data4ai.generator.settings")
-    def test_generator_initialization_custom_params(self, mock_settings, mock_configure_dspy):
+    def test_generator_initialization_custom_params(
+        self, mock_settings, mock_configure_dspy
+    ):
         """Test generator initialization with custom parameters."""
         # Mock API key to prevent ConfigurationError
         mock_settings.openrouter_api_key = "test-key"
@@ -50,7 +54,13 @@ class TestDatasetGeneratorInitialization:
     @patch("data4ai.integrations.openrouter_dspy.create_openrouter_prompt_generator")
     @patch("data4ai.generator.create_prompt_generator")
     @patch("data4ai.generator.settings")
-    def test_generator_prompt_generator_setup(self, mock_settings, mock_create_prompt, mock_create_openrouter_prompt, mock_configure_dspy):
+    def test_generator_prompt_generator_setup(
+        self,
+        mock_settings,
+        mock_create_prompt,
+        mock_create_openrouter_prompt,
+        mock_configure_dspy,
+    ):
         """Test that prompt generator is set up correctly."""
         # Mock API key to prevent ConfigurationError
         mock_settings.openrouter_api_key = "test-key"
@@ -145,7 +155,13 @@ class TestPromptBuilding:
     @patch("data4ai.integrations.openrouter_dspy.create_openrouter_prompt_generator")
     @patch("data4ai.generator.create_prompt_generator")
     @patch("data4ai.generator.settings")
-    def test_build_generation_prompt_with_dspy(self, mock_settings, mock_create_prompt, mock_create_openrouter_prompt, mock_configure_dspy):
+    def test_build_generation_prompt_with_dspy(
+        self,
+        mock_settings,
+        mock_create_prompt,
+        mock_create_openrouter_prompt,
+        mock_configure_dspy,
+    ):
         """Test building generation prompt with DSPy."""
         # Mock API key to prevent ConfigurationError
         mock_settings.openrouter_api_key = "test-key"
@@ -176,7 +192,11 @@ class TestPromptBuilding:
     @patch("data4ai.generator.create_prompt_generator")
     @patch("data4ai.generator.settings")
     def test_build_generation_prompt_with_examples(
-        self, mock_settings, mock_create_prompt, mock_create_openrouter_prompt, mock_configure_dspy
+        self,
+        mock_settings,
+        mock_create_prompt,
+        mock_create_openrouter_prompt,
+        mock_configure_dspy,
     ):
         """Test building generation prompt with previous examples."""
         # Mock API key to prevent ConfigurationError
@@ -220,7 +240,9 @@ class TestPromptBuilding:
     @patch("data4ai.integrations.openrouter_dspy.create_openrouter_prompt_generator")
     @patch("data4ai.generator.create_prompt_generator")
     @patch("data4ai.generator.settings")
-    def test_build_generation_prompt_fallback(self, mock_settings, mock_create_prompt, mock_create_openrouter_prompt):
+    def test_build_generation_prompt_fallback(
+        self, mock_settings, mock_create_prompt, mock_create_openrouter_prompt
+    ):
         """Test that prompt building falls back to static prompt on error."""
         # Mock API key to prevent ConfigurationError
         mock_settings.openrouter_api_key = "test-key"

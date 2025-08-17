@@ -7,7 +7,7 @@ import os
 def main():
     """Entry point wrapper that ensures error messages are visible."""
     # Force unbuffered output
-    os.environ['PYTHONUNBUFFERED'] = '1'
+    os.environ["PYTHONUNBUFFERED"] = "1"
 
     # Import after setting env var
     from data4ai.cli import app

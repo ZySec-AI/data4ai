@@ -29,7 +29,6 @@ class HuggingFacePublisher:
         repo_name: str,
         private: bool = False,
         description: Optional[str] = None,
-
     ) -> str:
         """Push dataset to HuggingFace Hub."""
         try:
@@ -137,8 +136,6 @@ class HuggingFacePublisher:
                         logger.warning(f"Failed to upload {file_name}: {e}")
 
             logger.info(f"Successfully uploaded {len(uploaded_files)} files")
-
-
 
             # Return the dataset URL
             dataset_url = f"https://huggingface.co/datasets/{full_repo_name}"

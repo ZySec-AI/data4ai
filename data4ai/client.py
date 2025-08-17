@@ -296,5 +296,3 @@ class SyncOpenRouterClient:
     def close(self):
         """Close the HTTP client."""
         self.client.close()
-
-

@@ -27,7 +27,7 @@ class ErrorHandler:
 
     ERROR_MESSAGES = {
         # API Errors
-        "api_key_missing": "❌ OpenRouter API key not configured.\n\n📋 To set it in your terminal, run:\nexport OPENROUTER_API_KEY=\"your-api-key-here\"\n\n💡 Get your API key from: https://openrouter.ai/keys\n⚠️  Remember: This needs to be set in each new terminal session\n   For permanent setup, add it to your ~/.bashrc or ~/.zshrc file",
+        "api_key_missing": '❌ OpenRouter API key not configured.\n\n📋 To set it in your terminal, run:\nexport OPENROUTER_API_KEY="your-api-key-here"\n\n💡 Get your API key from: https://openrouter.ai/keys\n⚠️  Remember: This needs to be set in each new terminal session\n   For permanent setup, add it to your ~/.bashrc or ~/.zshrc file',
         "api_key_invalid": "❌ Invalid OpenRouter API key. Please check your credentials.",
         "rate_limit": "⚠️ Rate limit exceeded. Waiting before retrying...",
         "model_not_found": "❌ Model '{model}' not found. Use 'data4ai list-models' to see available models.",
@@ -56,7 +56,7 @@ class ErrorHandler:
         "config_invalid": "❌ Invalid configuration: {error}",
         "config_missing": "❌ Missing required configuration: {field}",
         # HuggingFace Errors
-        "hf_token_missing": "❌ HuggingFace token not configured.\n\n📋 To set it in your terminal, run:\nexport HF_TOKEN=\"your-huggingface-token-here\"\n\n💡 Get your token from: https://huggingface.co/settings/tokens\n⚠️  Remember: This needs to be set in each new terminal session\n   For permanent setup, add it to your ~/.bashrc or ~/.zshrc file",
+        "hf_token_missing": '❌ HuggingFace token not configured.\n\n📋 To set it in your terminal, run:\nexport HF_TOKEN="your-huggingface-token-here"\n\n💡 Get your token from: https://huggingface.co/settings/tokens\n⚠️  Remember: This needs to be set in each new terminal session\n   For permanent setup, add it to your ~/.bashrc or ~/.zshrc file',
         "hf_push_failed": "❌ Failed to push to HuggingFace: {error}",
         "hf_repo_exists": "⚠️ Repository already exists. Use --overwrite to replace.",
         # General Errors
@@ -80,7 +80,9 @@ class ErrorHandler:
             status = error.response.status_code
 
             if status == 401:
-                err_console.print(ErrorHandler.get_message("api_key_invalid"), style="red")
+                err_console.print(
+                    ErrorHandler.get_message("api_key_invalid"), style="red"
+                )
             elif status == 404:
                 # Try to extract model name from error
                 err_console.print(
@@ -88,14 +90,18 @@ class ErrorHandler:
                     style="red",
                 )
             elif status == 429:
-                err_console.print(ErrorHandler.get_message("rate_limit"), style="yellow")
+                err_console.print(
+                    ErrorHandler.get_message("rate_limit"), style="yellow"
+                )
             elif status >= 500:
                 err_console.print(
                     f"❌ OpenRouter API error (status {status}). Please try again later.",
                     style="red",
                 )
             else:
-                err_console.print(f"❌ API error (status {status}): {error}", style="red")
+                err_console.print(
+                    f"❌ API error (status {status}): {error}", style="red"
+                )
 
         elif isinstance(error, httpx.TimeoutException):
             err_console.print(ErrorHandler.get_message("api_timeout"), style="red")
@@ -179,7 +185,9 @@ def error_handler(func: Callable) -> Callable:
             err_console.print(
                 ErrorHandler.get_message("unexpected_error", error=str(e)), style="red"
             )
-            err_console.print("\n💡 For more details, run with --verbose flag", style="dim")
+            err_console.print(
+                "\n💡 For more details, run with --verbose flag", style="dim"
+            )
             sys.exit(1)
 
     return wrapper
@@ -241,7 +249,9 @@ class UserFriendlyError(Exception):
         err_console.print(str(self), style="red")
 
 
-def check_environment_variables(required_for_operation: Optional[list[str]] = None) -> dict[str, bool]:
+def check_environment_variables(
+    required_for_operation: Optional[list[str]] = None,
+) -> dict[str, bool]:
     """Check environment variables and provide helpful export commands.
 
     Args:
@@ -252,31 +262,32 @@ def check_environment_variables(required_for_operation: Optional[list[str]] = No
     """
     import sys
 
-
     env_vars = {
         "OPENROUTER_API_KEY": {
             "set": bool(os.getenv("OPENROUTER_API_KEY")),
             "example": 'export OPENROUTER_API_KEY="sk-or-v1-your-api-key-here"',
             "help_url": "https://openrouter.ai/keys",
-            "description": "OpenRouter API key for model access"
+            "description": "OpenRouter API key for model access",
         },
         "OPENROUTER_MODEL": {
             "set": bool(os.getenv("OPENROUTER_MODEL")),
             "example": 'export OPENROUTER_MODEL="openai/gpt-4o-mini"',
             "help_url": "https://openrouter.ai/models",
-            "description": "Model to use for generation (optional, defaults to openai/gpt-4o-mini)"
+            "description": "Model to use for generation (optional, defaults to openai/gpt-4o-mini)",
         },
         "HF_TOKEN": {
             "set": bool(os.getenv("HF_TOKEN")),
             "example": 'export HF_TOKEN="hf_your-token-here"',
             "help_url": "https://huggingface.co/settings/tokens",
-            "description": "HuggingFace token for dataset publishing (optional)"
-        }
+            "description": "HuggingFace token for dataset publishing (optional)",
+        },
     }
 
     missing_vars = []
     for var_name, var_info in env_vars.items():
-        if not var_info["set"] and (required_for_operation is None or var_name in (required_for_operation or [])):
+        if not var_info["set"] and (
+            required_for_operation is None or var_name in (required_for_operation or [])
+        ):
             missing_vars.append((var_name, var_info))
 
     if missing_vars:
@@ -289,7 +300,9 @@ def check_environment_variables(required_for_operation: Optional[list[str]] = No
             sys.stderr.write(f"{var_info['example']}\n")
             sys.stderr.write(f"# Get your key from: {var_info['help_url']}\n\n")
 
-        sys.stderr.write("⚠️  Important: Environment variables set with 'export' are temporary\n")
+        sys.stderr.write(
+            "⚠️  Important: Environment variables set with 'export' are temporary\n"
+        )
         sys.stderr.write("   They will be lost when you close your terminal\n\n")
         sys.stderr.write("💡 For permanent setup, add these exports to:\n")
         sys.stderr.write("   - ~/.bashrc (for Bash)\n")

@@ -13,11 +13,14 @@ class TestEnvironmentVariables:
 
     def test_check_with_all_variables_set(self):
         """Test check when all variables are set."""
-        with patch.dict(os.environ, {
-            "OPENROUTER_API_KEY": "test-key",
-            "OPENROUTER_MODEL": "test-model",
-            "HF_TOKEN": "test-token"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "OPENROUTER_API_KEY": "test-key",
+                "OPENROUTER_MODEL": "test-model",
+                "HF_TOKEN": "test-token",
+            },
+        ):
             result = check_environment_variables()
 
             assert result["OPENROUTER_API_KEY"] is True
@@ -57,7 +60,10 @@ class TestEnvironmentVariables:
 
             calls_str = str(mock_stderr.write.call_args_list)
             # Check for terminal-specific messages
-            assert "Important: Environment variables" in calls_str or "temporary" in calls_str
+            assert (
+                "Important: Environment variables" in calls_str
+                or "temporary" in calls_str
+            )
             assert "~/.bashrc" in calls_str or "~/.zshrc" in calls_str
 
     def test_required_for_operation_filter(self):
@@ -73,11 +79,17 @@ class TestEnvironmentVariables:
 
     def test_no_output_when_all_set(self):
         """Test that no missing variable output when all are set."""
-        with patch.dict(os.environ, {
-            "OPENROUTER_API_KEY": "test-key",
-            "OPENROUTER_MODEL": "test-model",
-            "HF_TOKEN": "test-token"
-        }), patch("sys.stderr") as mock_stderr:
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "OPENROUTER_API_KEY": "test-key",
+                    "OPENROUTER_MODEL": "test-model",
+                    "HF_TOKEN": "test-token",
+                },
+            ),
+            patch("sys.stderr") as mock_stderr,
+        ):
             check_environment_variables()
 
             # Should not print missing variables message
@@ -97,10 +109,13 @@ class TestEnvironmentIntegration:
         with patch("data4ai.generator.check_environment_variables") as mock_check:
             with pytest.raises(ConfigurationError):
                 from data4ai.generator import DatasetGenerator
+
                 DatasetGenerator()
 
             # Verify environment check was called
-            mock_check.assert_called_once_with(required_for_operation=["OPENROUTER_API_KEY"])
+            mock_check.assert_called_once_with(
+                required_for_operation=["OPENROUTER_API_KEY"]
+            )
 
     @patch("data4ai.config.settings")
     def test_publisher_checks_environment(self, mock_settings):
@@ -151,9 +166,7 @@ class TestNoEnvFileReading:
         """Test that only actual environment variables are read."""
         test_value = "from-environment-variable"
 
-        with patch.dict(os.environ, {
-            "OPENROUTER_API_KEY": test_value
-        }):
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY": test_value}):
             from data4ai.config import Settings
 
             settings = Settings()

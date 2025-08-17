@@ -97,9 +97,7 @@ def file_to_dataset(
     # Validate schema
     is_valid, missing = handler.validate_schema_compatibility(df, dataset)
     if not is_valid:
-        console.print(
-            f"❌ Missing required columns: {', '.join(missing)}", style="red"
-        )
+        console.print(f"❌ Missing required columns: {', '.join(missing)}", style="red")
         raise typer.Exit(1) from None
 
     # Convert to dataset
@@ -233,9 +231,7 @@ def run(
         # Show usage stats
         usage = result.get("usage", {})
         if usage.get("total_tokens"):
-            console.print(
-                f"📊 Tokens used: {usage['total_tokens']:,}", style="cyan"
-            )
+            console.print(f"📊 Tokens used: {usage['total_tokens']:,}", style="cyan")
             console.print(
                 f"💰 Estimated cost: ${usage.get('estimated_cost', 0):.4f}",
                 style="cyan",
@@ -269,9 +265,7 @@ def prompt(
         raise typer.Exit(1)
 
     if dry_run:
-        console.print(
-            f"🔍 Would generate {count} {dataset} examples", style="yellow"
-        )
+        console.print(f"🔍 Would generate {count} {dataset} examples", style="yellow")
         console.print(f"📝 Description: {description}", style="cyan")
         console.print(
             f"📁 Output directory: {settings.output_dir / repo}", style="cyan"
@@ -341,7 +335,6 @@ def push(
     description: Optional[str] = typer.Option(
         None, "--description", help="Dataset description"
     ),
-
     token: Optional[str] = typer.Option(None, "--token", help="HuggingFace token"),
 ):
     """Upload dataset to HuggingFace Hub."""
@@ -406,9 +399,7 @@ def validate(
     table.add_row("Valid Examples", str(valid_count))
     table.add_row("Invalid Examples", str(len(invalid_examples)))
     table.add_row("Completion Rate", f"{metrics['completion_rate']:.1%}")
-    table.add_row(
-        "Avg Instruction Length", f"{metrics['avg_instruction_length']:.0f}"
-    )
+    table.add_row("Avg Instruction Length", f"{metrics['avg_instruction_length']:.0f}")
     table.add_row("Avg Output Length", f"{metrics['avg_output_length']:.0f}")
 
     console.print(table)
@@ -461,9 +452,7 @@ def stats(
     table.add_row("Total Rows", str(metrics["total_rows"]))
     table.add_row("Empty Rows", str(metrics["empty_rows"]))
     table.add_row("Completion Rate", f"{metrics['completion_rate']:.1%}")
-    table.add_row(
-        "Avg Instruction Length", f"{metrics['avg_instruction_length']:.0f}"
-    )
+    table.add_row("Avg Instruction Length", f"{metrics['avg_instruction_length']:.0f}")
     table.add_row("Min Instruction Length", str(metrics["min_instruction_length"]))
     table.add_row("Max Instruction Length", str(metrics["max_instruction_length"]))
     table.add_row("Avg Output Length", f"{metrics['avg_output_length']:.0f}")
@@ -560,7 +549,9 @@ def version():
 @app.command()
 @error_handler
 def env(
-    check: bool = typer.Option(True, "--check/--no-check", help="Check current environment"),
+    check: bool = typer.Option(
+        True, "--check/--no-check", help="Check current environment"
+    ),
     export: bool = typer.Option(False, "--export", help="Show export commands"),
 ):
     """Check environment variables and show setup instructions."""
@@ -569,7 +560,11 @@ def env(
     env_vars = {
         "OPENROUTER_API_KEY": {
             "set": bool(os.getenv("OPENROUTER_API_KEY") or settings.openrouter_api_key),
-            "value": "***" if (os.getenv("OPENROUTER_API_KEY") or settings.openrouter_api_key) else None,
+            "value": (
+                "***"
+                if (os.getenv("OPENROUTER_API_KEY") or settings.openrouter_api_key)
+                else None
+            ),
             "example": 'export OPENROUTER_API_KEY="sk-or-v1-your-api-key-here"',
             "help_url": "https://openrouter.ai/keys",
             "description": "OpenRouter API key for model access",
@@ -621,33 +616,56 @@ def env(
             for _var_name, var_info in missing_vars:
                 console.print(f"# {var_info['description']}", style="dim")
                 console.print(var_info["example"], style="green")
-                console.print(f"# Get your key from: {var_info['help_url']}\n", style="dim")
+                console.print(
+                    f"# Get your key from: {var_info['help_url']}\n", style="dim"
+                )
 
             # Detect the user's shell
-            shell = os.environ.get('SHELL', '').split('/')[-1]
-            if shell == 'zsh':
-                config_file = '~/.zshrc'
-            elif shell == 'bash':
-                config_file = '~/.bashrc'
+            shell = os.environ.get("SHELL", "").split("/")[-1]
+            if shell == "zsh":
+                config_file = "~/.zshrc"
+            elif shell == "bash":
+                config_file = "~/.bashrc"
             else:
-                config_file = '~/.profile'
+                config_file = "~/.profile"
 
-            console.print("⚠️  Note: These exports are temporary (current session only)", style="yellow")
-            console.print(f"\n💡 To make them permanent in {shell or 'your shell'}:", style="cyan")
-            console.print("\n   Option 1: Add to your shell config file", style="bright_cyan")
-            console.print(f"   echo 'export OPENROUTER_API_KEY=\"your-key\"' >> {config_file}", style="dim")
-            console.print(f"   echo 'export HF_TOKEN=\"your-token\"' >> {config_file}", style="dim")
-            console.print(f"   source {config_file}  # Reload the configuration", style="dim")
+            console.print(
+                "⚠️  Note: These exports are temporary (current session only)",
+                style="yellow",
+            )
+            console.print(
+                f"\n💡 To make them permanent in {shell or 'your shell'}:", style="cyan"
+            )
+            console.print(
+                "\n   Option 1: Add to your shell config file", style="bright_cyan"
+            )
+            console.print(
+                f"   echo 'export OPENROUTER_API_KEY=\"your-key\"' >> {config_file}",
+                style="dim",
+            )
+            console.print(
+                f"   echo 'export HF_TOKEN=\"your-token\"' >> {config_file}",
+                style="dim",
+            )
+            console.print(
+                f"   source {config_file}  # Reload the configuration", style="dim"
+            )
             console.print("\n   Option 2: Use our setup script", style="bright_cyan")
-            console.print("   source setup_env.sh  # Interactive setup helper\n", style="dim")
+            console.print(
+                "   source setup_env.sh  # Interactive setup helper\n", style="dim"
+            )
         else:
             # In check mode, show guidance URLs but keep the original message
             for _var_name, var_info in missing_vars:
                 console.print(f"{var_name}: {var_info['help_url']}", style="dim")
-            console.print("\nRun 'data4ai env --export' to see setup commands\n", style="cyan")
+            console.print(
+                "\nRun 'data4ai env --export' to see setup commands\n", style="cyan"
+            )
     else:
         console.print("\n✅ All environment variables are configured!", style="green")
-        console.print("🔒 Your API keys are properly set in this terminal session\n", style="dim")
+        console.print(
+            "🔒 Your API keys are properly set in this terminal session\n", style="dim"
+        )
 
 
 if __name__ == "__main__":

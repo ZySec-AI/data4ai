@@ -17,10 +17,12 @@ class TestEnvCommand:
 
     def test_env_check_all_set(self):
         """Test env --check when all variables are set."""
-        with patch.dict(os.environ, {
-            "OPENROUTER_API_KEY": "test-key",
-            "HF_TOKEN": "test-token"
-        }), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(
+                os.environ, {"OPENROUTER_API_KEY": "test-key", "HF_TOKEN": "test-token"}
+            ),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = "test-key"
             mock_settings.openrouter_model = "default-model"
             mock_settings.hf_token = "test-token"
@@ -31,7 +33,10 @@ class TestEnvCommand:
 
     def test_env_check_missing_variables(self):
         """Test env --check when variables are missing."""
-        with patch.dict(os.environ, {}, clear=True), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
             mock_settings.openrouter_model = "default-model"
             mock_settings.hf_token = None
@@ -43,7 +48,10 @@ class TestEnvCommand:
 
     def test_env_export_shows_commands(self):
         """Test env --export shows export commands."""
-        with patch.dict(os.environ, {}, clear=True), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
             mock_settings.openrouter_model = ""
             mock_settings.hf_token = None
@@ -57,9 +65,10 @@ class TestEnvCommand:
 
     def test_env_shows_table_with_check(self):
         """Test that env --check shows status table."""
-        with patch.dict(os.environ, {
-            "OPENROUTER_API_KEY": "test-key"
-        }, clear=True), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}, clear=True),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = "test-key"
             mock_settings.openrouter_model = "default"
             mock_settings.hf_token = None
@@ -74,7 +83,10 @@ class TestEnvCommand:
 
     def test_env_shell_specific_guidance(self):
         """Test that shell-specific guidance is provided."""
-        with patch.dict(os.environ, {"SHELL": "/bin/zsh"}, clear=False), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {"SHELL": "/bin/zsh"}, clear=False),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
             mock_settings.openrouter_model = ""
             mock_settings.hf_token = None
@@ -86,7 +98,10 @@ class TestEnvCommand:
 
     def test_env_bash_shell_guidance(self):
         """Test guidance for bash shell."""
-        with patch.dict(os.environ, {"SHELL": "/bin/bash"}, clear=False), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {"SHELL": "/bin/bash"}, clear=False),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
             mock_settings.openrouter_model = ""
             mock_settings.hf_token = None
@@ -98,7 +113,10 @@ class TestEnvCommand:
 
     def test_env_shows_setup_script_option(self):
         """Test that env command mentions setup_env.sh script."""
-        with patch.dict(os.environ, {}, clear=True), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
             mock_settings.openrouter_model = ""
             mock_settings.hf_token = None
@@ -109,7 +127,10 @@ class TestEnvCommand:
 
     def test_env_shows_permanent_setup_instructions(self):
         """Test that permanent setup instructions are shown."""
-        with patch.dict(os.environ, {}, clear=True), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
             mock_settings.openrouter_model = ""
             mock_settings.hf_token = None
@@ -123,10 +144,16 @@ class TestEnvCommand:
 
     def test_env_masks_sensitive_values(self):
         """Test that sensitive values are masked."""
-        with patch.dict(os.environ, {
-            "OPENROUTER_API_KEY": "actual-secret-key-12345",
-            "HF_TOKEN": "actual-hf-token-67890"
-        }), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "OPENROUTER_API_KEY": "actual-secret-key-12345",
+                    "HF_TOKEN": "actual-hf-token-67890",
+                },
+            ),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = "actual-secret-key-12345"
             mock_settings.hf_token = "actual-hf-token-67890"
             mock_settings.openrouter_model = "test-model"
@@ -141,9 +168,10 @@ class TestEnvCommand:
 
     def test_env_shows_model_value(self):
         """Test that model value is shown (not sensitive)."""
-        with patch.dict(os.environ, {
-            "OPENROUTER_MODEL": "openai/gpt-4o-mini"
-        }), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {"OPENROUTER_MODEL": "openai/gpt-4o-mini"}),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
             mock_settings.openrouter_model = "openai/gpt-4o-mini"
             mock_settings.hf_token = None
@@ -163,22 +191,26 @@ class TestEnvCommandIntegration:
 
     def test_prompt_command_checks_env(self):
         """Test that prompt command checks environment."""
-        with patch.dict(os.environ, {}, clear=True), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
 
-            result = self.runner.invoke(app, [
-                "prompt",
-                "--repo", "test",
-                "--description", "test",
-                "--count", "1"
-            ])
+            result = self.runner.invoke(
+                app,
+                ["prompt", "--repo", "test", "--description", "test", "--count", "1"],
+            )
             # Should fail and show environment help
             assert result.exit_code != 0
             assert "Missing environment variables" in result.output
 
     def test_run_command_checks_env(self):
         """Test that run command checks environment."""
-        with patch.dict(os.environ, {}, clear=True), patch("data4ai.config.settings") as mock_settings:
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch("data4ai.config.settings") as mock_settings,
+        ):
             mock_settings.openrouter_api_key = ""
 
             # Create a dummy file
@@ -186,11 +218,7 @@ class TestEnvCommandIntegration:
                 with open("test.xlsx", "w") as f:
                     f.write("test")
 
-                result = self.runner.invoke(app, [
-                    "run",
-                    "test.xlsx",
-                    "--repo", "test"
-                ])
+                result = self.runner.invoke(app, ["run", "test.xlsx", "--repo", "test"])
                 # Should fail and show environment help
                 assert result.exit_code != 0
                 assert "Missing environment variables" in result.output

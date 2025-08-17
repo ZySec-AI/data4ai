@@ -304,9 +304,7 @@ class TestCreatePromptGenerator:
             result = create_prompt_generator()
 
             assert result == mock_generator
-            mock_generator_class.assert_called_once_with(
-                "openai/gpt-4o-mini"
-            )
+            mock_generator_class.assert_called_once_with("openai/gpt-4o-mini")
 
 
 class TestDSPyIntegrationEndToEnd:
