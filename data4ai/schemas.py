@@ -79,7 +79,9 @@ class DollySchema(BaseSchema):
 
     instruction: str = Field(..., min_length=1, description="The instruction/prompt")
     context: str = Field(default="", description="Context or background information")
-    response: str = Field(..., min_length=1, description="The response to the instruction")
+    response: str = Field(
+        ..., min_length=1, description="The response to the instruction"
+    )
     category: Optional[str] = Field(default=None, description="Optional category/type")
 
     @field_validator("instruction", "response")
@@ -133,7 +135,9 @@ class ConversationTurn(BaseModel):
         """Validate speaker role."""
         valid_roles = ["human", "gpt", "system", "assistant", "user"]
         if v.lower() not in valid_roles:
-            raise ValueError(f"Invalid role '{v}'. Must be one of: {', '.join(valid_roles)}")
+            raise ValueError(
+                f"Invalid role '{v}'. Must be one of: {', '.join(valid_roles)}"
+            )
         return v.lower()
 
     class Config:
@@ -149,14 +153,16 @@ class ShareGPTSchema(BaseSchema):
 
     @field_validator("conversations")
     @classmethod
-    def validate_conversations(cls, v: list[ConversationTurn]) -> list[ConversationTurn]:
+    def validate_conversations(
+        cls, v: list[ConversationTurn]
+    ) -> list[ConversationTurn]:
         """Validate conversation structure."""
         if len(v) < 2:
             raise ValueError("Conversations must have at least 2 turns")
 
         # Ensure alternating roles
         for i in range(1, len(v)):
-            if v[i].from_ == v[i-1].from_:
+            if v[i].from_ == v[i - 1].from_:
                 raise ValueError(f"Consecutive messages from same role at position {i}")
 
         return v
@@ -165,8 +171,7 @@ class ShareGPTSchema(BaseSchema):
         """Convert to JSONL format."""
         return {
             "conversations": [
-                {"from": turn.from_, "value": turn.value}
-                for turn in self.conversations
+                {"from": turn.from_, "value": turn.value} for turn in self.conversations
             ]
         }
 

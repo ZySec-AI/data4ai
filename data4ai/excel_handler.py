@@ -11,8 +11,9 @@ from data4ai.schemas import SchemaRegistry
 
 # Check if openpyxl is available
 try:
-    import openpyxl
-    OPENPYXL_AVAILABLE = True
+    import importlib.util
+
+    OPENPYXL_AVAILABLE = importlib.util.find_spec("openpyxl") is not None
 except ImportError:
     OPENPYXL_AVAILABLE = False
 
@@ -74,14 +75,12 @@ class ExcelHandler:
                 # Add instructions in a separate sheet
                 instructions = ExcelHandler._get_instructions(schema_name)
                 instructions_df = pd.DataFrame({"Instructions": [instructions]})
-                instructions_df.to_excel(
-                    writer, sheet_name="Instructions", index=False
-                )
+                instructions_df.to_excel(writer, sheet_name="Instructions", index=False)
 
             logger.info(f"Created Excel template at {path}")
 
         except Exception as e:
-            raise ExcelError(f"Failed to create template: {str(e)}")
+            raise ExcelError(f"Failed to create template: {str(e)}") from e
 
     @staticmethod
     def read_data(path: Path) -> pd.DataFrame:
@@ -104,7 +103,7 @@ class ExcelHandler:
             return df
 
         except Exception as e:
-            raise ExcelError(f"Failed to read Excel file: {str(e)}")
+            raise ExcelError(f"Failed to read Excel file: {str(e)}") from e
 
     @staticmethod
     def detect_partial_rows(df: pd.DataFrame) -> list[int]:
@@ -142,7 +141,8 @@ class ExcelHandler:
                 # Convert row to dict and remove NaN values
                 row_dict = row.to_dict()
                 row_dict = {
-                    k: v for k, v in row_dict.items()
+                    k: v
+                    for k, v in row_dict.items()
                     if not (pd.isna(v) or (isinstance(v, str) and not v.strip()))
                 }
 
@@ -182,7 +182,7 @@ class ExcelHandler:
             logger.info(f"Wrote completed data to {output_path}")
 
         except Exception as e:
-            raise ExcelError(f"Failed to write Excel file: {str(e)}")
+            raise ExcelError(f"Failed to write Excel file: {str(e)}") from e
 
     @staticmethod
     def validate_schema_compatibility(
@@ -200,9 +200,9 @@ class ExcelHandler:
         if schema_name == "sharegpt":
             # Check for either conversation columns or simplified format
             has_conversation_cols = any(
-                "conversation" in col.lower() or
-                "human" in col.lower() or
-                "assistant" in col.lower()
+                "conversation" in col.lower()
+                or "human" in col.lower()
+                or "assistant" in col.lower()
                 for col in actual_columns
             )
             if has_conversation_cols:
@@ -261,7 +261,6 @@ Tips:
 - Keep instructions clear and specific
 - Outputs should be complete and helpful
 - You can leave some rows partially filled for AI completion""",
-
             "dolly": """Dolly Format Instructions:
 
 1. instruction: The task or question (required)
@@ -273,7 +272,6 @@ Tips:
 - Context helps provide more specific responses
 - Categories help organize your dataset
 - Leave fields empty for AI to complete""",
-
             "sharegpt": """ShareGPT Format Instructions:
 
 1. human_message: The user's message
@@ -293,15 +291,11 @@ Tips:
         conversations = []
 
         if "human_message" in row_dict and row_dict["human_message"]:
-            conversations.append({
-                "from": "human",
-                "value": row_dict["human_message"]
-            })
+            conversations.append({"from": "human", "value": row_dict["human_message"]})
 
         if "assistant_response" in row_dict and row_dict["assistant_response"]:
-            conversations.append({
-                "from": "gpt",
-                "value": row_dict["assistant_response"]
-            })
+            conversations.append(
+                {"from": "gpt", "value": row_dict["assistant_response"]}
+            )
 
         return {"conversations": conversations}

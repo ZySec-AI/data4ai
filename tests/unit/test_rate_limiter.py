@@ -167,11 +167,7 @@ class TestRequestMetrics:
 
         # Record requests
         for i in range(10):
-            metrics.record_request(
-                success=(i % 2 == 0),
-                latency=1.0,
-                tokens=10
-            )
+            metrics.record_request(success=(i % 2 == 0), latency=1.0, tokens=10)
 
         stats = metrics.get_metrics()
 

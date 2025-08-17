@@ -151,7 +151,9 @@ class Settings(BaseSettings):
 
                 # Handle other top-level keys
                 for key, value in config_data.items():
-                    if key not in ["openrouter", "huggingface", "defaults"] and hasattr(self, key):
+                    if key not in ["openrouter", "huggingface", "defaults"] and hasattr(
+                        self, key
+                    ):
                         setattr(self, key, value)
 
     def save_to_yaml(self, path: Optional[Path] = None) -> None:

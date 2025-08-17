@@ -41,9 +41,7 @@ class DatasetGenerator:
         """Initialize generator with configuration."""
         self.api_key = api_key or settings.openrouter_api_key
         if not self.api_key:
-            raise ConfigurationError(
-                ErrorHandler.get_message("api_key_missing")
-            )
+            raise ConfigurationError(ErrorHandler.get_message("api_key_missing"))
 
         self.model = model or settings.openrouter_model
         self.temperature = temperature or settings.temperature
@@ -68,8 +66,7 @@ class DatasetGenerator:
 
         # Initialize DSPy prompt generator
         self.prompt_generator = create_prompt_generator(
-            model_name=self.model,
-            use_dspy=settings.use_dspy
+            model_name=self.model, use_dspy=settings.use_dspy
         )
 
     @async_error_handler
@@ -145,12 +142,16 @@ class DatasetGenerator:
                 "seed": self.seed,
                 "source": str(excel_path),
             }
-            save_metadata(output_dir, schema_name, self.model, len(dataset), parameters, metrics)
+            save_metadata(
+                output_dir, schema_name, self.model, len(dataset), parameters, metrics
+            )
 
             # Save completed Excel
             if partial_rows:
                 completed_excel_path = output_dir / "completed.xlsx"
-                ExcelHandler.write_completed_data(df, completed_data, completed_excel_path)
+                ExcelHandler.write_completed_data(
+                    df, completed_data, completed_excel_path
+                )
 
             logger.info(f"Generated {len(dataset)} examples")
 
@@ -162,7 +163,7 @@ class DatasetGenerator:
 
         except Exception as e:
             logger.error(f"Generation from Excel failed: {e}")
-            raise GenerationError(f"Failed to generate from Excel: {str(e)}")
+            raise GenerationError(f"Failed to generate from Excel: {str(e)}") from e
 
     @async_error_handler
     async def generate_from_prompt(
@@ -185,11 +186,16 @@ class DatasetGenerator:
             # Generate prompt once for the entire generation
             logger.info("Generating prompt for entire dataset...")
             master_prompt = self._build_generation_prompt(
-                description, schema_name, count, None  # No previous examples for master prompt
+                description,
+                schema_name,
+                count,
+                None,  # No previous examples for master prompt
             )
 
             # Track if DSPy was actually used
-            dspy_used = hasattr(self, 'prompt_generator') and hasattr(self.prompt_generator, 'optimizer')
+            dspy_used = hasattr(self, "prompt_generator") and hasattr(
+                self.prompt_generator, "optimizer"
+            )
 
             # Generate in batches using the same master prompt
             dataset = []
@@ -202,12 +208,14 @@ class DatasetGenerator:
                 prompt = master_prompt
 
                 # Store prompt for audit
-                prompts_used.append({
-                    "batch": batch_start // batch_size + 1,
-                    "prompt": prompt,
-                    "examples_requested": batch_count,
-                    "prompt_type": "master_dspy_prompt"
-                })
+                prompts_used.append(
+                    {
+                        "batch": batch_start // batch_size + 1,
+                        "prompt": prompt,
+                        "examples_requested": batch_count,
+                        "prompt_type": "master_dspy_prompt",
+                    }
+                )
 
                 # Get completion with retry logic
                 max_retries = 3
@@ -229,12 +237,18 @@ class DatasetGenerator:
                         if entries:
                             break  # Success, exit retry loop
                         else:
-                            logger.warning(f"Batch {batch_start//batch_size + 1} returned no valid entries (attempt {attempt + 1}/{max_retries})")
+                            logger.warning(
+                                f"Batch {batch_start // batch_size + 1} returned no valid entries (attempt {attempt + 1}/{max_retries})"
+                            )
 
                     except Exception as e:
-                        logger.warning(f"Batch {batch_start//batch_size + 1} failed (attempt {attempt + 1}/{max_retries}): {e}")
+                        logger.warning(
+                            f"Batch {batch_start // batch_size + 1} failed (attempt {attempt + 1}/{max_retries}): {e}"
+                        )
                         if attempt == max_retries - 1:
-                            logger.error(f"Failed to generate batch {batch_start//batch_size + 1} after {max_retries} attempts")
+                            logger.error(
+                                f"Failed to generate batch {batch_start // batch_size + 1} after {max_retries} attempts"
+                            )
 
                 dataset.extend(entries)
                 logger.info(f"Generated {len(dataset)}/{count} examples")
@@ -255,9 +269,11 @@ class DatasetGenerator:
                 "description": description,
                 "prompts_used": prompts_used,  # Include prompts for audit
                 "master_prompt": master_prompt,  # Include the master prompt
-                "prompt_generation_method": "dspy" if dspy_used else "static"
+                "prompt_generation_method": "dspy" if dspy_used else "static",
             }
-            save_metadata(output_dir, schema_name, self.model, len(dataset), parameters, metrics)
+            save_metadata(
+                output_dir, schema_name, self.model, len(dataset), parameters, metrics
+            )
 
             logger.info(f"Generated {len(dataset)} examples")
 
@@ -267,12 +283,12 @@ class DatasetGenerator:
                 "metrics": metrics,
                 "prompts_used": prompts_used,
                 "master_prompt": master_prompt,
-                "prompt_generation_method": "dspy" if dspy_used else "static"
+                "prompt_generation_method": "dspy" if dspy_used else "static",
             }
 
         except Exception as e:
             logger.error(f"Generation from prompt failed: {e}")
-            raise GenerationError(f"Failed to generate from prompt: {str(e)}")
+            raise GenerationError(f"Failed to generate from prompt: {str(e)}") from e
 
     def generate_from_excel_sync(self, *args, **kwargs) -> dict[str, Any]:
         """Synchronous wrapper for generate_from_excel."""
@@ -314,7 +330,9 @@ class DatasetGenerator:
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
             TaskProgressColumn(),
-            TextColumn("[cyan]{task.fields[success]} success, {task.fields[failed]} failed[/cyan]"),
+            TextColumn(
+                "[cyan]{task.fields[success]} success, {task.fields[failed]} failed[/cyan]"
+            ),
             TimeRemainingColumn(),
             console=console,
             transient=True,
@@ -323,7 +341,7 @@ class DatasetGenerator:
                 f"Completing {total_rows} partial rows",
                 total=total_rows,
                 success=0,
-                failed=0
+                failed=0,
             )
 
             for batch_num, batch in enumerate(batch_items(partial_rows, batch_size)):
@@ -345,8 +363,7 @@ class DatasetGenerator:
                     tasks.append((idx, api_task))
 
                 responses = await asyncio.gather(
-                    *[task for _, task in tasks],
-                    return_exceptions=True
+                    *[task for _, task in tasks], return_exceptions=True
                 )
 
                 # Parse responses
@@ -358,7 +375,9 @@ class DatasetGenerator:
                             failed += 1
                         else:
                             response_text = response["choices"][0]["message"]["content"]
-                            parsed = self._parse_completion_response(response_text, schema_name)
+                            parsed = self._parse_completion_response(
+                                response_text, schema_name
+                            )
                             completed_data[idx] = parsed
                             successful += 1
 
@@ -370,15 +389,10 @@ class DatasetGenerator:
                         completed_data[idx] = {}
                         failed += 1
 
-                    progress.update(
-                        task,
-                        advance=1,
-                        success=successful,
-                        failed=failed
-                    )
+                    progress.update(task, advance=1, success=successful, failed=failed)
 
                 # Show batch metrics
-                if hasattr(self.client, 'get_metrics'):
+                if hasattr(self.client, "get_metrics"):
                     metrics = self.client.get_metrics()
                     if metrics["requests_per_minute"] > 0:
                         console.print(
@@ -412,7 +426,7 @@ class DatasetGenerator:
                     description=description,
                     schema_name=schema_name,
                     count=count,
-                    previous_examples=previous_examples
+                    previous_examples=previous_examples,
                 )
             else:
                 # Use schema-aware dynamic prompting
@@ -420,14 +434,18 @@ class DatasetGenerator:
                     description=description,
                     schema_name=schema_name,
                     count=count,
-                    use_dspy=True
+                    use_dspy=True,
                 )
 
-            logger.info(f"Generated dynamic prompt for {schema_name} schema with {count} examples")
+            logger.info(
+                f"Generated dynamic prompt for {schema_name} schema with {count} examples"
+            )
             return prompt
 
         except Exception as e:
-            logger.warning(f"DSPy prompt generation failed, falling back to static prompt: {e}")
+            logger.warning(
+                f"DSPy prompt generation failed, falling back to static prompt: {e}"
+            )
             # Fallback to static prompts
             return self._build_static_prompt(description, schema_name, count)
 
@@ -459,7 +477,6 @@ Example format:
     "output": "Bonjour, comment allez-vous?"
   }}
 ]""",
-
             "dolly": f"""Generate {count} high-quality instruction-tuning examples for the following task:
 {description}
 
@@ -470,7 +487,6 @@ Format each example as a JSON object with these fields:
 - category: Type of task (optional)
 
 Return a JSON array of {count} examples.""",
-
             "sharegpt": f"""Generate {count} high-quality conversation examples for the following task:
 {description}
 
@@ -510,7 +526,7 @@ Return a JSON array of {count} conversation examples.""",
 Given fields:
 {json.dumps(filled_fields, indent=2)}
 
-Generate appropriate content for the missing fields: {', '.join(empty_fields)}
+Generate appropriate content for the missing fields: {", ".join(empty_fields)}
 
 Return a JSON object with ONLY the missing fields and their values."""
 
@@ -666,10 +682,7 @@ Return a JSON object with ONLY the missing fields and their values."""
             if partial_rows and not dry_run:
                 completed_csv_path = output_dir / "completed_data.csv"
                 CSVHandler.write_completed_data(
-                    df,
-                    completed_data,
-                    completed_csv_path,
-                    delimiter=delimiter or ','
+                    df, completed_data, completed_csv_path, delimiter=delimiter or ","
                 )
 
             logger.info(f"Successfully generated dataset with {count} examples")
@@ -684,7 +697,7 @@ Return a JSON object with ONLY the missing fields and their values."""
 
         except Exception as e:
             logger.error(f"Dataset generation failed: {e}")
-            raise GenerationError(f"Failed to generate dataset: {str(e)}")
+            raise GenerationError(f"Failed to generate dataset: {str(e)}") from e
 
         finally:
             await self.client.close()

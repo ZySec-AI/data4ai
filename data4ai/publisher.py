@@ -70,7 +70,9 @@ class HuggingFacePublisher:
                     repo_url = f"https://huggingface.co/datasets/{full_repo_name}"
                     logger.info(f"Repository already exists: {repo_url}")
                 else:
-                    raise PublishingError(f"Failed to create repository: {str(e)}")
+                    raise PublishingError(
+                        f"Failed to create repository: {str(e)}"
+                    ) from e
 
             # Generate dataset card if not exists
             readme_path = dataset_dir / "README.md"
@@ -79,6 +81,7 @@ class HuggingFacePublisher:
                 metadata_path = dataset_dir / "metadata.json"
                 if metadata_path.exists():
                     import json
+
                     with open(metadata_path) as f:
                         metadata = json.load(f)
 
@@ -135,7 +138,7 @@ class HuggingFacePublisher:
 
         except Exception as e:
             logger.error(f"Failed to push dataset: {e}")
-            raise PublishingError(f"Failed to push dataset: {str(e)}")
+            raise PublishingError(f"Failed to push dataset: {str(e)}") from e
 
     def validate_token(self) -> bool:
         """Validate HuggingFace token."""
@@ -168,7 +171,7 @@ class HuggingFacePublisher:
 
         except Exception as e:
             logger.error(f"Failed to list datasets: {e}")
-            raise PublishingError(f"Failed to list datasets: {str(e)}")
+            raise PublishingError(f"Failed to list datasets: {str(e)}") from e
 
     def delete_dataset(self, repo_name: str) -> bool:
         """Delete a dataset from HuggingFace Hub."""

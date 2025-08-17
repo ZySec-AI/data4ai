@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class OpenRouterConfig:
     """Configuration for OpenRouter API client."""
+
     api_key: str
     model: str = "meta-llama/llama-3-8b-instruct"
     temperature: float = 0.7
@@ -41,9 +42,10 @@ class OpenRouterClient:
             RateLimitConfig,
             RequestMetrics,
         )
+
         rate_config = RateLimitConfig(
             requests_per_minute=60,  # Default, can be overridden
-            max_concurrent=10
+            max_concurrent=10,
         )
         self.rate_limiter = AdaptiveRateLimiter(rate_config)
         self.metrics = RequestMetrics()
@@ -68,13 +70,10 @@ class OpenRouterClient:
         }
 
     @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10)
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
     )
     async def chat_completion(
-        self,
-        messages: list[dict[str, str]],
-        **kwargs
+        self, messages: list[dict[str, str]], **kwargs
     ) -> dict[str, Any]:
         """
         Make a chat completion request to OpenRouter with proper attribution.
@@ -103,22 +102,22 @@ class OpenRouterClient:
 
             try:
                 response = await self.client.post(
-                    url=url,
-                    headers=headers,
-                    json=payload
+                    url=url, headers=headers, json=payload
                 )
                 response.raise_for_status()
 
                 result = response.json()
                 latency = time.time() - start_time
 
-                logger.info(f"OpenRouter API call successful. Model: {payload['model']}")
+                logger.info(
+                    f"OpenRouter API call successful. Model: {payload['model']}"
+                )
 
                 # Record metrics
                 tokens_used = 0
                 if "usage" in result:
                     usage = result["usage"]
-                    tokens_used = usage.get('total_tokens', 0)
+                    tokens_used = usage.get("total_tokens", 0)
                     logger.info(f"Tokens used: {tokens_used}")
 
                 self.metrics.record_request(True, latency, tokens_used)
@@ -130,14 +129,20 @@ class OpenRouterClient:
                 self.metrics.record_request(False, latency)
 
                 # Handle rate limiting specifically
-                if hasattr(e, 'response') and e.response and e.response.status_code == 429:
-                    retry_after = e.response.headers.get('Retry-After')
+                if (
+                    hasattr(e, "response")
+                    and e.response
+                    and e.response.status_code == 429
+                ):
+                    retry_after = e.response.headers.get("Retry-After")
                     await self.rate_limiter.handle_429(
                         int(retry_after) if retry_after else None
                     )
 
                 logger.error(f"OpenRouter API call failed: {e}")
-                logger.error(f"Response: {e.response.text if hasattr(e, 'response') and e.response else 'No response'}")
+                logger.error(
+                    f"Response: {e.response.text if hasattr(e, 'response') and e.response else 'No response'}"
+                )
                 raise
 
     async def list_models(self) -> list[dict[str, Any]]:
@@ -184,6 +189,7 @@ class SyncOpenRouterClient:
 
         # Initialize metrics for sync client
         from data4ai.rate_limiter import RequestMetrics
+
         self.metrics = RequestMetrics()
 
     def _get_headers(self) -> dict[str, str]:
@@ -206,13 +212,10 @@ class SyncOpenRouterClient:
         }
 
     @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=4, max=10)
+        stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10)
     )
     def chat_completion(
-        self,
-        messages: list[dict[str, str]],
-        **kwargs
+        self, messages: list[dict[str, str]], **kwargs
     ) -> dict[str, Any]:
         """
         Make a synchronous chat completion request to OpenRouter with proper attribution.
@@ -235,11 +238,7 @@ class SyncOpenRouterClient:
         start_time = time.time()
 
         try:
-            response = self.client.post(
-                url=url,
-                headers=headers,
-                json=payload
-            )
+            response = self.client.post(url=url, headers=headers, json=payload)
             response.raise_for_status()
 
             result = response.json()
@@ -251,7 +250,7 @@ class SyncOpenRouterClient:
             tokens_used = 0
             if "usage" in result:
                 usage = result["usage"]
-                tokens_used = usage.get('total_tokens', 0)
+                tokens_used = usage.get("total_tokens", 0)
                 logger.info(f"Tokens used: {tokens_used}")
 
             self.metrics.record_request(True, latency, tokens_used)
@@ -263,7 +262,9 @@ class SyncOpenRouterClient:
             self.metrics.record_request(False, latency)
 
             logger.error(f"OpenRouter API call failed: {e}")
-            logger.error(f"Response: {e.response.text if hasattr(e, 'response') and e.response else 'No response'}")
+            logger.error(
+                f"Response: {e.response.text if hasattr(e, 'response') and e.response else 'No response'}"
+            )
             raise
 
     def list_models(self) -> list[dict[str, Any]]:
@@ -307,16 +308,14 @@ if __name__ == "__main__":
         model="meta-llama/llama-3-8b-instruct",
         temperature=0.7,
         site_url="https://www.zysec.ai",
-        site_name="Data4AI"
+        site_name="Data4AI",
     )
 
     # Example async usage
     async def example_async():
         client = OpenRouterClient(config)
         try:
-            messages = [
-                {"role": "user", "content": "What is the meaning of life?"}
-            ]
+            messages = [{"role": "user", "content": "What is the meaning of life?"}]
 
             response = await client.chat_completion(messages)
             print(f"Response: {response['choices'][0]['message']['content']}")
@@ -328,9 +327,7 @@ if __name__ == "__main__":
     def example_sync():
         client = SyncOpenRouterClient(config)
         try:
-            messages = [
-                {"role": "user", "content": "What is the meaning of life?"}
-            ]
+            messages = [{"role": "user", "content": "What is the meaning of life?"}]
 
             response = client.chat_completion(messages)
             print(f"Response: {response['choices'][0]['message']['content']}")

@@ -65,19 +65,21 @@ def mock_openrouter_response():
         "choices": [
             {
                 "message": {
-                    "content": json.dumps([
-                        {
-                            "instruction": "Test instruction",
-                            "input": "",
-                            "output": "Test output",
-                        }
-                    ])
+                    "content": json.dumps(
+                        [
+                            {
+                                "instruction": "Test instruction",
+                                "input": "",
+                                "output": "Test output",
+                            }
+                        ]
+                    )
                 }
             }
         ],
         "usage": {
             "total_tokens": 100,
-        }
+        },
     }
 
 

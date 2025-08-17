@@ -16,6 +16,7 @@ logger = logging.getLogger("data4ai")
 @dataclass
 class CheckpointData:
     """Data structure for checkpoint information."""
+
     session_id: str
     created_at: str
     updated_at: str
@@ -49,9 +50,7 @@ class CheckpointManager:
     DEFAULT_DIR = Path(".data4ai_checkpoint")
 
     def __init__(
-        self,
-        checkpoint_dir: Optional[Path] = None,
-        session_id: Optional[str] = None
+        self, checkpoint_dir: Optional[Path] = None, session_id: Optional[str] = None
     ):
         """Initialize checkpoint manager.
 
@@ -63,7 +62,9 @@ class CheckpointManager:
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
         self.session_id = session_id or str(uuid.uuid4())
-        self.checkpoint_file = self.checkpoint_dir / f"checkpoint_{self.session_id}.json"
+        self.checkpoint_file = (
+            self.checkpoint_dir / f"checkpoint_{self.session_id}.json"
+        )
         self.checkpoint_data: Optional[CheckpointData] = None
 
         logger.info(f"Checkpoint manager initialized: {self.checkpoint_file}")
@@ -76,7 +77,7 @@ class CheckpointManager:
         model: str,
         temperature: float,
         batch_size: int,
-        total_rows: list[int]
+        total_rows: list[int],
     ) -> CheckpointData:
         """Create a new checkpoint.
 
@@ -110,7 +111,7 @@ class CheckpointManager:
             partial_data={},
             metrics={},
             total_tokens=0,
-            total_cost=0.0
+            total_cost=0.0,
         )
 
         self._save_checkpoint()
@@ -118,7 +119,9 @@ class CheckpointManager:
 
         return self.checkpoint_data
 
-    def load_checkpoint(self, checkpoint_file: Optional[Path] = None) -> Optional[CheckpointData]:
+    def load_checkpoint(
+        self, checkpoint_file: Optional[Path] = None
+    ) -> Optional[CheckpointData]:
         """Load existing checkpoint.
 
         Args:
@@ -183,7 +186,7 @@ class CheckpointManager:
         failed: Optional[list[int]] = None,
         partial_data: Optional[dict[int, dict[str, Any]]] = None,
         metrics: Optional[dict[str, Any]] = None,
-        tokens: int = 0
+        tokens: int = 0,
     ) -> None:
         """Update checkpoint progress.
 
@@ -268,7 +271,7 @@ class CheckpointManager:
             "failed_count": len(self.checkpoint_data.failed_rows),
             "total_tokens": self.checkpoint_data.total_tokens,
             "can_resume": len(self.checkpoint_data.pending_rows) > 0,
-            "partial_data": self.checkpoint_data.partial_data
+            "partial_data": self.checkpoint_data.partial_data,
         }
 
     def cleanup(self, keep_failed: bool = False) -> None:
@@ -281,7 +284,9 @@ class CheckpointManager:
             return
 
         if self.checkpoint_data.failed_rows and keep_failed:
-            logger.info(f"Keeping checkpoint due to {len(self.checkpoint_data.failed_rows)} failures")
+            logger.info(
+                f"Keeping checkpoint due to {len(self.checkpoint_data.failed_rows)} failures"
+            )
             return
 
         if self.checkpoint_file.exists():
@@ -293,10 +298,7 @@ class CheckpointManager:
         if not self.checkpoint_data:
             return
 
-        AtomicWriter.write_json(
-            self.checkpoint_data.to_dict(),
-            self.checkpoint_file
-        )
+        AtomicWriter.write_json(self.checkpoint_data.to_dict(), self.checkpoint_file)
 
     @staticmethod
     def list_checkpoints(checkpoint_dir: Optional[Path] = None) -> list[dict[str, Any]]:
@@ -320,16 +322,18 @@ class CheckpointManager:
                 with open(checkpoint_file) as f:
                     data = json.load(f)
 
-                checkpoints.append({
-                    "file": str(checkpoint_file),
-                    "session_id": data.get("session_id"),
-                    "input_file": data.get("input_file"),
-                    "created_at": data.get("created_at"),
-                    "updated_at": data.get("updated_at"),
-                    "completed": len(data.get("completed_rows", [])),
-                    "pending": len(data.get("pending_rows", [])),
-                    "failed": len(data.get("failed_rows", []))
-                })
+                checkpoints.append(
+                    {
+                        "file": str(checkpoint_file),
+                        "session_id": data.get("session_id"),
+                        "input_file": data.get("input_file"),
+                        "created_at": data.get("created_at"),
+                        "updated_at": data.get("updated_at"),
+                        "completed": len(data.get("completed_rows", [])),
+                        "pending": len(data.get("pending_rows", [])),
+                        "failed": len(data.get("failed_rows", [])),
+                    }
+                )
             except Exception as e:
                 logger.warning(f"Failed to read checkpoint {checkpoint_file}: {e}")
                 continue
@@ -341,8 +345,7 @@ class CheckpointManager:
 
     @staticmethod
     def clean_old_checkpoints(
-        days: int = 7,
-        checkpoint_dir: Optional[Path] = None
+        days: int = 7, checkpoint_dir: Optional[Path] = None
     ) -> int:
         """Clean up old checkpoints.
 

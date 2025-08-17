@@ -12,6 +12,7 @@ logger = logging.getLogger("data4ai")
 @dataclass
 class RateLimitConfig:
     """Configuration for rate limiting."""
+
     requests_per_minute: int = 60
     max_concurrent: int = 10
     burst_size: int = 20
@@ -51,7 +52,9 @@ class TokenBucket:
                 deficit = tokens - self.tokens
                 wait_time = deficit / self.rate
 
-                logger.debug(f"Rate limit: waiting {wait_time:.2f}s for {tokens} tokens")
+                logger.debug(
+                    f"Rate limit: waiting {wait_time:.2f}s for {tokens} tokens"
+                )
                 await asyncio.sleep(wait_time)
 
                 # Update tokens
@@ -82,8 +85,7 @@ class AdaptiveRateLimiter:
         tokens_per_second = self.config.requests_per_minute / 60.0
 
         self.bucket = TokenBucket(
-            rate=tokens_per_second,
-            capacity=self.config.burst_size
+            rate=tokens_per_second, capacity=self.config.burst_size
         )
 
         # Concurrency control
@@ -125,15 +127,17 @@ class AdaptiveRateLimiter:
             wait_time = retry_after
         else:
             wait_time = min(
-                self.config.retry_after_default * (2 ** self.consecutive_429s),
-                300  # Max 5 minutes
+                self.config.retry_after_default * (2**self.consecutive_429s),
+                300,  # Max 5 minutes
             )
 
         self.backoff_until = time.time() + wait_time
 
         # Reduce rate for future requests
         self.current_rate_multiplier *= 0.5
-        new_rate = (self.config.requests_per_minute / 60.0) * self.current_rate_multiplier
+        new_rate = (
+            self.config.requests_per_minute / 60.0
+        ) * self.current_rate_multiplier
         self.bucket.rate = max(new_rate, 0.1)  # Minimum 6 requests per minute
 
         logger.warning(
@@ -150,7 +154,9 @@ class AdaptiveRateLimiter:
         # Gradually increase rate back to normal
         if self.current_rate_multiplier < 1.0:
             self.current_rate_multiplier = min(1.0, self.current_rate_multiplier * 1.1)
-            new_rate = (self.config.requests_per_minute / 60.0) * self.current_rate_multiplier
+            new_rate = (
+                self.config.requests_per_minute / 60.0
+            ) * self.current_rate_multiplier
             self.bucket.rate = new_rate
 
     async def __aenter__(self):
@@ -165,12 +171,13 @@ class AdaptiveRateLimiter:
         # Handle exceptions
         if exc_type is None:
             self.handle_success()
-        elif (hasattr(exc_val, 'response') and hasattr(exc_val.response, 'status_code')
-              and exc_val.response.status_code == 429):
-                retry_after = exc_val.response.headers.get('Retry-After')
-                await self.handle_429(
-                    int(retry_after) if retry_after else None
-                )
+        elif (
+            hasattr(exc_val, "response")
+            and hasattr(exc_val.response, "status_code")
+            and exc_val.response.status_code == 429
+        ):
+            retry_after = exc_val.response.headers.get("Retry-After")
+            await self.handle_429(int(retry_after) if retry_after else None)
 
 
 class RequestMetrics:
@@ -188,12 +195,7 @@ class RequestMetrics:
         self.total_errors = 0
         self.total_tokens = 0
 
-    def record_request(
-        self,
-        success: bool,
-        latency: float,
-        tokens: int = 0
-    ) -> None:
+    def record_request(self, success: bool, latency: float, tokens: int = 0) -> None:
         """Record a request."""
         now = time.time()
         self.requests.append((now, success, latency))
@@ -206,8 +208,7 @@ class RequestMetrics:
         # Clean old entries
         cutoff = now - self.window_size
         self.requests = [
-            (ts, succ, lat) for ts, succ, lat in self.requests
-            if ts > cutoff
+            (ts, succ, lat) for ts, succ, lat in self.requests if ts > cutoff
         ]
 
     def get_metrics(self) -> dict:

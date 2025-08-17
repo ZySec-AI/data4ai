@@ -17,6 +17,7 @@ console = Console()
 @dataclass
 class DeduplicationStats:
     """Statistics from deduplication process."""
+
     total_items: int
     unique_items: int
     duplicates_removed: int
@@ -32,7 +33,10 @@ class DeduplicationStats:
         table.add_row("Total Items", str(self.total_items))
         table.add_row("Unique Items", str(self.unique_items))
         table.add_row("Duplicates Removed", str(self.duplicates_removed))
-        table.add_row("Reduction", f"{self.duplicates_removed / max(self.total_items, 1) * 100:.1f}%")
+        table.add_row(
+            "Reduction",
+            f"{self.duplicates_removed / max(self.total_items, 1) * 100:.1f}%",
+        )
         table.add_row("Method", self.method)
 
         if self.threshold is not None:
@@ -54,16 +58,16 @@ class Deduplicator:
             threshold: Similarity threshold for fuzzy matching (0-1)
         """
         if strategy not in self.STRATEGIES:
-            raise ValueError(f"Unknown strategy: {strategy}. Use one of {self.STRATEGIES}")
+            raise ValueError(
+                f"Unknown strategy: {strategy}. Use one of {self.STRATEGIES}"
+            )
 
         self.strategy = strategy
         self.threshold = threshold
         logger.info(f"Deduplicator initialized with {strategy} strategy")
 
     def deduplicate(
-        self,
-        dataset: list[dict[str, Any]],
-        verbose: bool = False
+        self, dataset: list[dict[str, Any]], verbose: bool = False
     ) -> tuple[list[dict[str, Any]], DeduplicationStats]:
         """Deduplicate dataset based on selected strategy.
 
@@ -80,7 +84,10 @@ class Deduplicator:
         total = len(dataset)
 
         if verbose:
-            console.print(f"Deduplicating {total} items using {self.strategy} strategy...", style="blue")
+            console.print(
+                f"Deduplicating {total} items using {self.strategy} strategy...",
+                style="blue",
+            )
 
         if self.strategy == "exact":
             unique = self._dedupe_exact(dataset)
@@ -98,7 +105,7 @@ class Deduplicator:
             unique_items=len(unique),
             duplicates_removed=total - len(unique),
             method=self.strategy,
-            threshold=self.threshold if self.strategy == "fuzzy" else None
+            threshold=self.threshold if self.strategy == "fuzzy" else None,
         )
 
         if verbose:
@@ -129,9 +136,7 @@ class Deduplicator:
         return unique
 
     def _dedupe_fuzzy(
-        self,
-        dataset: list[dict[str, Any]],
-        verbose: bool = False
+        self, dataset: list[dict[str, Any]], verbose: bool = False
     ) -> list[dict[str, Any]]:
         """Remove near-duplicates using fuzzy matching.
 
@@ -154,7 +159,9 @@ class Deduplicator:
                 if similarity >= self.threshold:
                     is_duplicate = True
                     if verbose:
-                        logger.debug(f"Item {i} is duplicate (similarity: {similarity:.2f})")
+                        logger.debug(
+                            f"Item {i} is duplicate (similarity: {similarity:.2f})"
+                        )
                     break
 
             if not is_duplicate:
@@ -163,9 +170,7 @@ class Deduplicator:
         return unique
 
     def _dedupe_by_field(
-        self,
-        dataset: list[dict[str, Any]],
-        field: str
+        self, dataset: list[dict[str, Any]], field: str
     ) -> list[dict[str, Any]]:
         """Deduplicate based on a specific field.
 
@@ -230,9 +235,7 @@ class Deduplicator:
         return hashlib.sha256(sorted_str.encode()).hexdigest()
 
     def _calculate_similarity(
-        self,
-        item1: dict[str, Any],
-        item2: dict[str, Any]
+        self, item1: dict[str, Any], item2: dict[str, Any]
     ) -> float:
         """Calculate similarity between two items.
 
@@ -271,7 +274,7 @@ class Deduplicator:
             parts = [
                 item.get("instruction", ""),
                 item.get("input", "") or item.get("context", ""),
-                item.get("output", "") or item.get("response", "")
+                item.get("output", "") or item.get("response", ""),
             ]
             return " ".join(filter(None, parts))
         else:
@@ -351,6 +354,3 @@ class IncrementalDeduplicator:
             List of unique items
         """
         return self.seen_items.copy()
-
-
-

@@ -48,7 +48,9 @@ def callback(
 def create_sample(
     path: Path = typer.Argument(..., help="Output file path (Excel or CSV)"),
     schema: str = typer.Option("alpaca", "--schema", "-s", help="Dataset schema"),
-    format: str = typer.Option("excel", "--format", "-f", help="Output format: excel or csv"),
+    format: str = typer.Option(
+        "excel", "--format", "-f", help="Output format: excel or csv"
+    ),
 ):
     """Create a template file for the specified schema."""
     console.print(f"Creating {schema} template ({format} format)...", style="blue")
@@ -66,9 +68,13 @@ def create_sample(
 @error_handler
 def file_to_dataset(
     input_path: Path = typer.Argument(..., help="Input file (Excel or CSV)"),
-    repo: str = typer.Option(..., "--repo", "-r", help="Output directory and repo name"),
+    repo: str = typer.Option(
+        ..., "--repo", "-r", help="Output directory and repo name"
+    ),
     dataset: str = typer.Option("alpaca", "--dataset", "-d", help="Dataset schema"),
-    delimiter: Optional[str] = typer.Option(None, "--delimiter", help="CSV delimiter (auto-detect if not specified)"),
+    delimiter: Optional[str] = typer.Option(
+        None, "--delimiter", help="CSV delimiter (auto-detect if not specified)"
+    ),
 ):
     """Convert filled Excel/CSV file to dataset without AI completion."""
     try:
@@ -88,8 +94,10 @@ def file_to_dataset(
         # Validate schema
         is_valid, missing = handler.validate_schema_compatibility(df, dataset)
         if not is_valid:
-            console.print(f"❌ Missing required columns: {', '.join(missing)}", style="red")
-            raise typer.Exit(1)
+            console.print(
+                f"❌ Missing required columns: {', '.join(missing)}", style="red"
+            )
+            raise typer.Exit(1) from None
 
         # Convert to dataset
         dataset_data = handler.convert_to_dataset(df, dataset)
@@ -117,23 +125,31 @@ def file_to_dataset(
         )
 
         console.print(f"💾 Dataset saved to: {jsonl_path}", style="green")
-        console.print(f"📈 Metrics: {metrics['total_rows']} rows, "
-                     f"{metrics['completion_rate']:.1%} complete", style="cyan")
+        console.print(
+            f"📈 Metrics: {metrics['total_rows']} rows, "
+            f"{metrics['completion_rate']:.1%} complete",
+            style="cyan",
+        )
 
     except Exception as e:
         console.print(f"❌ Error: {e}", style="red")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 # Keep backward compatibility
 @app.command()
 def excel_to_dataset(
     excel_path: Path = typer.Argument(..., help="Input Excel file"),
-    repo: str = typer.Option(..., "--repo", "-r", help="Output directory and repo name"),
+    repo: str = typer.Option(
+        ..., "--repo", "-r", help="Output directory and repo name"
+    ),
     dataset: str = typer.Option("alpaca", "--dataset", "-d", help="Dataset schema"),
 ):
     """Convert filled Excel file to dataset without AI completion (deprecated, use file-to-dataset)."""
-    console.print("⚠️  This command is deprecated. Please use 'file-to-dataset' instead.", style="yellow")
+    console.print(
+        "⚠️  This command is deprecated. Please use 'file-to-dataset' instead.",
+        style="yellow",
+    )
     file_to_dataset(excel_path, repo, dataset)
 
 
@@ -141,14 +157,20 @@ def excel_to_dataset(
 @error_handler
 def run(
     input_path: Path = typer.Argument(..., help="Input file (Excel or CSV)"),
-    repo: str = typer.Option(..., "--repo", "-r", help="Output directory and repo name"),
+    repo: str = typer.Option(
+        ..., "--repo", "-r", help="Output directory and repo name"
+    ),
     dataset: str = typer.Option("alpaca", "--dataset", "-d", help="Dataset schema"),
     model: Optional[str] = typer.Option(None, "--model", "-m", help="Model to use"),
     temperature: float = typer.Option(0.7, "--temperature", "-t", help="Temperature"),
-    max_rows: Optional[int] = typer.Option(None, "--max-rows", help="Max rows to generate"),
+    max_rows: Optional[int] = typer.Option(
+        None, "--max-rows", help="Max rows to generate"
+    ),
     batch_size: int = typer.Option(10, "--batch-size", help="Batch size"),
     seed: Optional[int] = typer.Option(None, "--seed", help="Random seed"),
-    delimiter: Optional[str] = typer.Option(None, "--delimiter", help="CSV delimiter (auto-detect if not specified)"),
+    delimiter: Optional[str] = typer.Option(
+        None, "--delimiter", help="CSV delimiter (auto-detect if not specified)"
+    ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview without generating"),
 ):
     """Process Excel/CSV file with AI completion for partial rows."""
@@ -156,7 +178,9 @@ def run(
         if dry_run:
             console.print("🔍 Dry run mode - previewing only", style="yellow")
             console.print(f"📁 Input file: {input_path}", style="cyan")
-            console.print(f"📁 Output directory: {settings.output_dir / repo}", style="cyan")
+            console.print(
+                f"📁 Output directory: {settings.output_dir / repo}", style="cyan"
+            )
             console.print("✅ Dry run completed successfully", style="green")
             return
 
@@ -194,7 +218,10 @@ def run(
                 )
 
         if dry_run:
-            console.print(f"Would process {result.get('partial_rows', 0)} partial rows", style="cyan")
+            console.print(
+                f"Would process {result.get('partial_rows', 0)} partial rows",
+                style="cyan",
+            )
         else:
             console.print(f"✅ Generated {result['row_count']} examples", style="green")
             console.print(f"💾 Saved to: {result['output_path']}", style="green")
@@ -202,34 +229,49 @@ def run(
             # Show usage stats
             usage = result.get("usage", {})
             if usage.get("total_tokens"):
-                console.print(f"📊 Tokens used: {usage['total_tokens']:,}", style="cyan")
-                console.print(f"💰 Estimated cost: ${usage.get('estimated_cost', 0):.4f}", style="cyan")
+                console.print(
+                    f"📊 Tokens used: {usage['total_tokens']:,}", style="cyan"
+                )
+                console.print(
+                    f"💰 Estimated cost: ${usage.get('estimated_cost', 0):.4f}",
+                    style="cyan",
+                )
 
     except Exception as e:
         console.print(f"❌ Error: {e}", style="red")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()
 @error_handler
 def prompt(
-    repo: str = typer.Option(..., "--repo", "-r", help="Output directory and repo name"),
+    repo: str = typer.Option(
+        ..., "--repo", "-r", help="Output directory and repo name"
+    ),
     dataset: str = typer.Option("alpaca", "--dataset", "-d", help="Dataset schema"),
-    description: str = typer.Option(..., "--description", "-desc", help="Dataset description"),
+    description: str = typer.Option(
+        ..., "--description", "-desc", help="Dataset description"
+    ),
     count: int = typer.Option(100, "--count", "-c", help="Number of examples"),
     model: Optional[str] = typer.Option(None, "--model", "-m", help="Model to use"),
     temperature: float = typer.Option(0.7, "--temperature", "-t", help="Temperature"),
     batch_size: int = typer.Option(10, "--batch-size", help="Batch size"),
     seed: Optional[int] = typer.Option(None, "--seed", help="Random seed"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview without generating"),
-    use_dspy: bool = typer.Option(True, "--use-dspy/--no-use-dspy", help="Use DSPy for dynamic prompt generation"),
+    use_dspy: bool = typer.Option(
+        True, "--use-dspy/--no-use-dspy", help="Use DSPy for dynamic prompt generation"
+    ),
 ):
     """Generate dataset from natural language description."""
     try:
         if dry_run:
-            console.print(f"🔍 Would generate {count} {dataset} examples", style="yellow")
+            console.print(
+                f"🔍 Would generate {count} {dataset} examples", style="yellow"
+            )
             console.print(f"📝 Description: {description}", style="cyan")
-            console.print(f"📁 Output directory: {settings.output_dir / repo}", style="cyan")
+            console.print(
+                f"📁 Output directory: {settings.output_dir / repo}", style="cyan"
+            )
             console.print("✅ Dry run completed successfully", style="green")
             return
 
@@ -245,8 +287,7 @@ def prompt(
         # Override DSPy setting if specified
         if not use_dspy:
             generator.prompt_generator = create_prompt_generator(
-                model_name=model or settings.openrouter_model,
-                use_dspy=False
+                model_name=model or settings.openrouter_model, use_dspy=False
             )
 
         # Generate dataset
@@ -271,25 +312,35 @@ def prompt(
         # Show metrics
         metrics = result.get("metrics", {})
         if metrics:
-            console.print(f"📈 Completion rate: {metrics.get('completion_rate', 0):.1%}", style="cyan")
+            console.print(
+                f"📈 Completion rate: {metrics.get('completion_rate', 0):.1%}",
+                style="cyan",
+            )
 
         # Show usage
         usage = result.get("usage", {})
         if usage.get("total_tokens"):
             console.print(f"📊 Tokens used: {usage['total_tokens']:,}", style="cyan")
-            console.print(f"💰 Estimated cost: ${usage.get('estimated_cost', 0):.4f}", style="cyan")
+            console.print(
+                f"💰 Estimated cost: ${usage.get('estimated_cost', 0):.4f}",
+                style="cyan",
+            )
 
     except Exception as e:
         console.print(f"❌ Error: {e}", style="red")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()
 @error_handler
 def push(
-    repo: str = typer.Option(..., "--repo", "-r", help="Dataset directory and repo name"),
+    repo: str = typer.Option(
+        ..., "--repo", "-r", help="Dataset directory and repo name"
+    ),
     private: bool = typer.Option(False, "--private", help="Make dataset private"),
-    description: Optional[str] = typer.Option(None, "--description", help="Dataset description"),
+    description: Optional[str] = typer.Option(
+        None, "--description", help="Dataset description"
+    ),
     token: Optional[str] = typer.Option(None, "--token", help="HuggingFace token"),
 ):
     """Upload dataset to HuggingFace Hub."""
@@ -315,7 +366,7 @@ def push(
 
     except Exception as e:
         console.print(f"❌ Error: {e}", style="red")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()
@@ -332,7 +383,7 @@ def validate(
         jsonl_path = Path(repo) / "data.jsonl"
         if not jsonl_path.exists():
             console.print(f"❌ Dataset not found: {jsonl_path}", style="red")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from None
 
         dataset_data = list(read_jsonl(jsonl_path))
         console.print(f"📊 Read {len(dataset_data)} examples", style="cyan")
@@ -360,19 +411,24 @@ def validate(
         table.add_row("Valid Examples", str(valid_count))
         table.add_row("Invalid Examples", str(len(invalid_examples)))
         table.add_row("Completion Rate", f"{metrics['completion_rate']:.1%}")
-        table.add_row("Avg Instruction Length", f"{metrics['avg_instruction_length']:.0f}")
+        table.add_row(
+            "Avg Instruction Length", f"{metrics['avg_instruction_length']:.0f}"
+        )
         table.add_row("Avg Output Length", f"{metrics['avg_output_length']:.0f}")
 
         console.print(table)
 
         if invalid_examples:
-            console.print(f"⚠️  Invalid examples at indices: {invalid_examples[:10]}...", style="yellow")
+            console.print(
+                f"⚠️  Invalid examples at indices: {invalid_examples[:10]}...",
+                style="yellow",
+            )
         else:
             console.print("✅ All examples are valid!", style="green")
 
     except Exception as e:
         console.print(f"❌ Error: {e}", style="red")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()
@@ -388,7 +444,7 @@ def stats(
         jsonl_path = Path(repo) / "data.jsonl"
         if not jsonl_path.exists():
             console.print(f"❌ Dataset not found: {jsonl_path}", style="red")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from None
 
         dataset = list(read_jsonl(jsonl_path))
 
@@ -412,21 +468,23 @@ def stats(
 
         table.add_row("File Size", format_file_size(file_size))
         table.add_row("Schema", schema)
-        table.add_row("Total Rows", str(metrics['total_rows']))
-        table.add_row("Empty Rows", str(metrics['empty_rows']))
+        table.add_row("Total Rows", str(metrics["total_rows"]))
+        table.add_row("Empty Rows", str(metrics["empty_rows"]))
         table.add_row("Completion Rate", f"{metrics['completion_rate']:.1%}")
-        table.add_row("Avg Instruction Length", f"{metrics['avg_instruction_length']:.0f}")
-        table.add_row("Min Instruction Length", str(metrics['min_instruction_length']))
-        table.add_row("Max Instruction Length", str(metrics['max_instruction_length']))
+        table.add_row(
+            "Avg Instruction Length", f"{metrics['avg_instruction_length']:.0f}"
+        )
+        table.add_row("Min Instruction Length", str(metrics["min_instruction_length"]))
+        table.add_row("Max Instruction Length", str(metrics["max_instruction_length"]))
         table.add_row("Avg Output Length", f"{metrics['avg_output_length']:.0f}")
-        table.add_row("Min Output Length", str(metrics['min_output_length']))
-        table.add_row("Max Output Length", str(metrics['max_output_length']))
+        table.add_row("Min Output Length", str(metrics["min_output_length"]))
+        table.add_row("Max Output Length", str(metrics["max_output_length"]))
 
         console.print(table)
 
     except Exception as e:
         console.print(f"❌ Error: {e}", style="red")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command("list-models")
@@ -437,11 +495,8 @@ def list_models():
 
     # Check if API key is set
     if not settings.openrouter_api_key:
-        console.print(
-            ErrorHandler.get_message("api_key_missing"),
-            style="red"
-        )
-        raise typer.Exit(1)
+        console.print(ErrorHandler.get_message("api_key_missing"), style="red")
+        raise typer.Exit(1) from None
 
     config = OpenRouterConfig(
         api_key=settings.openrouter_api_key,
@@ -458,7 +513,7 @@ def list_models():
     table.add_column("Price/1M tokens", style="yellow")
 
     for model in models[:20]:  # Show top 20
-        pricing = model.get('pricing', {}).get('prompt', 0)
+        pricing = model.get("pricing", {}).get("prompt", 0)
         try:
             price_str = f"${float(pricing) * 1000:.2f}" if pricing else "N/A"
         except (ValueError, TypeError):
@@ -483,7 +538,10 @@ def config(
     try:
         if save:
             settings.save_to_yaml()
-            console.print(f"✅ Configuration saved to: {settings.get_config_path()}", style="green")
+            console.print(
+                f"✅ Configuration saved to: {settings.get_config_path()}",
+                style="green",
+            )
 
         if show:
             table = Table(title="Current Configuration")
@@ -507,7 +565,7 @@ def config(
 
     except Exception as e:
         console.print(f"❌ Error: {e}", style="red")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()

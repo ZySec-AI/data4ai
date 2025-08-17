@@ -1,7 +1,5 @@
 """Tests for utility functions."""
 
-
-
 from data4ai.utils import (
     batch_items,
     calculate_metrics,
@@ -45,7 +43,7 @@ def test_calculate_metrics():
 
     assert metrics["total_rows"] == 3
     assert metrics["empty_rows"] == 1
-    assert metrics["completion_rate"] == 2/3
+    assert metrics["completion_rate"] == 2 / 3
     assert metrics["avg_instruction_length"] > 0
 
 

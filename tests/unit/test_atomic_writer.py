@@ -13,10 +13,7 @@ class TestAtomicWriter:
 
     def test_write_jsonl_new_file(self, temp_dir):
         """Test writing JSONL to a new file."""
-        data = [
-            {"id": 1, "text": "Hello"},
-            {"id": 2, "text": "World"}
-        ]
+        data = [{"id": 1, "text": "Hello"}, {"id": 2, "text": "World"}]
 
         file_path = temp_dir / "test.jsonl"
         count = AtomicWriter.write_jsonl(data, file_path)
@@ -64,7 +61,7 @@ class TestAtomicWriter:
         assert file_path.exists()
 
         # Verify compressed content
-        with gzip.open(file_path, 'rt') as f:
+        with gzip.open(file_path, "rt") as f:
             line = f.readline()
             assert json.loads(line) == data[0]
 

@@ -16,21 +16,19 @@ class TestDatasetGeneratorInitialization:
         assert generator.temperature == 0.7
         assert generator.seed is None
         # max_retries is a local variable, not an instance attribute
-        assert hasattr(generator, 'prompt_generator')
+        assert hasattr(generator, "prompt_generator")
 
     def test_generator_initialization_custom_params(self):
         """Test generator initialization with custom parameters."""
         generator = DatasetGenerator(
-            model="anthropic/claude-3-5-sonnet",
-            temperature=0.9,
-            seed=42
+            model="anthropic/claude-3-5-sonnet", temperature=0.9, seed=42
         )
 
         assert generator.model == "anthropic/claude-3-5-sonnet"
         assert generator.temperature == 0.9
         assert generator.seed == 42
 
-    @patch('data4ai.generator.create_prompt_generator')
+    @patch("data4ai.generator.create_prompt_generator")
     def test_generator_prompt_generator_setup(self, mock_create_prompt):
         """Test that prompt generator is set up correctly."""
         mock_prompt_generator = Mock()
@@ -50,9 +48,7 @@ class TestPromptBuilding:
         generator = DatasetGenerator()
 
         prompt = generator._build_static_prompt(
-            description="Create programming questions",
-            schema_name="alpaca",
-            count=5
+            description="Create programming questions", schema_name="alpaca", count=5
         )
 
         assert isinstance(prompt, str)
@@ -67,9 +63,7 @@ class TestPromptBuilding:
         generator = DatasetGenerator()
 
         prompt = generator._build_static_prompt(
-            description="Create educational content",
-            schema_name="dolly",
-            count=3
+            description="Create educational content", schema_name="dolly", count=3
         )
 
         assert isinstance(prompt, str)
@@ -84,9 +78,7 @@ class TestPromptBuilding:
         generator = DatasetGenerator()
 
         prompt = generator._build_static_prompt(
-            description="Create conversations",
-            schema_name="sharegpt",
-            count=2
+            description="Create conversations", schema_name="sharegpt", count=2
         )
 
         assert isinstance(prompt, str)
@@ -94,47 +86,50 @@ class TestPromptBuilding:
         assert "2" in prompt
         assert "conversations" in prompt
 
-    @patch('data4ai.generator.create_prompt_generator')
+    @patch("data4ai.generator.create_prompt_generator")
     def test_build_generation_prompt_with_dspy(self, mock_create_prompt):
         """Test building generation prompt with DSPy."""
         mock_prompt_generator = Mock()
-        mock_prompt_generator.generate_schema_prompt.return_value = "Dynamic prompt content"
+        mock_prompt_generator.generate_schema_prompt.return_value = (
+            "Dynamic prompt content"
+        )
         mock_create_prompt.return_value = mock_prompt_generator
 
         generator = DatasetGenerator()
 
         prompt = generator._build_generation_prompt(
-            description="Create questions",
-            schema_name="alpaca",
-            count=5
+            description="Create questions", schema_name="alpaca", count=5
         )
 
         assert prompt == "Dynamic prompt content"
         mock_prompt_generator.generate_schema_prompt.assert_called_once_with(
-            description="Create questions",
-            schema_name="alpaca",
-            count=5,
-            use_dspy=True
+            description="Create questions", schema_name="alpaca", count=5, use_dspy=True
         )
 
-    @patch('data4ai.generator.create_prompt_generator')
+    @patch("data4ai.generator.create_prompt_generator")
     def test_build_generation_prompt_with_examples(self, mock_create_prompt):
         """Test building generation prompt with previous examples."""
         mock_prompt_generator = Mock()
-        mock_prompt_generator.generate_adaptive_prompt.return_value = "Adaptive prompt content"
+        mock_prompt_generator.generate_adaptive_prompt.return_value = (
+            "Adaptive prompt content"
+        )
         mock_create_prompt.return_value = mock_prompt_generator
 
         generator = DatasetGenerator()
 
         examples = [
-            {"instruction": "Write a function", "input": "", "output": "def func(): pass"}
+            {
+                "instruction": "Write a function",
+                "input": "",
+                "output": "def func(): pass",
+            }
         ]
 
         prompt = generator._build_generation_prompt(
             description="Create more examples",
             schema_name="alpaca",
             count=3,
-            previous_examples=examples
+            previous_examples=examples,
         )
 
         assert prompt == "Adaptive prompt content"
@@ -142,22 +137,22 @@ class TestPromptBuilding:
             description="Create more examples",
             schema_name="alpaca",
             count=3,
-            previous_examples=examples
+            previous_examples=examples,
         )
 
-    @patch('data4ai.generator.create_prompt_generator')
+    @patch("data4ai.generator.create_prompt_generator")
     def test_build_generation_prompt_fallback(self, mock_create_prompt):
         """Test that prompt building falls back to static prompt on error."""
         mock_prompt_generator = Mock()
-        mock_prompt_generator.generate_schema_prompt.side_effect = Exception("DSPy error")
+        mock_prompt_generator.generate_schema_prompt.side_effect = Exception(
+            "DSPy error"
+        )
         mock_create_prompt.return_value = mock_prompt_generator
 
         generator = DatasetGenerator()
 
         prompt = generator._build_generation_prompt(
-            description="Create questions",
-            schema_name="alpaca",
-            count=5
+            description="Create questions", schema_name="alpaca", count=5
         )
 
         assert isinstance(prompt, str)

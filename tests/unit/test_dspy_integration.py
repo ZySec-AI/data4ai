@@ -20,8 +20,8 @@ class TestDatasetGenerationSignature:
         # Test that the signature class exists and can be instantiated
         assert signature_class is not None
         # Test that it's a DSPy signature
-        assert hasattr(signature_class, '__name__')
-        assert signature_class.__name__ == 'DatasetGenerationSignature'
+        assert hasattr(signature_class, "__name__")
+        assert signature_class.__name__ == "DatasetGenerationSignature"
 
     def test_signature_fields(self):
         """Test that signature has correct input and output fields."""
@@ -29,17 +29,17 @@ class TestDatasetGenerationSignature:
         signature_class = DatasetGenerationSignature
 
         # Check that it's a DSPy signature class
-        assert hasattr(signature_class, '__name__')
-        assert signature_class.__name__ == 'DatasetGenerationSignature'
+        assert hasattr(signature_class, "__name__")
+        assert signature_class.__name__ == "DatasetGenerationSignature"
         # Check that it inherits from dspy.Signature
-        assert hasattr(signature_class, '__bases__')
+        assert hasattr(signature_class, "__bases__")
 
 
 class TestPromptOptimizer:
     """Test DSPy prompt optimizer."""
 
-    @patch('data4ai.integrations.dspy_prompts.dspy')
-    @patch('data4ai.integrations.dspy_prompts.os.getenv')
+    @patch("data4ai.integrations.dspy_prompts.dspy")
+    @patch("data4ai.integrations.dspy_prompts.os.getenv")
     def test_optimizer_initialization(self, mock_getenv, mock_dspy):
         """Test optimizer initialization with DSPy setup."""
         mock_getenv.return_value = "test_api_key"
@@ -53,7 +53,7 @@ class TestPromptOptimizer:
         mock_dspy.LM.assert_called_once_with(
             model="openrouter/meta-llama/llama-3-8b-instruct",
             api_key="test_api_key",
-            base_url="https://openrouter.ai/api/v1"
+            base_url="https://openrouter.ai/api/v1",
         )
 
     def test_setup_signatures(self):
@@ -73,9 +73,7 @@ class TestPromptOptimizer:
         optimizer = PromptOptimizer("test-model")
 
         prompt = optimizer.generate_dynamic_prompt(
-            description="Create programming questions",
-            schema_name="alpaca",
-            count=5
+            description="Create programming questions", schema_name="alpaca", count=5
         )
 
         assert isinstance(prompt, str)
@@ -90,9 +88,7 @@ class TestPromptOptimizer:
         optimizer = PromptOptimizer("test-model")
 
         prompt = optimizer.generate_dynamic_prompt(
-            description="Create educational content",
-            schema_name="dolly",
-            count=3
+            description="Create educational content", schema_name="dolly", count=3
         )
 
         assert "dolly schema" in prompt
@@ -105,9 +101,7 @@ class TestPromptOptimizer:
         optimizer = PromptOptimizer("test-model")
 
         prompt = optimizer.generate_dynamic_prompt(
-            description="Create conversations",
-            schema_name="sharegpt",
-            count=2
+            description="Create conversations", schema_name="sharegpt", count=2
         )
 
         assert "sharegpt schema" in prompt
@@ -118,15 +112,23 @@ class TestPromptOptimizer:
         optimizer = PromptOptimizer("test-model")
 
         examples = [
-            {"instruction": "Write a function", "input": "", "output": "def func(): pass"},
-            {"instruction": "Create a class", "input": "", "output": "class MyClass: pass"}
+            {
+                "instruction": "Write a function",
+                "input": "",
+                "output": "def func(): pass",
+            },
+            {
+                "instruction": "Create a class",
+                "input": "",
+                "output": "class MyClass: pass",
+            },
         ]
 
         prompt = optimizer.optimize_prompt_with_examples(
             description="Create more programming examples",
             schema_name="alpaca",
             count=3,
-            example_data=examples
+            example_data=examples,
         )
 
         assert isinstance(prompt, str)
@@ -136,7 +138,7 @@ class TestPromptOptimizer:
 class TestSchemaAwarePromptGenerator:
     """Test schema-aware prompt generator."""
 
-    @patch('data4ai.integrations.dspy_prompts.PromptOptimizer')
+    @patch("data4ai.integrations.dspy_prompts.PromptOptimizer")
     def test_generator_initialization(self, mock_optimizer_class):
         """Test generator initialization."""
         mock_optimizer = Mock()
@@ -172,7 +174,7 @@ class TestSchemaAwarePromptGenerator:
         assert "conversational datasets" in sharegpt_prompt
         assert "conversations:" in sharegpt_prompt
 
-    @patch('data4ai.integrations.dspy_prompts.PromptOptimizer')
+    @patch("data4ai.integrations.dspy_prompts.PromptOptimizer")
     def test_generate_schema_prompt_with_dspy(self, mock_optimizer_class):
         """Test schema prompt generation with DSPy enabled."""
         mock_optimizer = Mock()
@@ -185,7 +187,7 @@ class TestSchemaAwarePromptGenerator:
             description="Create programming questions",
             schema_name="alpaca",
             count=5,
-            use_dspy=True
+            use_dspy=True,
         )
 
         assert prompt == "Dynamic prompt content"
@@ -193,7 +195,7 @@ class TestSchemaAwarePromptGenerator:
             "Create programming questions", "alpaca", 5
         )
 
-    @patch('data4ai.integrations.dspy_prompts.PromptOptimizer')
+    @patch("data4ai.integrations.dspy_prompts.PromptOptimizer")
     def test_generate_schema_prompt_without_dspy(self, mock_optimizer_class):
         """Test schema prompt generation with DSPy disabled."""
         mock_optimizer = Mock()
@@ -205,7 +207,7 @@ class TestSchemaAwarePromptGenerator:
             description="Create programming questions",
             schema_name="alpaca",
             count=5,
-            use_dspy=False
+            use_dspy=False,
         )
 
         assert "instruction-following datasets" in prompt
@@ -213,24 +215,30 @@ class TestSchemaAwarePromptGenerator:
         assert "5" in prompt
         mock_optimizer.generate_dynamic_prompt.assert_not_called()
 
-    @patch('data4ai.integrations.dspy_prompts.PromptOptimizer')
+    @patch("data4ai.integrations.dspy_prompts.PromptOptimizer")
     def test_generate_adaptive_prompt_with_examples(self, mock_optimizer_class):
         """Test adaptive prompt generation with previous examples."""
         mock_optimizer = Mock()
-        mock_optimizer.optimize_prompt_with_examples.return_value = "Adaptive prompt content"
+        mock_optimizer.optimize_prompt_with_examples.return_value = (
+            "Adaptive prompt content"
+        )
         mock_optimizer_class.return_value = mock_optimizer
 
         generator = SchemaAwarePromptGenerator("test-model")
 
         examples = [
-            {"instruction": "Write a function", "input": "", "output": "def func(): pass"}
+            {
+                "instruction": "Write a function",
+                "input": "",
+                "output": "def func(): pass",
+            }
         ]
 
         prompt = generator.generate_adaptive_prompt(
             description="Create more examples",
             schema_name="alpaca",
             count=3,
-            previous_examples=examples
+            previous_examples=examples,
         )
 
         assert prompt == "Adaptive prompt content"
@@ -238,7 +246,7 @@ class TestSchemaAwarePromptGenerator:
             "Create more examples", "alpaca", 3, examples
         )
 
-    @patch('data4ai.integrations.dspy_prompts.PromptOptimizer')
+    @patch("data4ai.integrations.dspy_prompts.PromptOptimizer")
     def test_generate_adaptive_prompt_without_examples(self, mock_optimizer_class):
         """Test adaptive prompt generation without previous examples."""
         mock_optimizer = Mock()
@@ -251,7 +259,7 @@ class TestSchemaAwarePromptGenerator:
             description="Create examples",
             schema_name="alpaca",
             count=3,
-            previous_examples=None
+            previous_examples=None,
         )
 
         assert prompt == "Dynamic prompt content"
@@ -263,44 +271,42 @@ class TestSchemaAwarePromptGenerator:
 class TestCreatePromptGenerator:
     """Test factory function for creating prompt generators."""
 
-    @patch('data4ai.integrations.dspy_prompts.SchemaAwarePromptGenerator')
+    @patch("data4ai.integrations.dspy_prompts.SchemaAwarePromptGenerator")
     def test_create_prompt_generator_with_dspy(self, mock_generator_class):
         """Test creating prompt generator with DSPy enabled."""
         mock_generator = Mock()
         mock_generator_class.return_value = mock_generator
 
-        result = create_prompt_generator(
-            model_name="test-model",
-            use_dspy=True
-        )
+        result = create_prompt_generator(model_name="test-model", use_dspy=True)
 
         assert result == mock_generator
         mock_generator_class.assert_called_once_with("test-model")
 
     def test_create_prompt_generator_without_dspy(self):
         """Test creating prompt generator without DSPy."""
-        result = create_prompt_generator(
-            model_name="test-model",
-            use_dspy=False
-        )
+        result = create_prompt_generator(model_name="test-model", use_dspy=False)
 
         # Should return a SimplePromptGenerator when DSPy is disabled
-        assert hasattr(result, 'generate_schema_prompt')
-        assert hasattr(result, 'model_name')
-        assert hasattr(result, 'schema_prompts')
+        assert hasattr(result, "generate_schema_prompt")
+        assert hasattr(result, "model_name")
+        assert hasattr(result, "schema_prompts")
         # Should not have DSPy-specific attributes
-        assert not hasattr(result, 'optimizer')
+        assert not hasattr(result, "optimizer")
 
     def test_create_prompt_generator_defaults(self):
         """Test create_prompt_generator with default parameters."""
-        with patch('data4ai.integrations.dspy_prompts.SchemaAwarePromptGenerator') as mock_generator_class:
+        with patch(
+            "data4ai.integrations.dspy_prompts.SchemaAwarePromptGenerator"
+        ) as mock_generator_class:
             mock_generator = Mock()
             mock_generator_class.return_value = mock_generator
 
             result = create_prompt_generator()
 
             assert result == mock_generator
-            mock_generator_class.assert_called_once_with("meta-llama/llama-3-8b-instruct")
+            mock_generator_class.assert_called_once_with(
+                "meta-llama/llama-3-8b-instruct"
+            )
 
 
 class TestDSPyIntegrationEndToEnd:
@@ -309,17 +315,14 @@ class TestDSPyIntegrationEndToEnd:
     def test_dspy_integration_workflow(self):
         """Test complete DSPy integration workflow."""
         # Create prompt generator
-        generator = create_prompt_generator(
-            model_name="test-model",
-            use_dspy=True
-        )
+        generator = create_prompt_generator(model_name="test-model", use_dspy=True)
 
         # Test schema prompt generation
         prompt = generator.generate_schema_prompt(
             description="Create programming questions",
             schema_name="alpaca",
             count=5,
-            use_dspy=True
+            use_dspy=True,
         )
 
         assert isinstance(prompt, str)
@@ -327,14 +330,18 @@ class TestDSPyIntegrationEndToEnd:
 
         # Test adaptive prompt generation
         examples = [
-            {"instruction": "Write a function", "input": "", "output": "def func(): pass"}
+            {
+                "instruction": "Write a function",
+                "input": "",
+                "output": "def func(): pass",
+            }
         ]
 
         adaptive_prompt = generator.generate_adaptive_prompt(
             description="Create more examples",
             schema_name="alpaca",
             count=3,
-            previous_examples=examples
+            previous_examples=examples,
         )
 
         assert isinstance(adaptive_prompt, str)
@@ -342,17 +349,14 @@ class TestDSPyIntegrationEndToEnd:
 
     def test_dspy_fallback_mechanism(self):
         """Test that DSPy falls back gracefully when errors occur."""
-        generator = create_prompt_generator(
-            model_name="test-model",
-            use_dspy=True
-        )
+        generator = create_prompt_generator(model_name="test-model", use_dspy=True)
 
         # This should work even if DSPy fails internally
         prompt = generator.generate_schema_prompt(
             description="Create test examples",
             schema_name="alpaca",
             count=2,
-            use_dspy=True
+            use_dspy=True,
         )
 
         assert isinstance(prompt, str)

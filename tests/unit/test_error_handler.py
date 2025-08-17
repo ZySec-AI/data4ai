@@ -31,7 +31,7 @@ class TestErrorHandler:
         assert "unexpected error" in msg.lower()
         assert "Something bad" in msg
 
-    @patch('data4ai.error_handler.console')
+    @patch("data4ai.error_handler.console")
     def test_handle_api_error_401(self, mock_console):
         """Test handling 401 authentication error."""
         response = Mock(status_code=401)
@@ -43,7 +43,7 @@ class TestErrorHandler:
         call_args = str(mock_console.print.call_args)
         assert "Invalid OpenRouter API key" in call_args
 
-    @patch('data4ai.error_handler.console')
+    @patch("data4ai.error_handler.console")
     def test_handle_api_error_429(self, mock_console):
         """Test handling 429 rate limit error."""
         response = Mock(status_code=429)
@@ -55,7 +55,7 @@ class TestErrorHandler:
         call_args = str(mock_console.print.call_args)
         assert "Rate limit" in call_args
 
-    @patch('data4ai.error_handler.console')
+    @patch("data4ai.error_handler.console")
     def test_handle_api_error_timeout(self, mock_console):
         """Test handling timeout error."""
         error = httpx.TimeoutException("Timeout")
@@ -66,7 +66,7 @@ class TestErrorHandler:
         call_args = str(mock_console.print.call_args)
         assert "timeout" in call_args.lower()
 
-    @patch('data4ai.error_handler.console')
+    @patch("data4ai.error_handler.console")
     def test_handle_file_error_not_found(self, mock_console):
         """Test handling file not found error."""
         error = FileNotFoundError("File not found")
@@ -78,7 +78,7 @@ class TestErrorHandler:
         assert "File not found" in call_args
         assert "/test.txt" in call_args
 
-    @patch('data4ai.error_handler.console')
+    @patch("data4ai.error_handler.console")
     def test_handle_validation_error(self, mock_console):
         """Test handling validation error."""
         error = ValidationError("Invalid data format")
@@ -90,7 +90,7 @@ class TestErrorHandler:
         assert "Validation error" in call_args
         assert "Invalid data format" in call_args
 
-    @patch('data4ai.error_handler.console')
+    @patch("data4ai.error_handler.console")
     def test_handle_generation_error(self, mock_console):
         """Test handling generation error."""
         error = GenerationError("Failed to generate")
@@ -105,9 +105,10 @@ class TestErrorHandler:
 class TestErrorDecorator:
     """Test error handler decorator."""
 
-    @patch('data4ai.error_handler.console')
+    @patch("data4ai.error_handler.console")
     def test_decorator_catches_configuration_error(self, mock_console):
         """Test decorator catches configuration errors."""
+
         @error_handler
         def failing_function():
             raise ConfigurationError("Bad config")
@@ -118,9 +119,10 @@ class TestErrorDecorator:
         assert exc_info.value.code == 1
         mock_console.print.assert_called()
 
-    @patch('data4ai.error_handler.console')
+    @patch("data4ai.error_handler.console")
     def test_decorator_catches_keyboard_interrupt(self, mock_console):
         """Test decorator handles keyboard interrupt."""
+
         @error_handler
         def interrupted_function():
             raise KeyboardInterrupt()
@@ -133,9 +135,10 @@ class TestErrorDecorator:
         call_args = str(mock_console.print.call_args)
         assert "cancelled" in call_args.lower()
 
-    @patch('data4ai.error_handler.console')
+    @patch("data4ai.error_handler.console")
     def test_decorator_catches_file_error(self, mock_console):
         """Test decorator catches file errors."""
+
         @error_handler
         def file_function():
             raise FileNotFoundError("Missing file")
@@ -148,6 +151,7 @@ class TestErrorDecorator:
 
     def test_decorator_allows_success(self):
         """Test decorator doesn't interfere with successful execution."""
+
         @error_handler
         def successful_function():
             return "success"
@@ -160,9 +164,10 @@ class TestAsyncErrorDecorator:
     """Test async error handler decorator."""
 
     @pytest.mark.asyncio
-    @patch('data4ai.error_handler.console')
+    @patch("data4ai.error_handler.console")
     async def test_async_decorator_catches_errors(self, mock_console):
         """Test async decorator catches errors."""
+
         @async_error_handler
         async def async_failing_function():
             raise ValidationError("Async validation error")
@@ -175,6 +180,7 @@ class TestAsyncErrorDecorator:
     @pytest.mark.asyncio
     async def test_async_decorator_allows_success(self):
         """Test async decorator doesn't interfere with success."""
+
         @async_error_handler
         async def async_successful_function():
             return "async success"
@@ -193,22 +199,17 @@ class TestUserFriendlyError:
 
     def test_error_key_message(self):
         """Test exception with error key."""
-        exc = UserFriendlyError(
-            "Fallback message",
-            error_key="api_key_missing"
-        )
+        exc = UserFriendlyError("Fallback message", error_key="api_key_missing")
         assert "OpenRouter API key" in str(exc)
 
     def test_formatted_message(self):
         """Test exception with formatted message."""
         exc = UserFriendlyError(
-            "Fallback",
-            error_key="file_not_found",
-            path="/test.txt"
+            "Fallback", error_key="file_not_found", path="/test.txt"
         )
         assert "/test.txt" in str(exc)
 
-    @patch('data4ai.error_handler.console')
+    @patch("data4ai.error_handler.console")
     def test_display_method(self, mock_console):
         """Test display method."""
         exc = UserFriendlyError("Display this error")

@@ -39,28 +39,24 @@ class TestCLIApp:
 class TestCreateSampleCommand:
     """Test create-sample command."""
 
-    @patch('data4ai.cli.create_sample')
+    @patch("data4ai.cli.create_sample")
     def test_create_sample_excel(self, mock_create_sample):
         """Test creating Excel sample file."""
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "create-sample",
-            "tests/samples/test.xlsx",
-            "--schema", "alpaca"
-        ])
+        result = runner.invoke(
+            app, ["create-sample", "tests/samples/test.xlsx", "--schema", "alpaca"]
+        )
 
         # The actual function is being called, not the mock
         assert result.exit_code == 0
 
-    @patch('data4ai.cli.create_sample')
+    @patch("data4ai.cli.create_sample")
     def test_create_sample_csv(self, mock_create_sample):
         """Test creating CSV sample file."""
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "create-sample",
-            "tests/samples/test.csv",
-            "--schema", "dolly"
-        ])
+        result = runner.invoke(
+            app, ["create-sample", "tests/samples/test.csv", "--schema", "dolly"]
+        )
 
         # The actual function is being called, not the mock
         assert result.exit_code == 0
@@ -68,11 +64,9 @@ class TestCreateSampleCommand:
     def test_create_sample_invalid_dataset(self):
         """Test create-sample with invalid dataset."""
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "create-sample",
-            "tests/samples/test.xlsx",
-            "--schema", "invalid"
-        ])
+        result = runner.invoke(
+            app, ["create-sample", "tests/samples/test.xlsx", "--schema", "invalid"]
+        )
 
         # Should handle invalid dataset gracefully
         assert result.exit_code != 0
@@ -81,72 +75,93 @@ class TestCreateSampleCommand:
 class TestPromptCommand:
     """Test prompt command."""
 
-    @patch('data4ai.cli.DatasetGenerator')
-    @patch('data4ai.cli.settings')
+    @patch("data4ai.cli.DatasetGenerator")
+    @patch("data4ai.cli.settings")
     def test_prompt_command_basic(self, mock_settings, mock_generator_class):
         """Test basic prompt command."""
         mock_settings.output_dir = Path("/tmp")
         mock_generator = Mock()
         mock_generator.generate_from_prompt_sync.return_value = {
-            'row_count': 5,
-            'output_path': Path("/tmp/test/data.jsonl"),
-            'prompt_generation_method': 'dspy',
-            'metrics': {'completion_rate': 0.8}
+            "row_count": 5,
+            "output_path": Path("/tmp/test/data.jsonl"),
+            "prompt_generation_method": "dspy",
+            "metrics": {"completion_rate": 0.8},
         }
         mock_generator_class.return_value = mock_generator
 
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "prompt",
-            "--repo", "test",
-            "--description", "Create programming questions",
-            "--count", "5",
-            "--dataset", "alpaca"
-        ])
+        result = runner.invoke(
+            app,
+            [
+                "prompt",
+                "--repo",
+                "test",
+                "--description",
+                "Create programming questions",
+                "--count",
+                "5",
+                "--dataset",
+                "alpaca",
+            ],
+        )
 
         assert result.exit_code == 0
         assert "Generated 5 examples" in result.stdout
         assert "Prompt Method: DSPY" in result.stdout
 
-    @patch('data4ai.cli.settings')
+    @patch("data4ai.cli.settings")
     def test_prompt_command_dry_run(self, mock_settings):
         """Test prompt command with dry-run."""
         mock_settings.output_dir = Path("/tmp")
 
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "prompt",
-            "--repo", "test",
-            "--description", "Create programming questions",
-            "--count", "5",
-            "--dry-run"
-        ])
+        result = runner.invoke(
+            app,
+            [
+                "prompt",
+                "--repo",
+                "test",
+                "--description",
+                "Create programming questions",
+                "--count",
+                "5",
+                "--dry-run",
+            ],
+        )
 
         assert result.exit_code == 0
         assert "Would generate 5 alpaca examples" in result.stdout
         assert "Dry run completed successfully" in result.stdout
 
-    @patch('data4ai.cli.DatasetGenerator')
-    @patch('data4ai.cli.settings')
-    def test_prompt_command_with_dspy_options(self, mock_settings, mock_generator_class):
+    @patch("data4ai.cli.DatasetGenerator")
+    @patch("data4ai.cli.settings")
+    def test_prompt_command_with_dspy_options(
+        self, mock_settings, mock_generator_class
+    ):
         """Test prompt command with DSPy options."""
         mock_settings.output_dir = Path("/tmp")
         mock_generator = Mock()
         mock_generator.generate_from_prompt_sync.return_value = {
-            'row_count': 3,
-            'output_path': Path("/tmp/test/data.jsonl"),
-            'prompt_generation_method': 'static'
+            "row_count": 3,
+            "output_path": Path("/tmp/test/data.jsonl"),
+            "prompt_generation_method": "static",
         }
         mock_generator_class.return_value = mock_generator
 
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "prompt",
-            "--repo", "test",
-            "--description", "Create questions",
-            "--count", "3",
-            "--no-use-dspy"
-        ])
+        result = runner.invoke(
+            app,
+            [
+                "prompt",
+                "--repo",
+                "test",
+                "--description",
+                "Create questions",
+                "--count",
+                "3",
+                "--no-use-dspy",
+            ],
+        )
 
         assert result.exit_code == 0
         assert "Generated 3 examples" in result.stdout
@@ -164,42 +179,37 @@ class TestPromptCommand:
 class TestRunCommand:
     """Test run command."""
 
-    @patch('data4ai.cli.DatasetGenerator')
-    @patch('data4ai.cli.settings')
+    @patch("data4ai.cli.DatasetGenerator")
+    @patch("data4ai.cli.settings")
     def test_run_command_excel(self, mock_settings, mock_generator_class):
         """Test run command with Excel file."""
         mock_settings.output_dir = Path("/tmp")
         mock_generator = Mock()
         mock_generator.generate_from_excel_sync.return_value = {
-            'row_count': 10,
-            'output_path': Path("/tmp/test/data.jsonl"),
-            'metrics': {'completion_rate': 0.9}
+            "row_count": 10,
+            "output_path": Path("/tmp/test/data.jsonl"),
+            "metrics": {"completion_rate": 0.9},
         }
         mock_generator_class.return_value = mock_generator
 
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "run",
-            "tests/samples/test.xlsx",
-            "--repo", "test",
-            "--dataset", "alpaca"
-        ])
+        result = runner.invoke(
+            app,
+            ["run", "tests/samples/test.xlsx", "--repo", "test", "--dataset", "alpaca"],
+        )
 
         assert result.exit_code == 0
         assert "Generated 10 examples" in result.stdout
 
-    @patch('data4ai.cli.settings')
+    @patch("data4ai.cli.settings")
     def test_run_command_dry_run(self, mock_settings):
         """Test run command with dry-run."""
         mock_settings.output_dir = Path("/tmp")
 
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "run",
-            "tests/samples/test.xlsx",
-            "--repo", "test",
-            "--dry-run"
-        ])
+        result = runner.invoke(
+            app, ["run", "tests/samples/test.xlsx", "--repo", "test", "--dry-run"]
+        )
 
         assert result.exit_code == 0
         assert "Dry run mode - previewing only" in result.stdout
@@ -208,11 +218,7 @@ class TestRunCommand:
     def test_run_command_file_not_found(self):
         """Test run command with non-existent file."""
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "run",
-            "nonexistent.xlsx",
-            "--repo", "test"
-        ])
+        result = runner.invoke(app, ["run", "nonexistent.xlsx", "--repo", "test"])
 
         assert result.exit_code != 0
 
@@ -220,42 +226,49 @@ class TestRunCommand:
 class TestFileToDatasetCommand:
     """Test file-to-dataset command."""
 
-    @patch('data4ai.cli.settings')
+    @patch("data4ai.cli.settings")
     def test_file_to_dataset_command(self, mock_settings):
         """Test file-to-dataset command."""
         mock_settings.output_dir = Path("/tmp")
 
         # Mock the ExcelHandler.read_data to avoid file not found error
-        with patch('data4ai.cli.ExcelHandler.read_data') as mock_read:
-            mock_read.return_value = pd.DataFrame({
-                'instruction': ['test'],
-                'input': [''],
-                'output': ['test']
-            })
+        with patch("data4ai.cli.ExcelHandler.read_data") as mock_read:
+            mock_read.return_value = pd.DataFrame(
+                {"instruction": ["test"], "input": [""], "output": ["test"]}
+            )
 
             runner = CliRunner()
-            result = runner.invoke(app, [
-                "file-to-dataset",
-                "tests/samples/test.xlsx",
-                "--repo", "test",
-                "--dataset", "alpaca"
-            ])
+            result = runner.invoke(
+                app,
+                [
+                    "file-to-dataset",
+                    "tests/samples/test.xlsx",
+                    "--repo",
+                    "test",
+                    "--dataset",
+                    "alpaca",
+                ],
+            )
 
             # The actual function is being called, so we just check it doesn't crash
             assert result.exit_code in [0, 1]  # Either success or expected error
 
-    @patch('data4ai.cli.settings')
+    @patch("data4ai.cli.settings")
     def test_file_to_dataset_dry_run(self, mock_settings):
         """Test file-to-dataset command with dry-run."""
         mock_settings.output_dir = Path("/tmp")
 
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "file-to-dataset",
-            "tests/samples/test.xlsx",
-            "--repo", "test",
-            "--dry-run"
-        ])
+        result = runner.invoke(
+            app,
+            [
+                "file-to-dataset",
+                "tests/samples/test.xlsx",
+                "--repo",
+                "test",
+                "--dry-run",
+            ],
+        )
 
         # The actual function is being called, so we just check it doesn't crash
         assert result.exit_code in [0, 1, 2]  # Either success or expected error
@@ -296,20 +309,20 @@ class TestStatsCommand:
 class TestListModelsCommand:
     """Test list-models command."""
 
-    @patch('data4ai.cli.list_models')
+    @patch("data4ai.cli.list_models")
     def test_list_models_command(self, mock_list_models):
         """Test list-models command."""
         mock_list_models.return_value = [
             {
-                'id': 'meta-llama/llama-3-8b-instruct',
-                'name': 'Llama 3 8B Instruct',
-                'pricing': {'input': 0.0002, 'output': 0.0002}
+                "id": "meta-llama/llama-3-8b-instruct",
+                "name": "Llama 3 8B Instruct",
+                "pricing": {"input": 0.0002, "output": 0.0002},
             },
             {
-                'id': 'anthropic/claude-3-5-sonnet',
-                'name': 'Claude 3.5 Sonnet',
-                'pricing': {'input': 0.003, 'output': 0.015}
-            }
+                "id": "anthropic/claude-3-5-sonnet",
+                "name": "Claude 3.5 Sonnet",
+                "pricing": {"input": 0.003, "output": 0.015},
+            },
         ]
 
         runner = CliRunner()
@@ -339,11 +352,7 @@ class TestPushCommand:
     def test_push_command(self):
         """Test push command."""
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "push",
-            "--repo", "test",
-            "--private"
-        ])
+        result = runner.invoke(app, ["push", "--repo", "test", "--private"])
 
         # The actual function is being called, so we just check it doesn't crash
         assert result.exit_code in [0, 1]  # Either success or expected error
@@ -379,12 +388,10 @@ class TestCLIErrorHandling:
     def test_cli_with_invalid_option_values(self):
         """Test CLI with invalid option values."""
         runner = CliRunner()
-        result = runner.invoke(app, [
-            "prompt",
-            "--repo", "test",
-            "--description", "test",
-            "--count", "invalid"
-        ])
+        result = runner.invoke(
+            app,
+            ["prompt", "--repo", "test", "--description", "test", "--count", "invalid"],
+        )
 
         # Typer exits with code 2 for invalid values
         assert result.exit_code == 2
@@ -411,7 +418,10 @@ class TestCLIHelpMessages:
         result = runner.invoke(app, ["run", "--help"])
 
         assert result.exit_code == 0
-        assert "Process Excel/CSV file with AI completion for partial rows" in result.stdout
+        assert (
+            "Process Excel/CSV file with AI completion for partial rows"
+            in result.stdout
+        )
         assert "--repo" in result.stdout
         assert "--dataset" in result.stdout
 

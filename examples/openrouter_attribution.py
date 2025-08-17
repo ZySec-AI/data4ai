@@ -21,7 +21,7 @@ async def async_example():
         model="meta-llama/llama-3-8b-instruct",
         temperature=0.7,
         site_url="https://www.zysec.ai",
-        site_name="Data4AI"
+        site_name="Data4AI",
     )
 
     client = OpenRouterClient(config)
@@ -31,12 +31,12 @@ async def async_example():
         messages = [
             {
                 "role": "system",
-                "content": "You are a helpful AI assistant that creates high-quality training data."
+                "content": "You are a helpful AI assistant that creates high-quality training data.",
             },
             {
                 "role": "user",
-                "content": "Create a question and answer pair about machine learning."
-            }
+                "content": "Create a question and answer pair about machine learning.",
+            },
         ]
 
         print("Making async API call with attribution headers...")
@@ -45,8 +45,8 @@ async def async_example():
         print(f"Response: {response['choices'][0]['message']['content']}")
 
         # Show usage information
-        if 'usage' in response:
-            usage = response['usage']
+        if "usage" in response:
+            usage = response["usage"]
             print(f"Tokens used: {usage.get('total_tokens', 'N/A')}")
             print(f"Prompt tokens: {usage.get('prompt_tokens', 'N/A')}")
             print(f"Completion tokens: {usage.get('completion_tokens', 'N/A')}")
@@ -64,7 +64,7 @@ def sync_example():
         model="meta-llama/llama-3-8b-instruct",
         temperature=0.7,
         site_url="https://www.zysec.ai",
-        site_name="Data4AI"
+        site_name="Data4AI",
     )
 
     client = SyncOpenRouterClient(config)
@@ -74,12 +74,12 @@ def sync_example():
         messages = [
             {
                 "role": "system",
-                "content": "You are a helpful AI assistant that creates high-quality training data."
+                "content": "You are a helpful AI assistant that creates high-quality training data.",
             },
             {
                 "role": "user",
-                "content": "Create a question and answer pair about Python programming."
-            }
+                "content": "Create a question and answer pair about Python programming.",
+            },
         ]
 
         print("Making sync API call with attribution headers...")
@@ -88,8 +88,8 @@ def sync_example():
         print(f"Response: {response['choices'][0]['message']['content']}")
 
         # Show usage information
-        if 'usage' in response:
-            usage = response['usage']
+        if "usage" in response:
+            usage = response["usage"]
             print(f"Tokens used: {usage.get('total_tokens', 'N/A')}")
             print(f"Prompt tokens: {usage.get('prompt_tokens', 'N/A')}")
             print(f"Completion tokens: {usage.get('completion_tokens', 'N/A')}")
@@ -104,7 +104,7 @@ async def list_models_example():
     config = OpenRouterConfig(
         api_key=os.getenv("OPENROUTER_API_KEY"),
         site_url="https://www.zysec.ai",
-        site_name="Data4AI"
+        site_name="Data4AI",
     )
 
     client = OpenRouterClient(config)
@@ -127,7 +127,7 @@ def show_headers_example():
     config = OpenRouterConfig(
         api_key="your_api_key_here",
         site_url="https://www.zysec.ai",
-        site_name="Data4AI"
+        site_name="Data4AI",
     )
 
     client = SyncOpenRouterClient(config)
@@ -157,17 +157,17 @@ if __name__ == "__main__":
         print("1. Async example:")
         asyncio.run(async_example())
 
-        print("\n" + "="*50 + "\n")
+        print("\n" + "=" * 50 + "\n")
 
         print("2. Sync example:")
         sync_example()
 
-        print("\n" + "="*50 + "\n")
+        print("\n" + "=" * 50 + "\n")
 
         print("3. List models example:")
         asyncio.run(list_models_example())
 
-        print("\n" + "="*50 + "\n")
+        print("\n" + "=" * 50 + "\n")
 
         print("4. Headers example:")
         show_headers_example()

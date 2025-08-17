@@ -2,6 +2,7 @@
 
 try:
     from importlib.metadata import version
+
     __version__ = version("data4ai")
 except Exception:
     # Fallback for development or when package is not installed
@@ -326,7 +327,7 @@ class Data4AI:
         repo: str,
         dataset: str = "alpaca",
         count: int = 100,
-        **kwargs
+        **kwargs,
     ) -> dict[str, Any]:
         """Generate dataset from description. See module-level function for details."""
         return generate_from_description(
@@ -336,15 +337,11 @@ class Data4AI:
             count=count,
             model=kwargs.get("model", self.model),
             temperature=kwargs.get("temperature", self.temperature),
-            **{k: v for k, v in kwargs.items() if k not in ["model", "temperature"]}
+            **{k: v for k, v in kwargs.items() if k not in ["model", "temperature"]},
         )
 
     def generate_from_excel(
-        self,
-        excel_path: str,
-        repo: str,
-        dataset: str = "alpaca",
-        **kwargs
+        self, excel_path: str, repo: str, dataset: str = "alpaca", **kwargs
     ) -> dict[str, Any]:
         """Generate dataset from Excel. See module-level function for details."""
         return generate_from_excel(
@@ -353,7 +350,7 @@ class Data4AI:
             dataset=dataset,
             model=kwargs.get("model", self.model),
             temperature=kwargs.get("temperature", self.temperature),
-            **{k: v for k, v in kwargs.items() if k not in ["model", "temperature"]}
+            **{k: v for k, v in kwargs.items() if k not in ["model", "temperature"]},
         )
 
     def create_sample_excel(self, path: str, dataset: str = "alpaca") -> None:

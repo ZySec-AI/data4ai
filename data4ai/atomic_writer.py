@@ -19,7 +19,7 @@ class AtomicWriter:
         data: list[dict[str, Any]],
         file_path: Path,
         append: bool = False,
-        compress: bool = False
+        compress: bool = False,
     ) -> int:
         """Write JSONL file atomically.
 
@@ -41,9 +41,7 @@ class AtomicWriter:
 
         # For new file, use atomic write
         temp_fd, temp_path = tempfile.mkstemp(
-            suffix='.tmp',
-            prefix=f'.{file_path.name}.',
-            dir=file_path.parent
+            suffix=".tmp", prefix=f".{file_path.name}.", dir=file_path.parent
         )
 
         try:
@@ -51,14 +49,15 @@ class AtomicWriter:
 
             if compress:
                 import gzip
-                with gzip.open(temp_path, 'wt', encoding='utf-8') as f:
+
+                with gzip.open(temp_path, "wt", encoding="utf-8") as f:
                     for entry in data:
-                        f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+                        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
                         count += 1
             else:
-                with os.fdopen(temp_fd, 'w', encoding='utf-8') as f:
+                with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
                     for entry in data:
-                        f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+                        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
                         count += 1
                     f.flush()
                     os.fsync(f.fileno())  # Ensure data is written to disk
@@ -78,32 +77,31 @@ class AtomicWriter:
 
     @staticmethod
     def _append_jsonl(
-        data: list[dict[str, Any]],
-        file_path: Path,
-        compress: bool = False
+        data: list[dict[str, Any]], file_path: Path, compress: bool = False
     ) -> int:
         """Append to JSONL file with safety measures."""
         # Create backup for safety
-        backup_path = file_path.with_suffix(file_path.suffix + '.backup')
+        backup_path = file_path.with_suffix(file_path.suffix + ".backup")
 
         try:
             if file_path.exists():
                 shutil.copy2(file_path, backup_path)
 
             count = 0
-            mode = 'at' if not compress else 'ab'
+            mode = "at" if not compress else "ab"
 
             if compress:
                 import gzip
+
                 with gzip.open(file_path, mode) as f:
                     for entry in data:
-                        line = json.dumps(entry, ensure_ascii=False) + '\n'
-                        f.write(line.encode('utf-8'))
+                        line = json.dumps(entry, ensure_ascii=False) + "\n"
+                        f.write(line.encode("utf-8"))
                         count += 1
             else:
-                with open(file_path, mode, encoding='utf-8') as f:
+                with open(file_path, mode, encoding="utf-8") as f:
                     for entry in data:
-                        f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+                        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
                         count += 1
                     f.flush()
                     os.fsync(f.fileno())
@@ -122,23 +120,17 @@ class AtomicWriter:
             raise
 
     @staticmethod
-    def write_json(
-        data: dict[str, Any],
-        file_path: Path,
-        indent: int = 2
-    ) -> None:
+    def write_json(data: dict[str, Any], file_path: Path, indent: int = 2) -> None:
         """Write JSON file atomically."""
         file_path = Path(file_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         temp_fd, temp_path = tempfile.mkstemp(
-            suffix='.tmp',
-            prefix=f'.{file_path.name}.',
-            dir=file_path.parent
+            suffix=".tmp", prefix=f".{file_path.name}.", dir=file_path.parent
         )
 
         try:
-            with os.fdopen(temp_fd, 'w', encoding='utf-8') as f:
+            with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=indent, ensure_ascii=False)
                 f.flush()
                 os.fsync(f.fileno())
@@ -153,22 +145,17 @@ class AtomicWriter:
             raise
 
     @staticmethod
-    def write_text(
-        content: str,
-        file_path: Path
-    ) -> None:
+    def write_text(content: str, file_path: Path) -> None:
         """Write text file atomically."""
         file_path = Path(file_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         temp_fd, temp_path = tempfile.mkstemp(
-            suffix='.tmp',
-            prefix=f'.{file_path.name}.',
-            dir=file_path.parent
+            suffix=".tmp", prefix=f".{file_path.name}.", dir=file_path.parent
         )
 
         try:
-            with os.fdopen(temp_fd, 'w', encoding='utf-8') as f:
+            with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
                 f.write(content)
                 f.flush()
                 os.fsync(f.fileno())
@@ -187,10 +174,7 @@ class ShardedWriter:
     """Write large datasets in shards to avoid memory issues."""
 
     def __init__(
-        self,
-        output_dir: Path,
-        shard_size: int = 10000,
-        compress: bool = False
+        self, output_dir: Path, shard_size: int = 10000, compress: bool = False
     ):
         """Initialize sharded writer.
 
@@ -220,14 +204,12 @@ class ShardedWriter:
             return
 
         # Determine filename
-        extension = '.jsonl' if not self.compress else '.jsonl.gz'
+        extension = ".jsonl" if not self.compress else ".jsonl.gz"
         shard_file = self.output_dir / f"data-{self.current_shard:05d}{extension}"
 
         # Write atomically
         count = AtomicWriter.write_jsonl(
-            self.buffer,
-            shard_file,
-            compress=self.compress
+            self.buffer, shard_file, compress=self.compress
         )
 
         logger.info(f"Wrote shard {self.current_shard} with {count} records")
@@ -244,5 +226,5 @@ class ShardedWriter:
             "total_records": self.current_count,
             "shards": self.current_shard,
             "shard_size": self.shard_size,
-            "compressed": self.compress
+            "compressed": self.compress,
         }

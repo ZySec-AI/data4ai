@@ -20,7 +20,9 @@ from rich.progress import (
 console = Console()
 
 
-def setup_logging(level: str = "INFO", log_file: Optional[Path] = None) -> logging.Logger:
+def setup_logging(
+    level: str = "INFO", log_file: Optional[Path] = None
+) -> logging.Logger:
     """Set up application logging with Rich handler."""
     logger = logging.getLogger("data4ai")
     logger.setLevel(getattr(logging, level.upper()))
@@ -42,9 +44,7 @@ def setup_logging(level: str = "INFO", log_file: Optional[Path] = None) -> loggi
     if log_file:
         file_handler = logging.FileHandler(log_file, encoding="utf-8")
         file_handler.setFormatter(
-            logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         )
         logger.addHandler(file_handler)
 
@@ -66,12 +66,11 @@ def read_jsonl(file_path: Path) -> Generator[dict[str, Any], None, None]:
 
 
 def write_jsonl(
-    data: list[dict[str, Any]],
-    file_path: Path,
-    append: bool = False
+    data: list[dict[str, Any]], file_path: Path, append: bool = False
 ) -> int:
     """Write data to JSONL file (now using atomic writes)."""
     from data4ai.atomic_writer import AtomicWriter
+
     return AtomicWriter.write_jsonl(data, file_path, append=append)
 
 
@@ -136,8 +135,12 @@ def calculate_metrics(data: list[dict[str, Any]], schema: str) -> dict[str, Any]
         if instruction_field and instruction_field in entry:
             length = len(entry[instruction_field])
             instruction_lengths.append(length)
-            metrics["min_instruction_length"] = min(metrics["min_instruction_length"], length)
-            metrics["max_instruction_length"] = max(metrics["max_instruction_length"], length)
+            metrics["min_instruction_length"] = min(
+                metrics["min_instruction_length"], length
+            )
+            metrics["max_instruction_length"] = max(
+                metrics["max_instruction_length"], length
+            )
 
         if output_field and output_field in entry:
             length = len(entry[output_field])
@@ -155,7 +158,9 @@ def calculate_metrics(data: list[dict[str, Any]], schema: str) -> dict[str, Any]
 
     # Calculate averages
     if instruction_lengths:
-        metrics["avg_instruction_length"] = sum(instruction_lengths) / len(instruction_lengths)
+        metrics["avg_instruction_length"] = sum(instruction_lengths) / len(
+            instruction_lengths
+        )
     if output_lengths:
         metrics["avg_output_length"] = sum(output_lengths) / len(output_lengths)
 
@@ -165,7 +170,9 @@ def calculate_metrics(data: list[dict[str, Any]], schema: str) -> dict[str, Any]
     if metrics["min_output_length"] == float("inf"):
         metrics["min_output_length"] = 0
 
-    metrics["completion_rate"] = (metrics["total_rows"] - metrics["empty_rows"]) / max(metrics["total_rows"], 1)
+    metrics["completion_rate"] = (metrics["total_rows"] - metrics["empty_rows"]) / max(
+        metrics["total_rows"], 1
+    )
 
     return metrics
 
@@ -205,7 +212,7 @@ def truncate_text(text: str, max_length: int = 100, suffix: str = "...") -> str:
     """Truncate text to maximum length."""
     if len(text) <= max_length:
         return text
-    return text[:max_length - len(suffix)] + suffix
+    return text[: max_length - len(suffix)] + suffix
 
 
 def generate_dataset_card(
@@ -302,7 +309,7 @@ def _get_schema_description(schema: str) -> str:
 def batch_items(items: list[Any], batch_size: int) -> Generator[list[Any], None, None]:
     """Yield batches of items."""
     for i in range(0, len(items), batch_size):
-        yield items[i:i + batch_size]
+        yield items[i : i + batch_size]
 
 
 def safe_json_parse(text: str) -> Optional[Any]:
@@ -319,14 +326,14 @@ def extract_json_from_text(text: str) -> Optional[Any]:
     import re
 
     # Look for JSON array
-    array_match = re.search(r'\[.*\]', text, re.DOTALL)
+    array_match = re.search(r"\[.*\]", text, re.DOTALL)
     if array_match:
         result = safe_json_parse(array_match.group())
         if result is not None:
             return result
 
     # Look for JSON object
-    object_match = re.search(r'\{.*\}', text, re.DOTALL)
+    object_match = re.search(r"\{.*\}", text, re.DOTALL)
     if object_match:
         result = safe_json_parse(object_match.group())
         if result is not None:

@@ -18,7 +18,9 @@ class CSVHandler:
     """Handle CSV file operations with streaming support."""
 
     @staticmethod
-    def detect_dialect(file_path: Path, encoding: str = 'utf-8') -> tuple[csv.Dialect, bool]:
+    def detect_dialect(
+        file_path: Path, encoding: str = "utf-8"
+    ) -> tuple[csv.Dialect, bool]:
         """Auto-detect CSV dialect (delimiter, quote char, etc.).
 
         Args:
@@ -39,7 +41,7 @@ class CSVHandler:
                     dialect = sniffer.sniff(sample)
                 except csv.Error:
                     # Fallback to common delimiters
-                    for delimiter in [',', ';', '\t', '|']:
+                    for delimiter in [",", ";", "\t", "|"]:
                         if delimiter in sample:
                             dialect = csv.excel
                             dialect.delimiter = delimiter
@@ -47,26 +49,29 @@ class CSVHandler:
                     else:
                         # Default to comma
                         dialect = csv.excel
-                        dialect.delimiter = ','
+                        dialect.delimiter = ","
 
                 # Override delimiter detection for specific cases
                 # If sample contains semicolon and we detected comma, prefer semicolon
-                if ';' in sample and dialect.delimiter == ',':
-                    dialect.delimiter = ';'
+                if ";" in sample and dialect.delimiter == ",":
+                    dialect.delimiter = ";"
                 # If sample contains tab and we detected comma, prefer tab
-                elif '\t' in sample and dialect.delimiter == ',':
-                    dialect.delimiter = '\t'
+                elif "\t" in sample and dialect.delimiter == ",":
+                    dialect.delimiter = "\t"
 
                 # Check if has header - try to detect, but be more lenient
                 try:
                     has_header = sniffer.has_header(sample)
                 except csv.Error:
                     # If we can't detect, assume it has a header if first line looks like headers
-                    lines = sample.strip().split('\n')
+                    lines = sample.strip().split("\n")
                     if lines:
                         first_line = lines[0]
                         # Simple heuristic: if first line has no numbers and looks like column names
-                        if not any(char.isdigit() for char in first_line) and len(first_line.split(dialect.delimiter)) > 1:
+                        if (
+                            not any(char.isdigit() for char in first_line)
+                            and len(first_line.split(dialect.delimiter)) > 1
+                        ):
                             has_header = True
                         else:
                             has_header = False
@@ -75,17 +80,36 @@ class CSVHandler:
 
                 # Override header detection for specific cases
                 # If we have multiple lines and first line looks like column names, assume header
-                lines = sample.strip().split('\n')
+                lines = sample.strip().split("\n")
                 if len(lines) >= 2:
                     first_line = lines[0]
                     lines[1]
                     # Better heuristic: if first line contains common column name patterns
                     first_line_lower = first_line.lower()
-                    common_headers = ['col', 'column', 'field', 'name', 'id', 'type', 'value', 'data', 'instruction', 'input', 'output', 'response', 'context']
-                    looks_like_header = any(header in first_line_lower for header in common_headers)
+                    common_headers = [
+                        "col",
+                        "column",
+                        "field",
+                        "name",
+                        "id",
+                        "type",
+                        "value",
+                        "data",
+                        "instruction",
+                        "input",
+                        "output",
+                        "response",
+                        "context",
+                    ]
+                    looks_like_header = any(
+                        header in first_line_lower for header in common_headers
+                    )
 
                     # If first line looks like headers and second line looks like data, assume header
-                    if looks_like_header and len(first_line.split(dialect.delimiter)) > 1:
+                    if (
+                        looks_like_header
+                        and len(first_line.split(dialect.delimiter)) > 1
+                    ):
                         has_header = True
 
                 logger.info(
@@ -104,8 +128,8 @@ class CSVHandler:
         file_path: Path,
         chunksize: int = 1000,
         delimiter: Optional[str] = None,
-        encoding: str = 'utf-8',
-        has_header: Optional[bool] = None
+        encoding: str = "utf-8",
+        has_header: Optional[bool] = None,
     ) -> Iterator[pd.DataFrame]:
         """Stream read CSV file in chunks to handle large files.
 
@@ -122,7 +146,9 @@ class CSVHandler:
         try:
             # Auto-detect if needed
             if delimiter is None or has_header is None:
-                dialect, detected_header = CSVHandler.detect_dialect(file_path, encoding)
+                dialect, detected_header = CSVHandler.detect_dialect(
+                    file_path, encoding
+                )
                 delimiter = delimiter or dialect.delimiter
                 has_header = has_header if has_header is not None else detected_header
 
@@ -134,7 +160,7 @@ class CSVHandler:
                 encoding=encoding,
                 header=0 if has_header else None,
                 skip_blank_lines=True,
-                on_bad_lines='warn'
+                on_bad_lines="warn",
             )
 
             for chunk_num, chunk in enumerate(reader):
@@ -143,15 +169,15 @@ class CSVHandler:
 
         except Exception as e:
             logger.error(f"Failed to read CSV file: {e}")
-            raise ValidationError(f"Failed to read CSV file: {str(e)}")
+            raise ValidationError(f"Failed to read CSV file: {str(e)}") from e
 
     @staticmethod
     def read_data(
         file_path: Path,
         delimiter: Optional[str] = None,
-        encoding: str = 'utf-8',
+        encoding: str = "utf-8",
         has_header: Optional[bool] = None,
-        max_rows: Optional[int] = None
+        max_rows: Optional[int] = None,
     ) -> pd.DataFrame:
         """Read entire CSV file into DataFrame.
 
@@ -171,7 +197,9 @@ class CSVHandler:
 
             # Auto-detect if needed
             if delimiter is None or has_header is None:
-                dialect, detected_header = CSVHandler.detect_dialect(file_path, encoding)
+                dialect, detected_header = CSVHandler.detect_dialect(
+                    file_path, encoding
+                )
                 delimiter = delimiter or dialect.delimiter
                 has_header = has_header if has_header is not None else detected_header
 
@@ -183,7 +211,7 @@ class CSVHandler:
                 header=0 if has_header else None,
                 nrows=max_rows,
                 skip_blank_lines=True,
-                on_bad_lines='warn'
+                on_bad_lines="warn",
             )
 
             if df.empty:
@@ -194,15 +222,15 @@ class CSVHandler:
 
         except Exception as e:
             logger.error(f"Failed to read CSV file: {e}")
-            raise ValidationError(f"Failed to read CSV file: {str(e)}")
+            raise ValidationError(f"Failed to read CSV file: {str(e)}") from e
 
     @staticmethod
     def create_template(
         path: Path,
         schema_name: str,
         examples: Optional[list[dict[str, Any]]] = None,
-        delimiter: str = ',',
-        encoding: str = 'utf-8'
+        delimiter: str = ",",
+        encoding: str = "utf-8",
     ) -> None:
         """Create CSV template for specific schema.
 
@@ -219,12 +247,8 @@ class CSVHandler:
 
             path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(path, 'w', encoding=encoding, newline='') as f:
-                writer = csv.DictWriter(
-                    f,
-                    fieldnames=columns,
-                    delimiter=delimiter
-                )
+            with open(path, "w", encoding=encoding, newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=columns, delimiter=delimiter)
                 writer.writeheader()
 
                 if examples:
@@ -237,12 +261,12 @@ class CSVHandler:
 
                     # Add empty rows for user to fill
                     for _ in range(4):
-                        writer.writerow(dict.fromkeys(columns, ''))
+                        writer.writerow(dict.fromkeys(columns, ""))
 
             logger.info(f"Created CSV template at {path}")
 
         except Exception as e:
-            raise ValidationError(f"Failed to create CSV template: {str(e)}")
+            raise ValidationError(f"Failed to create CSV template: {str(e)}") from e
 
     @staticmethod
     def detect_partial_rows(df: pd.DataFrame, schema_name: str = "alpaca") -> list[int]:
@@ -261,7 +285,7 @@ class CSVHandler:
         required_fields = {
             "alpaca": ["instruction", "output"],
             "dolly": ["instruction", "response"],
-            "sharegpt": ["conversations"]
+            "sharegpt": ["conversations"],
         }
 
         required = required_fields.get(schema_name, ["instruction", "output"])
@@ -288,10 +312,7 @@ class CSVHandler:
         return partial_rows
 
     @staticmethod
-    def convert_to_dataset(
-        df: pd.DataFrame,
-        schema_name: str
-    ) -> list[dict[str, Any]]:
+    def convert_to_dataset(df: pd.DataFrame, schema_name: str) -> list[dict[str, Any]]:
         """Convert DataFrame to dataset format.
 
         Args:
@@ -309,7 +330,8 @@ class CSVHandler:
                 # Convert row to dict and remove NaN values
                 row_dict = row.to_dict()
                 row_dict = {
-                    k: v for k, v in row_dict.items()
+                    k: v
+                    for k, v in row_dict.items()
                     if not (pd.isna(v) or (isinstance(v, str) and not v.strip()))
                 }
 
@@ -333,8 +355,8 @@ class CSVHandler:
         df: pd.DataFrame,
         completed_data: dict[int, dict[str, Any]],
         output_path: Path,
-        delimiter: str = ',',
-        encoding: str = 'utf-8'
+        delimiter: str = ",",
+        encoding: str = "utf-8",
     ) -> None:
         """Write completed data back to CSV.
 
@@ -354,22 +376,16 @@ class CSVHandler:
 
             # Write to CSV
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            df.to_csv(
-                output_path,
-                index=False,
-                sep=delimiter,
-                encoding=encoding
-            )
+            df.to_csv(output_path, index=False, sep=delimiter, encoding=encoding)
 
             logger.info(f"Wrote completed data to {output_path}")
 
         except Exception as e:
-            raise ValidationError(f"Failed to write CSV file: {str(e)}")
+            raise ValidationError(f"Failed to write CSV file: {str(e)}") from e
 
     @staticmethod
     def validate_schema_compatibility(
-        df: pd.DataFrame,
-        schema_name: str
+        df: pd.DataFrame, schema_name: str
     ) -> tuple[bool, list[str]]:
         """Check if DataFrame columns are compatible with schema.
 
@@ -390,9 +406,9 @@ class CSVHandler:
         if schema_name == "sharegpt":
             # Check for either conversation columns or simplified format
             has_conversation_cols = any(
-                "conversation" in col.lower() or
-                "human" in col.lower() or
-                "assistant" in col.lower()
+                "conversation" in col.lower()
+                or "human" in col.lower()
+                or "assistant" in col.lower()
                 for col in actual_columns
             )
             if has_conversation_cols:
@@ -442,15 +458,11 @@ class CSVHandler:
         conversations = []
 
         if "human_message" in row_dict and row_dict["human_message"]:
-            conversations.append({
-                "from": "human",
-                "value": row_dict["human_message"]
-            })
+            conversations.append({"from": "human", "value": row_dict["human_message"]})
 
         if "assistant_response" in row_dict and row_dict["assistant_response"]:
-            conversations.append({
-                "from": "gpt",
-                "value": row_dict["assistant_response"]
-            })
+            conversations.append(
+                {"from": "gpt", "value": row_dict["assistant_response"]}
+            )
 
         return {"conversations": conversations}

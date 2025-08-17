@@ -73,7 +73,11 @@ class TestCreateTemplate:
             df = pd.read_excel(test_file)
 
             # Check columns
-            expected_columns = ["human_message", "assistant_response", "conversation_continues"]
+            expected_columns = [
+                "human_message",
+                "assistant_response",
+                "conversation_continues",
+            ]
             assert list(df.columns) == expected_columns
 
             # Check that it has example rows
@@ -99,17 +103,19 @@ class TestCreateTemplate:
             {
                 "instruction": "Custom instruction 1",
                 "input": "Custom input 1",
-                "output": "Custom output 1"
+                "output": "Custom output 1",
             },
             {
                 "instruction": "Custom instruction 2",
                 "input": "Custom input 2",
-                "output": "Custom output 2"
-            }
+                "output": "Custom output 2",
+            },
         ]
 
         try:
-            ExcelHandler.create_template(test_file, schema_name="alpaca", examples=custom_examples)
+            ExcelHandler.create_template(
+                test_file, schema_name="alpaca", examples=custom_examples
+            )
 
             assert test_file.exists()
 
@@ -133,11 +139,13 @@ class TestReadData:
         # Create a test Excel file
         test_file = Path("/tmp/test_read.xlsx")
 
-        test_data = pd.DataFrame({
-            "instruction": ["Test instruction 1", "Test instruction 2"],
-            "input": ["", "Test input"],
-            "output": ["Test output 1", "Test output 2"]
-        })
+        test_data = pd.DataFrame(
+            {
+                "instruction": ["Test instruction 1", "Test instruction 2"],
+                "input": ["", "Test input"],
+                "output": ["Test output 1", "Test output 2"],
+            }
+        )
 
         test_data.to_excel(test_file, index=False)
 
@@ -180,11 +188,13 @@ class TestDetectPartialRows:
 
     def test_detect_partial_rows_with_partial_data(self):
         """Test detecting partial rows."""
-        test_data = pd.DataFrame({
-            "instruction": ["Complete instruction", "", "Partial instruction"],
-            "input": ["", "Complete input", ""],
-            "output": ["Complete output", "Complete output", ""]
-        })
+        test_data = pd.DataFrame(
+            {
+                "instruction": ["Complete instruction", "", "Partial instruction"],
+                "input": ["", "Complete input", ""],
+                "output": ["Complete output", "Complete output", ""],
+            }
+        )
 
         partial_rows = ExcelHandler.detect_partial_rows(test_data)
 
@@ -196,11 +206,13 @@ class TestDetectPartialRows:
 
     def test_detect_partial_rows_all_complete(self):
         """Test detecting partial rows when all are complete."""
-        test_data = pd.DataFrame({
-            "instruction": ["Complete instruction 1", "Complete instruction 2"],
-            "input": ["Complete input 1", "Complete input 2"],
-            "output": ["Complete output 1", "Complete output 2"]
-        })
+        test_data = pd.DataFrame(
+            {
+                "instruction": ["Complete instruction 1", "Complete instruction 2"],
+                "input": ["Complete input 1", "Complete input 2"],
+                "output": ["Complete output 1", "Complete output 2"],
+            }
+        )
 
         partial_rows = ExcelHandler.detect_partial_rows(test_data)
 
@@ -208,11 +220,9 @@ class TestDetectPartialRows:
 
     def test_detect_partial_rows_all_empty(self):
         """Test detecting partial rows when all are empty."""
-        test_data = pd.DataFrame({
-            "instruction": ["", ""],
-            "input": ["", ""],
-            "output": ["", ""]
-        })
+        test_data = pd.DataFrame(
+            {"instruction": ["", ""], "input": ["", ""], "output": ["", ""]}
+        )
 
         partial_rows = ExcelHandler.detect_partial_rows(test_data)
 
@@ -224,11 +234,13 @@ class TestConvertToDataset:
 
     def test_convert_to_dataset_alpaca(self):
         """Test converting DataFrame to Alpaca dataset."""
-        test_data = pd.DataFrame({
-            "instruction": ["Write a function", "Create a class"],
-            "input": ["", "Input context"],
-            "output": ["def func(): pass", "class MyClass: pass"]
-        })
+        test_data = pd.DataFrame(
+            {
+                "instruction": ["Write a function", "Create a class"],
+                "input": ["", "Input context"],
+                "output": ["def func(): pass", "class MyClass: pass"],
+            }
+        )
 
         dataset = ExcelHandler.convert_to_dataset(test_data, "alpaca")
 
@@ -239,11 +251,13 @@ class TestConvertToDataset:
 
     def test_convert_to_dataset_dolly(self):
         """Test converting DataFrame to Dolly dataset."""
-        test_data = pd.DataFrame({
-            "instruction": ["Explain quantum computing"],
-            "context": ["For beginners"],
-            "response": ["Quantum computing is..."]
-        })
+        test_data = pd.DataFrame(
+            {
+                "instruction": ["Explain quantum computing"],
+                "context": ["For beginners"],
+                "response": ["Quantum computing is..."],
+            }
+        )
 
         dataset = ExcelHandler.convert_to_dataset(test_data, "dolly")
 
@@ -253,11 +267,13 @@ class TestConvertToDataset:
 
     def test_convert_to_dataset_sharegpt(self):
         """Test converting DataFrame to ShareGPT dataset."""
-        test_data = pd.DataFrame({
-            "human_message": ["Hello, how are you?"],
-            "assistant_response": ["I'm doing well, thank you!"],
-            "conversation_continues": ["no"]
-        })
+        test_data = pd.DataFrame(
+            {
+                "human_message": ["Hello, how are you?"],
+                "assistant_response": ["I'm doing well, thank you!"],
+                "conversation_continues": ["no"],
+            }
+        )
 
         dataset = ExcelHandler.convert_to_dataset(test_data, "sharegpt")
 
@@ -271,38 +287,47 @@ class TestValidateSchemaCompatibility:
 
     def test_validate_schema_compatibility_alpaca_valid(self):
         """Test valid Alpaca schema compatibility."""
-        test_data = pd.DataFrame({
-            "instruction": ["Test instruction"],
-            "input": [""],
-            "output": ["Test output"]
-        })
+        test_data = pd.DataFrame(
+            {
+                "instruction": ["Test instruction"],
+                "input": [""],
+                "output": ["Test output"],
+            }
+        )
 
-        is_compatible, missing = ExcelHandler.validate_schema_compatibility(test_data, "alpaca")
+        is_compatible, missing = ExcelHandler.validate_schema_compatibility(
+            test_data, "alpaca"
+        )
 
         assert is_compatible
         assert len(missing) == 0
 
     def test_validate_schema_compatibility_alpaca_invalid(self):
         """Test invalid Alpaca schema compatibility."""
-        test_data = pd.DataFrame({
-            "instruction": ["Test instruction"],
-            "input": [""]
-            # Missing "output" column
-        })
+        test_data = pd.DataFrame(
+            {
+                "instruction": ["Test instruction"],
+                "input": [""],
+                # Missing "output" column
+            }
+        )
 
-        is_compatible, missing = ExcelHandler.validate_schema_compatibility(test_data, "alpaca")
+        is_compatible, missing = ExcelHandler.validate_schema_compatibility(
+            test_data, "alpaca"
+        )
 
         assert not is_compatible
         assert "output" in missing
 
     def test_validate_schema_compatibility_dolly_valid(self):
         """Test valid Dolly schema compatibility."""
-        test_data = pd.DataFrame({
-            "instruction": ["Test instruction"],
-            "response": ["Test response"]
-        })
+        test_data = pd.DataFrame(
+            {"instruction": ["Test instruction"], "response": ["Test response"]}
+        )
 
-        is_compatible, missing = ExcelHandler.validate_schema_compatibility(test_data, "dolly")
+        is_compatible, missing = ExcelHandler.validate_schema_compatibility(
+            test_data, "dolly"
+        )
 
         assert is_compatible
         assert len(missing) == 0
@@ -315,15 +340,17 @@ class TestWriteCompletedData:
         """Test successful writing of completed data."""
         test_file = Path("/tmp/test_write.xlsx")
 
-        test_data = pd.DataFrame({
-            "instruction": ["Write a function", "Create a class"],
-            "input": ["", "Input context"],
-            "output": ["", ""]  # Empty outputs to be completed
-        })
+        test_data = pd.DataFrame(
+            {
+                "instruction": ["Write a function", "Create a class"],
+                "input": ["", "Input context"],
+                "output": ["", ""],  # Empty outputs to be completed
+            }
+        )
 
         completed_data = {
             0: {"output": "def func(): pass"},
-            1: {"output": "class MyClass: pass"}
+            1: {"output": "class MyClass: pass"},
         }
 
         try:
@@ -388,7 +415,9 @@ class TestExcelHandlerIntegration:
                 assert len(df) > 0
 
                 # Validate compatibility
-                is_compatible, missing = ExcelHandler.validate_schema_compatibility(df, schema)
+                is_compatible, missing = ExcelHandler.validate_schema_compatibility(
+                    df, schema
+                )
                 assert is_compatible
                 assert len(missing) == 0
 

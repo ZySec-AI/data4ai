@@ -29,8 +29,7 @@ def example_dspy_prompt_generation():
     # Create prompt generator with DSPy
     print("📝 Creating DSPy prompt generator...")
     prompt_generator = create_prompt_generator(
-        model_name="meta-llama/llama-3-8b-instruct",
-        use_dspy=True
+        model_name="meta-llama/llama-3-8b-instruct", use_dspy=True
     )
 
     # Example 1: Basic dynamic prompt generation
@@ -42,10 +41,7 @@ def example_dspy_prompt_generation():
     count = 5
 
     prompt = prompt_generator.generate_schema_prompt(
-        description=description,
-        schema_name=schema_name,
-        count=count,
-        use_dspy=True
+        description=description, schema_name=schema_name, count=count, use_dspy=True
     )
 
     print(f"Description: {description}")
@@ -62,20 +58,20 @@ def example_dspy_prompt_generation():
         {
             "instruction": "Write a Python function to calculate factorial",
             "input": "Input: n = 5",
-            "output": "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n-1)"
+            "output": "def factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n-1)",
         },
         {
             "instruction": "Create a function to reverse a string",
             "input": "Input: 'hello'",
-            "output": "def reverse_string(s):\n    return s[::-1]"
-        }
+            "output": "def reverse_string(s):\n    return s[::-1]",
+        },
     ]
 
     adaptive_prompt = prompt_generator.generate_adaptive_prompt(
         description="Create more Python function examples",
         schema_name="alpaca",
         count=3,
-        previous_examples=previous_examples
+        previous_examples=previous_examples,
     )
 
     print(f"Previous Examples: {len(previous_examples)}")
@@ -93,7 +89,7 @@ def example_dspy_prompt_generation():
             description="Create educational content about machine learning",
             schema_name=schema,
             count=3,
-            use_dspy=True
+            use_dspy=True,
         )
 
         print(f"{schema.upper()} Prompt Length: {len(schema_prompt)} characters")
@@ -114,9 +110,7 @@ def example_dataset_generation_with_dspy():
     # Create generator with DSPy enabled
     print("🔧 Creating dataset generator with DSPy...")
     generator = DatasetGenerator(
-        model="meta-llama/llama-3-8b-instruct",
-        temperature=0.7,
-        seed=42
+        model="meta-llama/llama-3-8b-instruct", temperature=0.7, seed=42
     )
 
     # Generate dataset using DSPy prompts
@@ -129,7 +123,7 @@ def example_dataset_generation_with_dspy():
             schema_name="alpaca",
             count=5,
             batch_size=3,
-            dry_run=False
+            dry_run=False,
         )
 
         print(f"✅ Generated {result['row_count']} examples")
@@ -139,7 +133,9 @@ def example_dataset_generation_with_dspy():
         metrics = result.get("metrics", {})
         if metrics:
             print(f"📈 Completion Rate: {metrics.get('completion_rate', 0):.1%}")
-            print(f"📏 Avg Instruction Length: {metrics.get('avg_instruction_length', 0):.0f}")
+            print(
+                f"📏 Avg Instruction Length: {metrics.get('avg_instruction_length', 0):.0f}"
+            )
             print(f"📏 Avg Output Length: {metrics.get('avg_output_length', 0):.0f}")
 
     except Exception as e:
@@ -197,8 +193,7 @@ async def example_async_dspy_generation():
 
     # Create async generator
     generator = DatasetGenerator(
-        model="meta-llama/llama-3-8b-instruct",
-        temperature=0.7
+        model="meta-llama/llama-3-8b-instruct", temperature=0.7
     )
 
     # Generate dataset asynchronously
@@ -208,7 +203,7 @@ async def example_async_dspy_generation():
         schema_name="alpaca",
         count=3,
         batch_size=3,
-        dry_run=True  # Use dry-run for demo
+        dry_run=True,  # Use dry-run for demo
     )
 
     print("✅ Async generation completed")
