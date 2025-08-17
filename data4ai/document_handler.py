@@ -3,7 +3,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from data4ai.exceptions import ValidationError
 
@@ -316,37 +316,251 @@ class DocumentHandler:
         return chunks
 
     @staticmethod
-    def prepare_for_generation(
-        file_path: Path,
-        extraction_type: str = "qa",
-        chunk_size: int = 1000,
-        use_advanced: bool = False
-    ) -> dict[str, Any]:
-        """Prepare document for dataset generation.
+    def is_supported_file(file_path: Path) -> bool:
+        """Check if file is a supported document type.
         
         Args:
-            file_path: Path to document file
+            file_path: Path to check
+            
+        Returns:
+            True if file is supported
+        """
+        try:
+            DocumentHandler.detect_document_type(file_path)
+            return True
+        except ValidationError:
+            return False
+
+    @staticmethod
+    def scan_folder(
+        folder_path: Path,
+        recursive: bool = True,
+        file_types: Optional[list[str]] = None
+    ) -> list[Path]:
+        """Scan folder for supported documents.
+        
+        Args:
+            folder_path: Path to folder
+            recursive: Whether to scan subfolders
+            file_types: Specific file types to include (pdf, docx, md, txt)
+            
+        Returns:
+            List of document paths
+        """
+        if not folder_path.exists():
+            raise FileNotFoundError(f"Folder not found: {folder_path}")
+            
+        if not folder_path.is_dir():
+            raise ValidationError(f"Path is not a directory: {folder_path}")
+            
+        # Default to all supported types
+        if file_types is None:
+            file_types = ["pdf", "docx", "doc", "md", "markdown", "txt", "text"]
+        else:
+            # Normalize file types
+            file_types = [ft.lower() for ft in file_types]
+            
+        documents = []
+        
+        # Define supported extensions
+        extensions = []
+        if "pdf" in file_types:
+            extensions.append("*.pdf")
+        if "docx" in file_types or "doc" in file_types:
+            extensions.extend(["*.docx", "*.doc"])
+        if "md" in file_types or "markdown" in file_types:
+            extensions.extend(["*.md", "*.markdown"])
+        if "txt" in file_types or "text" in file_types:
+            extensions.extend(["*.txt", "*.text"])
+            
+        # Scan for files
+        for ext in extensions:
+            if recursive:
+                documents.extend(folder_path.rglob(ext))
+            else:
+                documents.extend(folder_path.glob(ext))
+                
+        # Filter out hidden files and ensure unique paths
+        documents = list(set([
+            doc for doc in documents 
+            if not doc.name.startswith(".") and doc.is_file()
+        ]))
+        
+        # Sort for consistent ordering
+        documents.sort()
+        
+        logger.info(f"Found {len(documents)} documents in {folder_path}")
+        return documents
+
+    @staticmethod
+    def extract_from_multiple(
+        file_paths: list[Path],
+        use_advanced: bool = False,
+        combine: bool = True
+    ) -> Union[str, dict[str, str]]:
+        """Extract text from multiple documents.
+        
+        Args:
+            file_paths: List of document paths
+            use_advanced: Use advanced extraction
+            combine: Whether to combine into single text or return dict
+            
+        Returns:
+            Combined text string or dict mapping paths to text
+        """
+        texts = {}
+        
+        for file_path in file_paths:
+            try:
+                text = DocumentHandler.extract_text(file_path, use_advanced)
+                if text:
+                    texts[str(file_path)] = text
+            except Exception as e:
+                logger.warning(f"Failed to extract from {file_path}: {e}")
+                continue
+                
+        if combine:
+            # Combine all texts with document separators
+            combined_parts = []
+            for path, text in texts.items():
+                doc_name = Path(path).name
+                combined_parts.append(f"=== Document: {doc_name} ===\n\n{text}")
+            return "\n\n".join(combined_parts)
+        else:
+            return texts
+
+    @staticmethod
+    def extract_chunks_from_multiple(
+        file_paths: list[Path],
+        chunk_size: int = 1000,
+        overlap: int = 200,
+        use_advanced: bool = False
+    ) -> list[dict[str, Any]]:
+        """Extract chunks from multiple documents.
+        
+        Args:
+            file_paths: List of document paths
+            chunk_size: Size of each chunk
+            overlap: Overlap between chunks
+            use_advanced: Use advanced extraction
+            
+        Returns:
+            List of all chunks with metadata
+        """
+        all_chunks = []
+        
+        for file_path in file_paths:
+            try:
+                chunks = DocumentHandler.extract_chunks(
+                    file_path,
+                    chunk_size=chunk_size,
+                    overlap=overlap,
+                    use_advanced=use_advanced
+                )
+                # Add file path to chunk metadata
+                for chunk in chunks:
+                    chunk["file_path"] = str(file_path)
+                all_chunks.extend(chunks)
+            except Exception as e:
+                logger.warning(f"Failed to extract chunks from {file_path}: {e}")
+                continue
+                
+        logger.info(f"Extracted {len(all_chunks)} total chunks from {len(file_paths)} documents")
+        return all_chunks
+
+    @staticmethod
+    def prepare_for_generation(
+        input_path: Union[Path, list[Path]],
+        extraction_type: str = "qa",
+        chunk_size: int = 1000,
+        use_advanced: bool = False,
+        recursive: bool = True
+    ) -> dict[str, Any]:
+        """Prepare document(s) for dataset generation.
+        
+        Args:
+            input_path: Path to document file, folder, or list of paths
             extraction_type: Type of extraction (qa, summary, instruction)
             chunk_size: Size of chunks for processing
             use_advanced: Use advanced extraction
+            recursive: For folders, whether to scan recursively
             
         Returns:
             Prepared data for generation
         """
-        doc_type = DocumentHandler.detect_document_type(file_path)
-        chunks = DocumentHandler.extract_chunks(
-            file_path, chunk_size=chunk_size, use_advanced=use_advanced
-        )
+        # Handle different input types
+        if isinstance(input_path, list):
+            # List of paths provided
+            file_paths = input_path
+            input_type = "multiple"
+        elif isinstance(input_path, Path):
+            if input_path.is_dir():
+                # Folder provided - scan for documents
+                file_paths = DocumentHandler.scan_folder(input_path, recursive=recursive)
+                input_type = "folder"
+                if not file_paths:
+                    raise ValidationError(f"No supported documents found in {input_path}")
+            else:
+                # Single file provided
+                file_paths = [input_path]
+                input_type = "file"
+        else:
+            # Convert string to Path
+            input_path = Path(input_path)
+            return DocumentHandler.prepare_for_generation(
+                input_path, extraction_type, chunk_size, use_advanced, recursive
+            )
         
-        return {
-            "document_type": doc_type,
-            "document_name": file_path.name,
-            "extraction_type": extraction_type,
-            "chunks": chunks,
-            "total_chunks": len(chunks),
-            "metadata": {
-                "chunk_size": chunk_size,
-                "file_size": file_path.stat().st_size,
-                "advanced_extraction": use_advanced,
+        # Extract chunks from all documents
+        if len(file_paths) == 1:
+            # Single document
+            doc_type = DocumentHandler.detect_document_type(file_paths[0])
+            chunks = DocumentHandler.extract_chunks(
+                file_paths[0], chunk_size=chunk_size, use_advanced=use_advanced
+            )
+            
+            return {
+                "document_type": doc_type,
+                "document_name": file_paths[0].name,
+                "extraction_type": extraction_type,
+                "chunks": chunks,
+                "total_chunks": len(chunks),
+                "total_documents": 1,
+                "input_type": input_type,
+                "metadata": {
+                    "chunk_size": chunk_size,
+                    "file_size": file_paths[0].stat().st_size,
+                    "advanced_extraction": use_advanced,
+                }
             }
-        }
+        else:
+            # Multiple documents
+            chunks = DocumentHandler.extract_chunks_from_multiple(
+                file_paths, chunk_size=chunk_size, use_advanced=use_advanced
+            )
+            
+            # Get document types and sizes
+            doc_types = set()
+            total_size = 0
+            for fp in file_paths:
+                try:
+                    doc_types.add(DocumentHandler.detect_document_type(fp))
+                    total_size += fp.stat().st_size
+                except:
+                    pass
+                    
+            return {
+                "document_type": "mixed" if len(doc_types) > 1 else list(doc_types)[0],
+                "document_names": [fp.name for fp in file_paths],
+                "extraction_type": extraction_type,
+                "chunks": chunks,
+                "total_chunks": len(chunks),
+                "total_documents": len(file_paths),
+                "input_type": input_type,
+                "metadata": {
+                    "chunk_size": chunk_size,
+                    "total_file_size": total_size,
+                    "advanced_extraction": use_advanced,
+                    "document_types": list(doc_types),
+                }
+            }

@@ -863,12 +863,13 @@ Return a JSON object with ONLY the missing fields and their values."""
         batch_size: int = 10,
         chunk_size: int = 1000,
         use_advanced: bool = False,
+        recursive: bool = True,
         dry_run: bool = False,
     ) -> dict[str, Any]:
-        """Generate dataset from document (PDF, DOCX, MD, TXT).
+        """Generate dataset from document(s) - supports files and folders.
         
         Args:
-            document_path: Path to document file
+            document_path: Path to document file or folder
             output_dir: Output directory for dataset
             schema_name: Dataset schema (alpaca, dolly, sharegpt)
             extraction_type: Type of extraction (qa, summary, instruction)
@@ -876,6 +877,7 @@ Return a JSON object with ONLY the missing fields and their values."""
             batch_size: Number of examples per batch
             chunk_size: Size of document chunks for processing
             use_advanced: Use advanced extraction methods
+            recursive: For folders, scan recursively
             dry_run: Simulate without generation
             
         Returns:
@@ -884,25 +886,33 @@ Return a JSON object with ONLY the missing fields and their values."""
         try:
             logger.info(f"Preparing document for dataset generation: {document_path}")
             
-            # Prepare document for generation
+            # Prepare document(s) for generation - handles files and folders
             doc_data = DocumentHandler.prepare_for_generation(
                 document_path,
                 extraction_type=extraction_type,
                 chunk_size=chunk_size,
-                use_advanced=use_advanced
+                use_advanced=use_advanced,
+                recursive=recursive
             )
             
             if dry_run:
-                logger.info(f"Dry run: Would process {doc_data['total_chunks']} chunks")
+                logger.info(f"Dry run: Would process {doc_data['total_chunks']} chunks from {doc_data.get('total_documents', 1)} document(s)")
                 return {
-                    "document": doc_data["document_name"],
+                    "document": doc_data.get("document_name") or doc_data.get("document_names", ["multiple"])[0],
                     "chunks": doc_data["total_chunks"],
+                    "total_documents": doc_data.get("total_documents", 1),
                     "dry_run": True,
                 }
             
-            logger.info(
-                f"Processing {doc_data['total_chunks']} chunks from {doc_data['document_type']} document"
-            )
+            # Log processing info
+            if doc_data.get("total_documents", 1) > 1:
+                logger.info(
+                    f"Processing {doc_data['total_chunks']} chunks from {doc_data['total_documents']} documents"
+                )
+            else:
+                logger.info(
+                    f"Processing {doc_data['total_chunks']} chunks from {doc_data['document_type']} document"
+                )
             
             # Generate examples from document chunks
             dataset = []
@@ -978,12 +988,19 @@ Return a JSON object with ONLY the missing fields and their values."""
                 "extraction_type": extraction_type,
                 "chunk_size": chunk_size,
                 "chunks_processed": min(len(chunks), count),
+                "total_documents": doc_data.get("total_documents", 1),
+                "input_type": doc_data.get("input_type", "file"),
             }
+            
+            # Add document names if multiple
+            if doc_data.get("document_names"):
+                parameters["documents"] = doc_data["document_names"][:20]  # Limit to 20 for metadata
+                
             save_metadata(
                 output_dir, schema_name, self.model, len(dataset), parameters, metrics
             )
             
-            logger.info(f"Generated {len(dataset)} examples from document")
+            logger.info(f"Generated {len(dataset)} examples from {doc_data.get('total_documents', 1)} document(s)")
             
             return {
                 "row_count": len(dataset),
@@ -991,6 +1008,7 @@ Return a JSON object with ONLY the missing fields and their values."""
                 "metrics": metrics,
                 "document_type": doc_data["document_type"],
                 "chunks_processed": min(len(chunks), count),
+                "total_documents": doc_data.get("total_documents", 1),
             }
             
         except Exception as e:

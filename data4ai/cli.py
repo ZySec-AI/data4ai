@@ -417,7 +417,7 @@ def validate(
 @app.command("doc-to-dataset")
 @error_handler
 def doc_to_dataset(
-    input_path: Path = typer.Argument(..., help="Input document (PDF, DOCX, MD, TXT)"),
+    input_path: Path = typer.Argument(..., help="Input document or folder containing documents"),
     repo: str = typer.Option(
         ..., "--repo", "-r", help="Output directory and repo name"
     ),
@@ -435,6 +435,12 @@ def doc_to_dataset(
     chunk_size: int = typer.Option(
         1000, "--chunk-size", help="Document chunk size for processing"
     ),
+    recursive: bool = typer.Option(
+        True, "--recursive/--no-recursive", help="Scan folders recursively"
+    ),
+    file_types: Optional[str] = typer.Option(
+        None, "--file-types", help="Comma-separated file types (pdf,docx,md,txt)"
+    ),
     advanced: bool = typer.Option(
         False, "--advanced", help="Use advanced extraction (slower but better)"
     ),
@@ -443,18 +449,45 @@ def doc_to_dataset(
         False, "--huggingface", "-hf", help="Push to HuggingFace"
     ),
 ):
-    """Generate dataset from document (PDF, DOCX, Markdown, or text file)."""
-    console.print(
-        f"📄 Processing {input_path.suffix.upper()} document...", style="blue"
-    )
+    """Generate dataset from document(s) - supports files and folders."""
     
-    # Validate document type
-    try:
-        doc_type = DocumentHandler.detect_document_type(input_path)
-        console.print(f"📋 Document type: {doc_type.upper()}", style="cyan")
-    except Exception as e:
-        console.print(f"❌ {str(e)}", style="red")
-        raise typer.Exit(1)
+    # Check if input is file or folder
+    if input_path.is_dir():
+        console.print(f"📁 Scanning folder: {input_path}", style="blue")
+        
+        # Parse file types if provided
+        types_to_scan = None
+        if file_types:
+            types_to_scan = [ft.strip() for ft in file_types.split(",")]
+            
+        # Scan folder for documents
+        try:
+            documents = DocumentHandler.scan_folder(
+                input_path, recursive=recursive, file_types=types_to_scan
+            )
+            if not documents:
+                console.print("❌ No supported documents found in folder", style="red")
+                raise typer.Exit(1)
+                
+            console.print(f"📚 Found {len(documents)} documents:", style="cyan")
+            for doc in documents[:10]:  # Show first 10
+                console.print(f"  • {doc.name}", style="dim")
+            if len(documents) > 10:
+                console.print(f"  ... and {len(documents) - 10} more", style="dim")
+                
+        except Exception as e:
+            console.print(f"❌ {str(e)}", style="red")
+            raise typer.Exit(1)
+    else:
+        console.print(f"📄 Processing document: {input_path.name}", style="blue")
+        
+        # Validate document type
+        try:
+            doc_type = DocumentHandler.detect_document_type(input_path)
+            console.print(f"📋 Document type: {doc_type.upper()}", style="cyan")
+        except Exception as e:
+            console.print(f"❌ {str(e)}", style="red")
+            raise typer.Exit(1)
     
     # Initialize generator
     generator = DatasetGenerator()
@@ -462,7 +495,11 @@ def doc_to_dataset(
     # Generate dataset
     output_path = settings.output_dir / repo
     
-    with console.status(f"Generating dataset from {doc_type} document..."):
+    status_msg = "Generating dataset from document(s)..."
+    if input_path.is_dir():
+        status_msg = f"Generating dataset from {len(documents) if 'documents' in locals() else 'multiple'} documents..."
+    
+    with console.status(status_msg):
         result = generator.generate_from_document_sync(
             document_path=input_path,
             output_dir=output_path,
@@ -472,20 +509,29 @@ def doc_to_dataset(
             batch_size=batch_size,
             chunk_size=chunk_size,
             use_advanced=advanced,
+            recursive=recursive,
             dry_run=dry_run,
         )
     
     if dry_run:
         console.print(
-            f"Would process {result.get('chunks', 0)} chunks from document",
+            f"Would process {result.get('chunks', 0)} chunks from {result.get('total_documents', 1)} document(s)",
             style="cyan",
         )
     else:
         console.print(f"✅ Generated {result['row_count']} examples", style="green")
         console.print(f"💾 Saved to: {result['output_path']}", style="green")
-        console.print(
-            f"📊 Processed {result['chunks_processed']} document chunks", style="cyan"
-        )
+        
+        # Show document stats
+        if result.get('total_documents', 1) > 1:
+            console.print(
+                f"📊 Processed {result['chunks_processed']} chunks from {result['total_documents']} documents",
+                style="cyan"
+            )
+        else:
+            console.print(
+                f"📊 Processed {result['chunks_processed']} document chunks", style="cyan"
+            )
         
         # Push to HuggingFace if requested
         if huggingface:
@@ -495,6 +541,7 @@ def doc_to_dataset(
                     "⚠️  HF_TOKEN not set. Skipping HuggingFace upload.", style="yellow"
                 )
             else:
+                doc_desc = f"{result.get('total_documents', 1)} documents" if result.get('total_documents', 1) > 1 else "document"
                 with console.status("Pushing to HuggingFace Hub..."):
                     publisher = HuggingFacePublisher(
                         token=hf_token, organization=settings.hf_organization
@@ -502,7 +549,7 @@ def doc_to_dataset(
                     hf_url = publisher.push_dataset(
                         dataset_dir=output_path,
                         repo_name=repo,
-                        description=f"Dataset generated from {doc_type} document using {extraction_type} extraction",
+                        description=f"Dataset generated from {doc_desc} using {extraction_type} extraction",
                     )
                 console.print(f"🤗 Published to: {hf_url}", style="green")
 

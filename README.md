@@ -102,11 +102,24 @@ data4ai run template.xlsx --repo my-dataset --max-rows 100
 ### 3. Generate from Documents
 
 ```bash
-# From PDF document
+# From single PDF document
 data4ai doc-to-dataset research-paper.pdf \
   --repo paper-qa \
   --type qa \
   --count 100
+
+# From entire folder of documents
+data4ai doc-to-dataset /path/to/docs/folder \
+  --repo multi-doc-dataset \
+  --type qa \
+  --count 500 \
+  --recursive
+
+# Process only specific file types in folder
+data4ai doc-to-dataset /path/to/docs \
+  --repo pdf-only-dataset \
+  --file-types pdf \
+  --count 200
 
 # From Word document with summaries
 data4ai doc-to-dataset manual.docx \
