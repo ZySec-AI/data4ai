@@ -161,7 +161,7 @@ jobs:
     
     - name: Test CLI
       run: |
-        data4ai --version
+        data4ai version
         data4ai --help
         data4ai config --help
     
