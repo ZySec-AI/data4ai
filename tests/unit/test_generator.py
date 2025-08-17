@@ -17,7 +17,7 @@ class TestDatasetGeneratorInitialization:
         mock_settings.temperature = 0.7
         mock_settings.seed = None
         mock_settings.use_dspy = True
-        
+
         generator = DatasetGenerator()
 
         assert generator.model == "meta-llama/llama-3-8b-instruct"
@@ -35,7 +35,7 @@ class TestDatasetGeneratorInitialization:
         mock_settings.temperature = 0.7
         mock_settings.seed = None
         mock_settings.use_dspy = True
-        
+
         generator = DatasetGenerator(
             model="anthropic/claude-3-5-sonnet", temperature=0.9, seed=42
         )
@@ -54,7 +54,7 @@ class TestDatasetGeneratorInitialization:
         mock_settings.temperature = 0.7
         mock_settings.seed = None
         mock_settings.use_dspy = True
-        
+
         mock_prompt_generator = Mock()
         mock_create_prompt.return_value = mock_prompt_generator
 
@@ -76,7 +76,7 @@ class TestPromptBuilding:
         mock_settings.temperature = 0.7
         mock_settings.seed = None
         mock_settings.use_dspy = True
-        
+
         generator = DatasetGenerator()
 
         prompt = generator._build_static_prompt(
@@ -99,7 +99,7 @@ class TestPromptBuilding:
         mock_settings.temperature = 0.7
         mock_settings.seed = None
         mock_settings.use_dspy = True
-        
+
         generator = DatasetGenerator()
 
         prompt = generator._build_static_prompt(
@@ -122,7 +122,7 @@ class TestPromptBuilding:
         mock_settings.temperature = 0.7
         mock_settings.seed = None
         mock_settings.use_dspy = True
-        
+
         generator = DatasetGenerator()
 
         prompt = generator._build_static_prompt(
@@ -144,7 +144,7 @@ class TestPromptBuilding:
         mock_settings.temperature = 0.7
         mock_settings.seed = None
         mock_settings.use_dspy = True
-        
+
         mock_prompt_generator = Mock()
         mock_prompt_generator.generate_schema_prompt.return_value = (
             "Dynamic prompt content"
@@ -172,7 +172,7 @@ class TestPromptBuilding:
         mock_settings.temperature = 0.7
         mock_settings.seed = None
         mock_settings.use_dspy = True
-        
+
         mock_prompt_generator = Mock()
         mock_prompt_generator.generate_adaptive_prompt.return_value = (
             "Adaptive prompt content"
@@ -214,7 +214,7 @@ class TestPromptBuilding:
         mock_settings.temperature = 0.7
         mock_settings.seed = None
         mock_settings.use_dspy = True
-        
+
         mock_prompt_generator = Mock()
         mock_prompt_generator.generate_schema_prompt.side_effect = Exception(
             "DSPy error"

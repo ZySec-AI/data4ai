@@ -317,7 +317,7 @@ class TestListModelsCommand:
         mock_settings.openrouter_api_key = "test-key"
         mock_settings.site_url = "https://example.com"
         mock_settings.site_name = "test"
-        
+
         # Mock the client and its list_models method
         mock_client = Mock()
         mock_client.list_models.return_value = [
