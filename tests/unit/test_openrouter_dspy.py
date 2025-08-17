@@ -33,9 +33,8 @@ class TestOpenRouterDSPyClient:
 
     def test_client_initialization_missing_api_key(self):
         """Test client initialization fails without API key."""
-        with patch.dict('os.environ', {}, clear=True):
-            with pytest.raises(ValueError, match="OpenRouter API key is required"):
-                OpenRouterDSPyClient()
+        with patch.dict('os.environ', {}, clear=True), pytest.raises(ValueError, match="OpenRouter API key is required"):
+            OpenRouterDSPyClient()
 
     def test_get_headers(self):
         """Test header generation with attribution."""
