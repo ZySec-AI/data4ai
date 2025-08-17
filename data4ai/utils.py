@@ -3,7 +3,7 @@
 import json
 import logging
 from collections.abc import Generator
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -179,6 +179,7 @@ def calculate_metrics(data: list[dict[str, Any]], schema: str) -> dict[str, Any]
 
 def create_progress_bar(description: str = "Processing") -> Progress:
     """Create a Rich progress bar."""
+    _ = description  # Reserved for future use
     return Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -246,7 +247,7 @@ This dataset was generated using Data4AI with the {schema} schema format.
 - **Format**: {schema}
 - **Size**: {row_count} examples
 - **Model**: {model}
-- **Generated**: {datetime.utcnow().strftime("%Y-%m-%d")}{tags_section}
+- **Generated**: {datetime.now(timezone.utc).strftime("%Y-%m-%d")}{tags_section}
 
 ## Schema Format
 
@@ -264,7 +265,7 @@ dataset = load_dataset("{dataset_name}")
 
 ## Generation Details
 
-This dataset was generated using [Data4AI](https://github.com/zysec/data4ai),
+This dataset was generated using [Data4AI](https://github.com/data4ai/data4ai),
 an AI-powered tool for creating high-quality instruction-tuning datasets.
 
 ## License
@@ -278,7 +279,7 @@ If you use this dataset, please cite:
 ```bibtex
 @misc{{{dataset_name},
   title={{{dataset_name}}},
-  author={{ZySec AI}},
+  author={{Data4AI Project}},
   year={{2024}},
   publisher={{HuggingFace}}
 }}
@@ -332,22 +333,47 @@ def safe_json_parse(text: str) -> Optional[Any]:
 
 def extract_json_from_text(text: str) -> Optional[Any]:
     """Extract JSON from text that might contain other content."""
-    # Try to find JSON array or object
     import re
-
-    # Look for JSON array
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Clean the text - remove common prefixes/suffixes
+    text = text.strip()
+    
+    # Try to find JSON array first (most common for datasets)
     array_match = re.search(r"\[.*\]", text, re.DOTALL)
     if array_match:
-        result = safe_json_parse(array_match.group())
-        if result is not None:
-            return result
+        try:
+            result = safe_json_parse(array_match.group())
+            if result is not None:
+                logger.debug(f"Successfully extracted JSON array with {len(result)} items")
+                return result
+        except Exception as e:
+            logger.debug(f"Failed to parse JSON array: {e}")
 
     # Look for JSON object
     object_match = re.search(r"\{.*\}", text, re.DOTALL)
     if object_match:
-        result = safe_json_parse(object_match.group())
-        if result is not None:
-            return result
+        try:
+            result = safe_json_parse(object_match.group())
+            if result is not None:
+                logger.debug(f"Successfully extracted JSON object")
+                return result
+        except Exception as e:
+            logger.debug(f"Failed to parse JSON object: {e}")
 
     # Try parsing the whole text
-    return safe_json_parse(text)
+    try:
+        result = safe_json_parse(text)
+        if result is not None:
+            logger.debug(f"Successfully parsed entire text as JSON")
+            return result
+    except Exception as e:
+        logger.debug(f"Failed to parse entire text as JSON: {e}")
+    
+    # Log preview of failed parsing
+    preview = text[:200] + "..." if len(text) > 200 else text
+    logger.warning(f"Could not extract JSON from text. Preview: {preview}")
+    
+    return None

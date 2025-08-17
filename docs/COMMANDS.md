@@ -243,7 +243,7 @@ export OPENROUTER_API_KEY="your_key_here"
 data4ai list-models
 
 # Use a different model
-data4ai prompt --repo test --description "test" --model "meta-llama/llama-3-8b-instruct"
+data4ai prompt --repo test --description "test" --model "openai/gpt-4o-mini"
 ```
 
 **"Excel file not found"**

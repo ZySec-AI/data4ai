@@ -19,10 +19,10 @@ class OpenRouterConfig:
     """Configuration for OpenRouter API client."""
 
     api_key: str
-    model: str = "meta-llama/llama-3-8b-instruct"
+    model: str = "openai/gpt-4o-mini"
     temperature: float = 0.7
     max_tokens: int = 2048
-    site_url: str = "https://www.zysec.ai"
+    site_url: str = "https://github.com/data4ai/data4ai"
     site_name: str = "Data4AI"
     timeout: int = 30
 
@@ -298,46 +298,3 @@ class SyncOpenRouterClient:
         self.client.close()
 
 
-# Example usage
-if __name__ == "__main__":
-    import asyncio
-
-    # Configuration with attribution
-    config = OpenRouterConfig(
-        api_key="your_openrouter_api_key_here",
-        model="meta-llama/llama-3-8b-instruct",
-        temperature=0.7,
-        site_url="https://www.zysec.ai",
-        site_name="Data4AI",
-    )
-
-    # Example async usage
-    async def example_async():
-        client = OpenRouterClient(config)
-        try:
-            messages = [{"role": "user", "content": "What is the meaning of life?"}]
-
-            response = await client.chat_completion(messages)
-            print(f"Response: {response['choices'][0]['message']['content']}")
-
-        finally:
-            await client.close()
-
-    # Example sync usage
-    def example_sync():
-        client = SyncOpenRouterClient(config)
-        try:
-            messages = [{"role": "user", "content": "What is the meaning of life?"}]
-
-            response = client.chat_completion(messages)
-            print(f"Response: {response['choices'][0]['message']['content']}")
-
-        finally:
-            client.close()
-
-    # Run examples
-    print("Async example:")
-    asyncio.run(example_async())
-
-    print("\nSync example:")
-    example_sync()

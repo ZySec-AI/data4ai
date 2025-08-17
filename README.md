@@ -27,12 +27,39 @@ pip install data4ai[excel]       # With Excel support
 pip install data4ai[all]         # All features
 ```
 
-### Get API Key
+### Set Up Environment Variables
 
-Get your free API key from [OpenRouter](https://openrouter.ai/)
+Data4AI requires environment variables to be set in your terminal:
 
+#### Option 1: Quick Setup (Current Session)
 ```bash
+# Get your API key from https://openrouter.ai/keys
 export OPENROUTER_API_KEY="your_key_here"
+
+# Optional: Set a specific model (default: openai/gpt-4o-mini)
+export OPENROUTER_MODEL="anthropic/claude-3-5-sonnet"  # Or another model
+
+# Optional: For publishing to HuggingFace
+export HF_TOKEN="your_huggingface_token"
+```
+
+#### Option 2: Interactive Setup
+```bash
+# Use our setup helper
+source setup_env.sh
+```
+
+#### Option 3: Permanent Setup
+```bash
+# Add to your shell config (~/.bashrc, ~/.zshrc, or ~/.profile)
+echo 'export OPENROUTER_API_KEY="your_key_here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+#### Check Your Setup
+```bash
+# Verify environment variables are set
+data4ai env --check
 ```
 
 ### Generate Your First Dataset
@@ -130,7 +157,7 @@ print(f"Generated {result.row_count} examples")
 Create `.env` file:
 ```bash
 OPENROUTER_API_KEY=your_key_here
-OPENROUTER_MODEL=meta-llama/llama-3-8b-instruct  # Optional
+OPENROUTER_MODEL=openai/gpt-4o-mini  # Optional (this is the default)
 HF_TOKEN=your_huggingface_token                   # For publishing
 ```
 

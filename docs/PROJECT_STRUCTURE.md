@@ -6,8 +6,8 @@ When you run Data4AI commands, files are organized as follows:
 
 ```
 data4ai/
-├── .env                    # Your API keys (gitignored)
-├── .env.example            # Template for environment variables
+├── setup_env.sh            # Interactive environment setup script
+├── .env.example            # Example environment variables (reference only)
 ├── outputs/                # Default output directory (gitignored)
 │   ├── my-dataset/         # Each dataset in its own folder
 │   │   ├── data.jsonl      # Generated dataset
@@ -41,14 +41,26 @@ outputs/
 
 ## Environment Configuration
 
-Copy `.env.example` to `.env` and configure:
+Data4AI uses environment variables from your terminal session:
 
 ```bash
-cp .env.example .env
-# Edit .env with your API keys
+# Method 1: Direct export in terminal
+export OPENROUTER_API_KEY="your_key_here"
+export HF_TOKEN="your_huggingface_token"  # Optional
+
+# Method 2: Use the interactive setup script
+source setup_env.sh
+
+# Method 3: Add to your shell config for persistence
+echo 'export OPENROUTER_API_KEY="your_key_here"' >> ~/.bashrc
+source ~/.bashrc
+
+# Verify your setup
+data4ai env --check
 ```
 
-The `.env` file is gitignored for security.
+**Important:** Data4AI reads environment variables directly from your terminal.
+No .env files are used - this is more secure and follows best practices.
 
 ## Checkpoint System
 

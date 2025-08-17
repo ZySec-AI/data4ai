@@ -31,7 +31,7 @@ class TestErrorHandler:
         assert "unexpected error" in msg.lower()
         assert "Something bad" in msg
 
-    @patch("data4ai.error_handler.console")
+    @patch("data4ai.error_handler.err_console")
     def test_handle_api_error_401(self, mock_console):
         """Test handling 401 authentication error."""
         response = Mock(status_code=401)
@@ -43,7 +43,7 @@ class TestErrorHandler:
         call_args = str(mock_console.print.call_args)
         assert "Invalid OpenRouter API key" in call_args
 
-    @patch("data4ai.error_handler.console")
+    @patch("data4ai.error_handler.err_console")
     def test_handle_api_error_429(self, mock_console):
         """Test handling 429 rate limit error."""
         response = Mock(status_code=429)
@@ -55,7 +55,7 @@ class TestErrorHandler:
         call_args = str(mock_console.print.call_args)
         assert "Rate limit" in call_args
 
-    @patch("data4ai.error_handler.console")
+    @patch("data4ai.error_handler.err_console")
     def test_handle_api_error_timeout(self, mock_console):
         """Test handling timeout error."""
         error = httpx.TimeoutException("Timeout")
@@ -66,7 +66,7 @@ class TestErrorHandler:
         call_args = str(mock_console.print.call_args)
         assert "timeout" in call_args.lower()
 
-    @patch("data4ai.error_handler.console")
+    @patch("data4ai.error_handler.err_console")
     def test_handle_file_error_not_found(self, mock_console):
         """Test handling file not found error."""
         error = FileNotFoundError("File not found")
@@ -78,7 +78,7 @@ class TestErrorHandler:
         assert "File not found" in call_args
         assert "/test.txt" in call_args
 
-    @patch("data4ai.error_handler.console")
+    @patch("data4ai.error_handler.err_console")
     def test_handle_validation_error(self, mock_console):
         """Test handling validation error."""
         error = ValidationError("Invalid data format")
@@ -90,7 +90,7 @@ class TestErrorHandler:
         assert "Validation error" in call_args
         assert "Invalid data format" in call_args
 
-    @patch("data4ai.error_handler.console")
+    @patch("data4ai.error_handler.err_console")
     def test_handle_generation_error(self, mock_console):
         """Test handling generation error."""
         error = GenerationError("Failed to generate")
@@ -105,7 +105,7 @@ class TestErrorHandler:
 class TestErrorDecorator:
     """Test error handler decorator."""
 
-    @patch("data4ai.error_handler.console")
+    @patch("data4ai.error_handler.err_console")
     def test_decorator_catches_configuration_error(self, mock_console):
         """Test decorator catches configuration errors."""
 
@@ -119,7 +119,7 @@ class TestErrorDecorator:
         assert exc_info.value.code == 1
         mock_console.print.assert_called()
 
-    @patch("data4ai.error_handler.console")
+    @patch("data4ai.error_handler.err_console")
     def test_decorator_catches_keyboard_interrupt(self, mock_console):
         """Test decorator handles keyboard interrupt."""
 
@@ -135,7 +135,7 @@ class TestErrorDecorator:
         call_args = str(mock_console.print.call_args)
         assert "cancelled" in call_args.lower()
 
-    @patch("data4ai.error_handler.console")
+    @patch("data4ai.error_handler.err_console")
     def test_decorator_catches_file_error(self, mock_console):
         """Test decorator catches file errors."""
 
@@ -164,7 +164,7 @@ class TestAsyncErrorDecorator:
     """Test async error handler decorator."""
 
     @pytest.mark.asyncio
-    @patch("data4ai.error_handler.console")
+    @patch("data4ai.error_handler.err_console")
     async def test_async_decorator_catches_errors(self, mock_console):
         """Test async decorator catches errors."""
 
@@ -209,7 +209,7 @@ class TestUserFriendlyError:
         )
         assert "/test.txt" in str(exc)
 
-    @patch("data4ai.error_handler.console")
+    @patch("data4ai.error_handler.err_console")
     def test_display_method(self, mock_console):
         """Test display method."""
         exc = UserFriendlyError("Display this error")

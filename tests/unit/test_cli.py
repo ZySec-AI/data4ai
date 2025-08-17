@@ -133,10 +133,11 @@ class TestPromptCommand:
         assert "Would generate 5 alpaca examples" in result.stdout
         assert "Dry run completed successfully" in result.stdout
 
+    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
     @patch("data4ai.cli.DatasetGenerator")
     @patch("data4ai.cli.settings")
     def test_prompt_command_with_dspy_options(
-        self, mock_settings, mock_generator_class
+        self, mock_settings, mock_generator_class, mock_configure_dspy
     ):
         """Test prompt command with DSPy options."""
         mock_settings.output_dir = Path("/tmp")
@@ -322,7 +323,7 @@ class TestListModelsCommand:
         mock_client = Mock()
         mock_client.list_models.return_value = [
             {
-                "id": "meta-llama/llama-3-8b-instruct",
+                "id": "openai/gpt-4o-mini",
                 "name": "Llama 3 8B Instruct",
                 "context_length": 8192,
                 "pricing": {"prompt": 0.0002, "completion": 0.0002},

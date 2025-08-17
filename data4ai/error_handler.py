@@ -14,9 +14,12 @@ from data4ai.exceptions import (
     GenerationError,
     ValidationError,
 )
+import os
 
 logger = logging.getLogger("data4ai")
 console = Console()
+# Create a separate console for error messages that goes to stderr
+err_console = Console(stderr=True)
 
 
 class ErrorHandler:
@@ -24,7 +27,7 @@ class ErrorHandler:
 
     ERROR_MESSAGES = {
         # API Errors
-        "api_key_missing": "❌ OpenRouter API key not configured. Set OPENROUTER_API_KEY environment variable or use --api-key flag.",
+        "api_key_missing": "❌ OpenRouter API key not configured.\n\n📋 To set it in your terminal, run:\nexport OPENROUTER_API_KEY=\"your-api-key-here\"\n\n💡 Get your API key from: https://openrouter.ai/keys\n⚠️  Remember: This needs to be set in each new terminal session\n   For permanent setup, add it to your ~/.bashrc or ~/.zshrc file",
         "api_key_invalid": "❌ Invalid OpenRouter API key. Please check your credentials.",
         "rate_limit": "⚠️ Rate limit exceeded. Waiting before retrying...",
         "model_not_found": "❌ Model '{model}' not found. Use 'data4ai list-models' to see available models.",
@@ -53,7 +56,7 @@ class ErrorHandler:
         "config_invalid": "❌ Invalid configuration: {error}",
         "config_missing": "❌ Missing required configuration: {field}",
         # HuggingFace Errors
-        "hf_token_missing": "❌ HuggingFace token not configured. Set HF_TOKEN environment variable.",
+        "hf_token_missing": "❌ HuggingFace token not configured.\n\n📋 To set it in your terminal, run:\nexport HF_TOKEN=\"your-huggingface-token-here\"\n\n💡 Get your token from: https://huggingface.co/settings/tokens\n⚠️  Remember: This needs to be set in each new terminal session\n   For permanent setup, add it to your ~/.bashrc or ~/.zshrc file",
         "hf_push_failed": "❌ Failed to push to HuggingFace: {error}",
         "hf_repo_exists": "⚠️ Repository already exists. Use --overwrite to replace.",
         # General Errors
@@ -77,31 +80,31 @@ class ErrorHandler:
             status = error.response.status_code
 
             if status == 401:
-                console.print(ErrorHandler.get_message("api_key_invalid"), style="red")
+                err_console.print(ErrorHandler.get_message("api_key_invalid"), style="red")
             elif status == 404:
                 # Try to extract model name from error
-                console.print(
+                err_console.print(
                     ErrorHandler.get_message("model_not_found", model="unknown"),
                     style="red",
                 )
             elif status == 429:
-                console.print(ErrorHandler.get_message("rate_limit"), style="yellow")
+                err_console.print(ErrorHandler.get_message("rate_limit"), style="yellow")
             elif status >= 500:
-                console.print(
+                err_console.print(
                     f"❌ OpenRouter API error (status {status}). Please try again later.",
                     style="red",
                 )
             else:
-                console.print(f"❌ API error (status {status}): {error}", style="red")
+                err_console.print(f"❌ API error (status {status}): {error}", style="red")
 
         elif isinstance(error, httpx.TimeoutException):
-            console.print(ErrorHandler.get_message("api_timeout"), style="red")
+            err_console.print(ErrorHandler.get_message("api_timeout"), style="red")
 
         elif isinstance(error, httpx.ConnectError):
-            console.print(ErrorHandler.get_message("api_connection"), style="red")
+            err_console.print(ErrorHandler.get_message("api_connection"), style="red")
 
         else:
-            console.print(
+            err_console.print(
                 ErrorHandler.get_message("unexpected_error", error=str(error)),
                 style="red",
             )
@@ -110,34 +113,33 @@ class ErrorHandler:
     def handle_file_error(error: Exception, path: Optional[str] = None) -> None:
         """Handle file-related errors."""
         if isinstance(error, FileNotFoundError):
-            console.print(
+            err_console.print(
                 ErrorHandler.get_message("file_not_found", path=path or "unknown"),
                 style="red",
             )
         elif isinstance(error, PermissionError):
-            console.print(
+            err_console.print(
                 ErrorHandler.get_message("file_permission", path=path or "unknown"),
                 style="red",
             )
         else:
-            console.print(f"❌ File error: {error}", style="red")
+            err_console.print(f"❌ File error: {error}", style="red")
 
     @staticmethod
     def handle_validation_error(error: ValidationError) -> None:
         """Handle validation errors."""
-        console.print(f"❌ Validation error: {error}", style="red")
+        err_console.print(f"❌ Validation error: {error}", style="red")
 
     @staticmethod
     def handle_generation_error(error: GenerationError) -> None:
         """Handle generation errors."""
-        console.print(
-            ErrorHandler.get_message("generation_failed", error=str(error)), style="red"
-        )
+        # The GenerationError already has a user-friendly message, just print it
+        err_console.print(f"❌ {str(error)}", style="red")
 
     @staticmethod
     def handle_configuration_error(error: ConfigurationError) -> None:
         """Handle configuration errors."""
-        console.print(
+        err_console.print(
             ErrorHandler.get_message("config_invalid", error=str(error)), style="red"
         )
 
@@ -150,7 +152,7 @@ def error_handler(func: Callable) -> Callable:
         try:
             return func(*args, **kwargs)
         except KeyboardInterrupt:
-            console.print(
+            err_console.print(
                 "\n" + ErrorHandler.get_message("operation_cancelled"), style="yellow"
             )
             sys.exit(130)  # Standard exit code for SIGINT
@@ -174,10 +176,10 @@ def error_handler(func: Callable) -> Callable:
             raise
         except Exception as e:
             logger.exception("Unexpected error")
-            console.print(
+            err_console.print(
                 ErrorHandler.get_message("unexpected_error", error=str(e)), style="red"
             )
-            console.print("\n💡 For more details, run with --verbose flag", style="dim")
+            err_console.print("\n💡 For more details, run with --verbose flag", style="dim")
             sys.exit(1)
 
     return wrapper
@@ -191,7 +193,7 @@ def async_error_handler(func: Callable) -> Callable:
         try:
             return await func(*args, **kwargs)
         except KeyboardInterrupt:
-            console.print(
+            err_console.print(
                 "\n" + ErrorHandler.get_message("operation_cancelled"), style="yellow"
             )
             sys.exit(130)
@@ -212,7 +214,7 @@ def async_error_handler(func: Callable) -> Callable:
             raise
         except Exception as e:
             logger.exception("Unexpected error")
-            console.print(
+            err_console.print(
                 ErrorHandler.get_message("unexpected_error", error=str(e)), style="red"
             )
             raise
@@ -236,4 +238,69 @@ class UserFriendlyError(Exception):
 
     def display(self) -> None:
         """Display the error message to user."""
-        console.print(str(self), style="red")
+        err_console.print(str(self), style="red")
+
+
+def check_environment_variables(required_for_operation: Optional[list[str]] = None) -> dict[str, bool]:
+    """Check environment variables and provide helpful export commands.
+    
+    Args:
+        required_for_operation: List of required env vars for the current operation
+        
+    Returns:
+        Dict mapping variable names to whether they're set
+    """
+    import sys
+    import typer
+    
+    env_vars = {
+        "OPENROUTER_API_KEY": {
+            "set": bool(os.getenv("OPENROUTER_API_KEY")),
+            "example": 'export OPENROUTER_API_KEY="sk-or-v1-your-api-key-here"',
+            "help_url": "https://openrouter.ai/keys",
+            "description": "OpenRouter API key for model access"
+        },
+        "OPENROUTER_MODEL": {
+            "set": bool(os.getenv("OPENROUTER_MODEL")),  
+            "example": 'export OPENROUTER_MODEL="openai/gpt-4o-mini"',
+            "help_url": "https://openrouter.ai/models",
+            "description": "Model to use for generation (optional, defaults to openai/gpt-4o-mini)"
+        },
+        "HF_TOKEN": {
+            "set": bool(os.getenv("HF_TOKEN")),
+            "example": 'export HF_TOKEN="hf_your-token-here"',
+            "help_url": "https://huggingface.co/settings/tokens",
+            "description": "HuggingFace token for dataset publishing (optional)"
+        }
+    }
+    
+    missing_vars = []
+    for var_name, var_info in env_vars.items():
+        if not var_info["set"]:
+            # Only include if it's required for the current operation
+            if required_for_operation is None or var_name in (required_for_operation or []):
+                missing_vars.append((var_name, var_info))
+    
+    if missing_vars:
+        # Use sys.stderr.write directly for better compatibility with uv run
+        sys.stderr.write("\n📦 Missing environment variables detected:\n\n")
+        sys.stderr.write("📋 Run these commands in your terminal to set them:\n\n")
+        
+        for var_name, var_info in missing_vars:
+            sys.stderr.write(f"# {var_info['description']}\n")
+            sys.stderr.write(f"{var_info['example']}\n")
+            sys.stderr.write(f"# Get your key from: {var_info['help_url']}\n\n")
+        
+        sys.stderr.write("⚠️  Important: Environment variables set with 'export' are temporary\n")
+        sys.stderr.write("   They will be lost when you close your terminal\n\n")
+        sys.stderr.write("💡 For permanent setup, add these exports to:\n")
+        sys.stderr.write("   - ~/.bashrc (for Bash)\n")
+        sys.stderr.write("   - ~/.zshrc (for Zsh/macOS)\n")
+        sys.stderr.write("   - ~/.profile (for general shell)\n\n")
+        
+        # Force flush to ensure output is visible before exit
+        sys.stderr.flush()
+        
+        return {var: info["set"] for var, info in env_vars.items()}
+    
+    return {var: info["set"] for var, info in env_vars.items()}

@@ -28,7 +28,7 @@ class DatasetGenerationSignature(dspy.Signature):
 class PromptOptimizer:
     """DSPy-based prompt optimizer for dataset generation."""
 
-    def __init__(self, model_name: str = "meta-llama/llama-3-8b-instruct"):
+    def __init__(self, model_name: str = "openai/gpt-4o-mini"):
         """Initialize DSPy with the specified model."""
         self.model_name = model_name
         self._setup_dspy()
@@ -36,14 +36,24 @@ class PromptOptimizer:
 
     def _setup_dspy(self):
         """Setup DSPy with OpenRouter configuration."""
-        # Configure DSPy to use OpenRouter via LiteLLM format
-        dspy.configure(
-            lm=dspy.LM(
-                model=f"openrouter/{self.model_name}",
+        try:
+            # Import and use the new OpenRouter DSPy client
+            from data4ai.integrations.openrouter_dspy import configure_dspy_with_openrouter
+            
+            configure_dspy_with_openrouter(
+                model=self.model_name,
                 api_key=os.getenv("OPENROUTER_API_KEY"),
-                base_url="https://openrouter.ai/api/v1",
             )
-        )
+        except ImportError:
+            # Fallback to original method if new client is not available
+            logger.warning("OpenRouter DSPy client not available, using fallback")
+            dspy.configure(
+                lm=dspy.LM(
+                    model=f"openrouter/{self.model_name}",
+                    api_key=os.getenv("OPENROUTER_API_KEY"),
+                    base_url="https://openrouter.ai/api/v1",
+                )
+            )
 
     def _setup_signatures(self):
         """Setup DSPy signatures for different schemas."""
@@ -138,7 +148,7 @@ Generate exactly {count} diverse, high-quality examples. Ensure the JSON is vali
 class SchemaAwarePromptGenerator:
     """Schema-aware prompt generator using DSPy."""
 
-    def __init__(self, model_name: str = "meta-llama/llama-3-8b-instruct"):
+    def __init__(self, model_name: str = "openai/gpt-4o-mini"):
         """Initialize with schema-specific prompt generators."""
         self.optimizer = PromptOptimizer(model_name)
         self.schema_prompts = self._create_schema_prompts()
@@ -222,7 +232,7 @@ Focus on:
 
 # Factory function for easy integration
 def create_prompt_generator(
-    model_name: str = "meta-llama/llama-3-8b-instruct",
+    model_name: str = "openai/gpt-4o-mini",
     use_dspy: bool = True,
 ) -> SchemaAwarePromptGenerator:
     """Create a prompt generator with the specified configuration."""

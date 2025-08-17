@@ -15,13 +15,58 @@ pip install data4ai[all]         # All features (recommended)
 pipx install data4ai[all]
 ```
 
-## ⚙️ Setup
+## ⚙️ Environment Setup
+
+### 🎯 Method 1: Quick Setup (Recommended for Testing)
 
 ```bash
-# Set your OpenRouter API key
+# Set API key for current terminal session
 export OPENROUTER_API_KEY="your_key_here"
 
-# Get your API key from: https://openrouter.ai/
+# Get your API key from: https://openrouter.ai/keys
+
+# Verify setup
+data4ai env --check
+```
+
+### 🔧 Method 2: Interactive Setup
+
+```bash
+# Run the interactive setup script
+source setup_env.sh
+
+# This will prompt you for:
+# - OpenRouter API key (required)
+# - Model selection (optional)
+# - HuggingFace token (optional)
+```
+
+### 💾 Method 3: Permanent Setup
+
+```bash
+# For Bash (Linux/WSL)
+echo 'export OPENROUTER_API_KEY="your_key_here"' >> ~/.bashrc
+source ~/.bashrc
+
+# For Zsh (macOS/Linux)
+echo 'export OPENROUTER_API_KEY="your_key_here"' >> ~/.zshrc
+source ~/.zshrc
+
+# Verify it's permanent
+data4ai env --check
+```
+
+### 🆘 Troubleshooting Environment Issues
+
+```bash
+# Check what's missing
+data4ai env --check
+
+# Show export commands
+data4ai env --export
+
+# Test if API key is working
+data4ai prompt --repo test --description "test" --count 1 --dry-run
 ```
 
 ## 🎯 Quick Examples (Copy-Paste Ready)
@@ -188,7 +233,7 @@ data4ai file-to-dataset my_data.xlsx --repo my-dataset
 ### Environment Variables
 ```bash
 export OPENROUTER_API_KEY="your_key"
-export OPENROUTER_MODEL="meta-llama/llama-3-8b-instruct"
+export OPENROUTER_MODEL="openai/gpt-4o-mini"  # This is now the default
 export DATA4AI_TEMPERATURE="0.7"
 export HF_TOKEN="your_hf_token"
 export HF_ORG="ZySecAI"
@@ -225,7 +270,7 @@ export OPENROUTER_API_KEY="your_key_here"
 data4ai list-models
 
 # Use a different model
-data4ai prompt --repo test --description "test" --model "meta-llama/llama-3-8b-instruct"
+data4ai prompt --repo test --description "test" --model "openai/gpt-4o-mini"
 ```
 
 **"Excel file not found"**

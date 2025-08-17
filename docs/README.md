@@ -19,8 +19,10 @@ Welcome to the Data4AI documentation! This directory contains comprehensive guid
 - [**Publishing Guide**](PUBLISHING.md) - PyPI publishing instructions for maintainers
 - [**Contributing Guide**](../CONTRIBUTING.md) - How to contribute to the project
 
-### Configuration
-- [**.env.example**](../.env.example) - Environment variable template
+### Configuration & Setup
+- [**Environment Setup Guide**](ENVIRONMENT_SETUP.md) - Complete guide for setting up environment variables
+- [**Troubleshooting Guide**](TROUBLESHOOTING.md) - Common issues and solutions
+- [**.env.example**](../.env.example) - Example environment variables (reference only)
 
 ## 🗂️ Documentation Organization
 
@@ -37,6 +39,8 @@ data4ai/
     ├── DETAILED_USAGE.md   # Complete usage guide
     ├── EXAMPLES.md         # Code examples & recipes
     ├── COMMANDS.md         # CLI reference
+    ├── ENVIRONMENT_SETUP.md # Environment configuration guide
+    ├── TROUBLESHOOTING.md  # Problem solving guide
     ├── PROJECT_STRUCTURE.md # Architecture details
     └── PUBLISHING.md       # Release procedures
 ```
@@ -85,10 +89,12 @@ data4ai stats --repo my-dataset
 ## 🔍 Finding Information
 
 - **Installation?** → See [Main README](../README.md#-quick-start)
+- **Environment Setup?** → See [Environment Setup Guide](ENVIRONMENT_SETUP.md)
 - **CLI Options?** → See [Detailed Usage Guide](DETAILED_USAGE.md#cli-reference)
 - **Code Examples?** → Check [Examples](EXAMPLES.md)
-- **Error Messages?** → Review error handling in [Commands Reference](COMMANDS.md)
-- **Configuration?** → See Configuration section in [Main README](../README.md#️-configuration)
+- **Having Problems?** → Check [Troubleshooting Guide](TROUBLESHOOTING.md)
+- **Error Messages?** → Review [Troubleshooting Guide](TROUBLESHOOTING.md)
+- **Configuration?** → See [Environment Setup Guide](ENVIRONMENT_SETUP.md)
 - **Contributing?** → See [Contributing Guide](../CONTRIBUTING.md)
 
 ## 📝 Documentation Standards

@@ -179,7 +179,7 @@ from data4ai import generate_from_description
 # Set multiple environment variables
 os.environ.update({
     "OPENROUTER_API_KEY": "your_key_here",
-    "OPENROUTER_MODEL": "meta-llama/llama-3-8b-instruct",
+    "OPENROUTER_MODEL": "openai/gpt-4o-mini",
     "DATA4AI_TEMPERATURE": "0.7",
     "HF_TOKEN": "your_hf_token",
     "HF_ORG": "ZySecAI"

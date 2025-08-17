@@ -38,25 +38,19 @@ class TestDatasetGenerationSignature:
 class TestPromptOptimizer:
     """Test DSPy prompt optimizer."""
 
-    @patch("data4ai.integrations.dspy_prompts.dspy")
-    @patch("data4ai.integrations.dspy_prompts.os.getenv")
-    def test_optimizer_initialization(self, mock_getenv, mock_dspy):
+    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
+    def test_optimizer_initialization(self, mock_configure):
         """Test optimizer initialization with DSPy setup."""
-        mock_getenv.return_value = "test_api_key"
-        mock_lm = Mock()
-        mock_dspy.LM.return_value = mock_lm
+        optimizer = PromptOptimizer("openai/gpt-4o-mini")
 
-        optimizer = PromptOptimizer("meta-llama/llama-3-8b-instruct")
-
-        assert optimizer.model_name == "meta-llama/llama-3-8b-instruct"
-        mock_dspy.configure.assert_called_once()
-        mock_dspy.LM.assert_called_once_with(
-            model="openrouter/meta-llama/llama-3-8b-instruct",
-            api_key="test_api_key",
-            base_url="https://openrouter.ai/api/v1",
+        assert optimizer.model_name == "openai/gpt-4o-mini"
+        mock_configure.assert_called_once_with(
+            model="openai/gpt-4o-mini",
+            api_key=None,  # os.getenv returns None when not set
         )
 
-    def test_setup_signatures(self):
+    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
+    def test_setup_signatures(self, mock_configure):
         """Test that signatures are set up correctly."""
         optimizer = PromptOptimizer("test-model")
 
@@ -68,7 +62,8 @@ class TestPromptOptimizer:
         for _schema_name, signature_class in optimizer.signatures.items():
             assert signature_class == DatasetGenerationSignature
 
-    def test_generate_dynamic_prompt_fallback(self):
+    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
+    def test_generate_dynamic_prompt_fallback(self, mock_configure):
         """Test that dynamic prompt generation falls back to static prompt."""
         optimizer = PromptOptimizer("test-model")
 
@@ -83,7 +78,8 @@ class TestPromptOptimizer:
         assert "input" in prompt
         assert "output" in prompt
 
-    def test_generate_dynamic_prompt_dolly_schema(self):
+    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
+    def test_generate_dynamic_prompt_dolly_schema(self, mock_configure):
         """Test dynamic prompt generation for Dolly schema."""
         optimizer = PromptOptimizer("test-model")
 
@@ -96,7 +92,8 @@ class TestPromptOptimizer:
         assert "context" in prompt
         assert "response" in prompt
 
-    def test_generate_dynamic_prompt_sharegpt_schema(self):
+    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
+    def test_generate_dynamic_prompt_sharegpt_schema(self, mock_configure):
         """Test dynamic prompt generation for ShareGPT schema."""
         optimizer = PromptOptimizer("test-model")
 
@@ -107,7 +104,8 @@ class TestPromptOptimizer:
         assert "sharegpt schema" in prompt
         assert "conversations" in prompt
 
-    def test_optimize_prompt_with_examples(self):
+    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
+    def test_optimize_prompt_with_examples(self, mock_configure):
         """Test prompt optimization with previous examples."""
         optimizer = PromptOptimizer("test-model")
 
@@ -151,7 +149,8 @@ class TestSchemaAwarePromptGenerator:
         assert "dolly" in generator.schema_prompts
         assert "sharegpt" in generator.schema_prompts
 
-    def test_create_schema_prompts(self):
+    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
+    def test_create_schema_prompts(self, mock_configure):
         """Test that schema-specific prompts are created."""
         generator = SchemaAwarePromptGenerator("test-model")
 
@@ -282,7 +281,8 @@ class TestCreatePromptGenerator:
         assert result == mock_generator
         mock_generator_class.assert_called_once_with("test-model")
 
-    def test_create_prompt_generator_without_dspy(self):
+    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
+    def test_create_prompt_generator_without_dspy(self, mock_configure):
         """Test creating prompt generator without DSPy."""
         result = create_prompt_generator(model_name="test-model", use_dspy=False)
 
@@ -305,14 +305,15 @@ class TestCreatePromptGenerator:
 
             assert result == mock_generator
             mock_generator_class.assert_called_once_with(
-                "meta-llama/llama-3-8b-instruct"
+                "openai/gpt-4o-mini"
             )
 
 
 class TestDSPyIntegrationEndToEnd:
     """End-to-end tests for DSPy integration."""
 
-    def test_dspy_integration_workflow(self):
+    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
+    def test_dspy_integration_workflow(self, mock_configure):
         """Test complete DSPy integration workflow."""
         # Create prompt generator
         generator = create_prompt_generator(model_name="test-model", use_dspy=True)
@@ -347,7 +348,8 @@ class TestDSPyIntegrationEndToEnd:
         assert isinstance(adaptive_prompt, str)
         assert len(adaptive_prompt) > 0
 
-    def test_dspy_fallback_mechanism(self):
+    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
+    def test_dspy_fallback_mechanism(self, mock_configure):
         """Test that DSPy falls back gracefully when errors occur."""
         generator = create_prompt_generator(model_name="test-model", use_dspy=True)
 

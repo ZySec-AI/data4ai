@@ -12,7 +12,7 @@ import pandas as pd
 from data4ai.client import OpenRouterClient, OpenRouterConfig
 from data4ai.config import settings
 from data4ai.csv_handler import CSVHandler
-from data4ai.error_handler import ErrorHandler, async_error_handler
+from data4ai.error_handler import ErrorHandler, async_error_handler, check_environment_variables
 from data4ai.excel_handler import ExcelHandler
 from data4ai.exceptions import ConfigurationError, GenerationError, ValidationError
 from data4ai.integrations.dspy_prompts import create_prompt_generator
@@ -41,7 +41,9 @@ class DatasetGenerator:
         """Initialize generator with configuration."""
         self.api_key = api_key or settings.openrouter_api_key
         if not self.api_key:
-            raise ConfigurationError(ErrorHandler.get_message("api_key_missing"))
+            # Check environment variables and provide helpful messages
+            check_environment_variables(required_for_operation=["OPENROUTER_API_KEY"])
+            raise ConfigurationError("OpenRouter API key is required for dataset generation")
 
         self.model = model or settings.openrouter_model
         self.temperature = temperature or settings.temperature
@@ -51,13 +53,14 @@ class DatasetGenerator:
         if self.seed:
             random.seed(self.seed)
 
-        # Initialize API client with proper attribution
+        # Initialize API client with proper attribution and longer timeout for generation
         config = OpenRouterConfig(
             api_key=self.api_key,
             model=self.model,
             temperature=self.temperature,
             site_url=settings.site_url,
             site_name=settings.site_name,
+            timeout=120,  # 2 minutes for generation tasks
         )
         self.client = OpenRouterClient(config)
 
@@ -65,9 +68,26 @@ class DatasetGenerator:
         self.schemas = SchemaRegistry()
 
         # Initialize DSPy prompt generator
-        self.prompt_generator = create_prompt_generator(
-            model_name=self.model, use_dspy=settings.use_dspy
-        )
+        if settings.use_dspy:
+            try:
+                # Try to use the new OpenRouter DSPy integration
+                from data4ai.integrations.openrouter_dspy import create_openrouter_prompt_generator
+                self.prompt_generator = create_openrouter_prompt_generator(
+                    model=self.model,
+                    api_key=self.api_key,
+                )
+                logger.info("Using OpenRouter DSPy integration")
+            except ImportError:
+                # Fallback to original DSPy integration
+                logger.warning("OpenRouter DSPy not available, using fallback DSPy integration")
+                self.prompt_generator = create_prompt_generator(
+                    model_name=self.model, use_dspy=True
+                )
+        else:
+            # Use static prompt generator
+            self.prompt_generator = create_prompt_generator(
+                model_name=self.model, use_dspy=False
+            )
 
     @async_error_handler
     async def generate_from_excel(
@@ -183,75 +203,76 @@ class DatasetGenerator:
 
             logger.info(f"Generating {count} examples from description")
 
-            # Generate prompt once for the entire generation
+            # Generate prompt once for the entire generation (batch-agnostic)
             logger.info("Generating prompt for entire dataset...")
             master_prompt = self._build_generation_prompt(
                 description,
                 schema_name,
-                count,
+                batch_size,  # Use batch_size instead of total count
                 None,  # No previous examples for master prompt
             )
 
             # Track if DSPy was actually used
-            dspy_used = hasattr(self, "prompt_generator") and hasattr(
-                self.prompt_generator, "optimizer"
+            dspy_used = (
+                hasattr(self, "prompt_generator") and 
+                (hasattr(self.prompt_generator, "optimizer") or 
+                 hasattr(self.prompt_generator, "use_dspy"))
             )
 
-            # Generate in batches using the same master prompt
+            # Generate in batches using the same master prompt (CONCURRENT)
             dataset = []
             prompts_used = []  # Track prompts for audit
 
+            total_batches = (count + batch_size - 1) // batch_size
+            logger.info(f"🚀 Starting concurrent processing of {total_batches} batches...")
+            
+            # Create all batch tasks
+            batch_tasks = []
             for batch_start in range(0, count, batch_size):
                 batch_count = min(batch_size, count - batch_start)
-
-                # Use the master prompt for all batches
-                prompt = master_prompt
+                current_batch = batch_start // batch_size + 1
 
                 # Store prompt for audit
                 prompts_used.append(
                     {
-                        "batch": batch_start // batch_size + 1,
-                        "prompt": prompt,
+                        "batch": current_batch,
+                        "prompt": master_prompt,
                         "examples_requested": batch_count,
                         "prompt_type": "master_dspy_prompt",
                     }
                 )
 
-                # Get completion with retry logic
-                max_retries = 3
-                entries = []
+                # Create async task for this batch
+                task = self._process_batch_concurrent(
+                    batch_num=current_batch,
+                    total_batches=total_batches,
+                    prompt=master_prompt,
+                    batch_count=batch_count,
+                    schema_name=schema_name
+                )
+                batch_tasks.append(task)
 
-                for attempt in range(max_retries):
-                    try:
-                        messages = [{"role": "user", "content": prompt}]
-                        response = await self.client.chat_completion(
-                            messages,
-                            temperature=self.temperature,
-                            max_tokens=2000 * batch_count,
-                        )
-                        response_text = response["choices"][0]["message"]["content"]
+            # Process all batches concurrently with rate limiting
+            max_concurrent = min(5, len(batch_tasks))  # Limit to 5 concurrent requests
+            logger.info(f"⚡ Running {len(batch_tasks)} batches in parallel (max {max_concurrent} concurrent)...")
+            
+            semaphore = asyncio.Semaphore(max_concurrent)
+            
+            async def run_with_semaphore(task):
+                async with semaphore:
+                    return await task
+            
+            limited_tasks = [run_with_semaphore(task) for task in batch_tasks]
+            batch_results = await asyncio.gather(*limited_tasks, return_exceptions=True)
 
-                        # Parse response
-                        entries = self._parse_response(response_text, schema_name)
-
-                        if entries:
-                            break  # Success, exit retry loop
-                        else:
-                            logger.warning(
-                                f"Batch {batch_start // batch_size + 1} returned no valid entries (attempt {attempt + 1}/{max_retries})"
-                            )
-
-                    except Exception as e:
-                        logger.warning(
-                            f"Batch {batch_start // batch_size + 1} failed (attempt {attempt + 1}/{max_retries}): {e}"
-                        )
-                        if attempt == max_retries - 1:
-                            logger.error(
-                                f"Failed to generate batch {batch_start // batch_size + 1} after {max_retries} attempts"
-                            )
-
-                dataset.extend(entries)
-                logger.info(f"Generated {len(dataset)}/{count} examples")
+            # Collect results
+            for i, result in enumerate(batch_results):
+                if isinstance(result, Exception):
+                    logger.error(f"Batch {i+1} failed with exception: {result}")
+                else:
+                    dataset.extend(result)
+                    
+            logger.info(f"🎉 Concurrent processing complete! Generated {len(dataset)}/{count} examples ({(len(dataset)/count)*100:.1f}%)")
 
             # Write output
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -297,6 +318,61 @@ class DatasetGenerator:
     def generate_from_prompt_sync(self, *args, **kwargs) -> dict[str, Any]:
         """Synchronous wrapper for generate_from_prompt."""
         return asyncio.run(self.generate_from_prompt(*args, **kwargs))
+
+    async def _process_batch_concurrent(
+        self,
+        batch_num: int,
+        total_batches: int,
+        prompt: str,
+        batch_count: int,
+        schema_name: str,
+    ) -> list[dict[str, Any]]:
+        """Process a single batch concurrently with retry logic."""
+        import time
+        
+        max_retries = 3
+        
+        for attempt in range(max_retries):
+            try:
+                messages = [
+                    {
+                        "role": "system", 
+                        "content": "You are a dataset generator. You must respond with ONLY valid JSON arrays. Do not include any explanatory text, code examples, or markdown formatting. All fields must contain meaningful content - no empty strings."
+                    },
+                    {"role": "user", "content": f"{prompt}\n\nGenerate exactly {batch_count} examples."}
+                ]
+                
+                start_time = time.time()
+                logger.info(f"🔄 Batch {batch_num}/{total_batches}: Sending request (attempt {attempt + 1}/{max_retries})...")
+                
+                response = await self.client.chat_completion(
+                    messages,
+                    temperature=self.temperature,
+                    max_tokens=2000 * batch_count,
+                )
+                
+                elapsed = time.time() - start_time
+                logger.info(f"⚡ Batch {batch_num}/{total_batches}: Response received in {elapsed:.1f}s")
+                
+                response_text = response["choices"][0]["message"]["content"]
+
+                # Parse response
+                entries = self._parse_response(response_text, schema_name, max_entries=batch_count)
+
+                if entries:
+                    logger.info(f"✅ Batch {batch_num}/{total_batches}: {len(entries)} valid entries generated")
+                    return entries
+                else:
+                    logger.warning(f"⚠️ Batch {batch_num}/{total_batches}: No valid entries (attempt {attempt + 1}/{max_retries})")
+
+            except Exception as e:
+                logger.warning(f"❌ Batch {batch_num}/{total_batches}: Failed (attempt {attempt + 1}/{max_retries}): {e}")
+                
+                if attempt == max_retries - 1:
+                    logger.error(f"💥 Batch {batch_num}/{total_batches}: Failed after {max_retries} attempts")
+                    return []  # Return empty list on final failure
+        
+        return []  # Fallback return
 
     async def _complete_partial_rows(
         self,
@@ -419,32 +495,38 @@ class DatasetGenerator:
     ) -> str:
         """Build dynamic prompt using DSPy for generating examples from description."""
         try:
-            # Use DSPy to generate dynamic, high-quality prompts
-            if previous_examples:
-                # Use adaptive prompting with previous examples
-                prompt = self.prompt_generator.generate_adaptive_prompt(
-                    description=description,
-                    schema_name=schema_name,
-                    count=count,
-                    previous_examples=previous_examples,
+            # Check if we have a DSPy-enabled prompt generator
+            if hasattr(self.prompt_generator, 'use_dspy') and self.prompt_generator.use_dspy:
+                logger.info(f"Using DSPy-enabled prompt generator for {schema_name}")
+                # Use DSPy to generate dynamic, high-quality prompts
+                if previous_examples:
+                    # Use adaptive prompting with previous examples
+                    prompt = self.prompt_generator.generate_adaptive_prompt(
+                        description=description,
+                        schema_name=schema_name,
+                        count=count,
+                        previous_examples=previous_examples,
+                    )
+                else:
+                    # Use schema-aware dynamic prompting
+                    prompt = self.prompt_generator.generate_schema_prompt(
+                        description=description,
+                        schema_name=schema_name,
+                        count=count,
+                        use_dspy=True,
+                    )
+                
+                logger.info(
+                    f"✅ Generated dynamic prompt using DSPy for {schema_name} schema with {count} examples per batch"
                 )
+                return prompt
             else:
-                # Use schema-aware dynamic prompting
-                prompt = self.prompt_generator.generate_schema_prompt(
-                    description=description,
-                    schema_name=schema_name,
-                    count=count,
-                    use_dspy=True,
-                )
-
-            logger.info(
-                f"Generated dynamic prompt for {schema_name} schema with {count} examples"
-            )
-            return prompt
+                logger.info("Using static prompt generator (DSPy not enabled)")
+                return self._build_static_prompt(description, schema_name, count)
 
         except Exception as e:
             logger.warning(
-                f"DSPy prompt generation failed, falling back to static prompt: {e}"
+                f"Prompt generation failed, falling back to static prompt: {e}"
             )
             # Fallback to static prompts
             return self._build_static_prompt(description, schema_name, count)
@@ -536,6 +618,7 @@ Return a JSON object with ONLY the missing fields and their values."""
         self,
         response: str,
         schema_name: str,
+        max_entries: Optional[int] = None,
     ) -> list[dict[str, Any]]:
         """Parse AI response into dataset entries."""
         try:
@@ -559,6 +642,12 @@ Return a JSON object with ONLY the missing fields and their values."""
                     instance = schema_class.from_dict(entry)
                     if instance.validate_content():
                         dataset.append(instance.to_jsonl_entry())
+                        
+                        # Limit the number of entries if specified
+                        if max_entries and len(dataset) >= max_entries:
+                            logger.info(f"Limited to {max_entries} entries as requested")
+                            break
+                            
                 except Exception as e:
                     logger.warning(f"Invalid entry: {e}")
                     continue

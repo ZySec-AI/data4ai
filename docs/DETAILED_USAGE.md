@@ -60,7 +60,7 @@ data4ai prompt \
   --dataset alpaca \
   --description "Crear preguntas y respuestas en español sobre tecnología, programación y desarrollo de software" \
   --count 100 \
-  --model "meta-llama/llama-3-8b-instruct"
+  --model "openai/gpt-4o-mini"
 ```
 
 ## 🔧 Advanced Examples
@@ -201,7 +201,7 @@ my-dataset/
 ```json
 {
   "schema": "alpaca",
-  "model": "meta-llama/llama-3-8b-instruct",
+  "model": "openai/gpt-4o-mini",
   "row_count": 1000,
   "generated_at": "2024-01-15T10:30:00Z",
   "parameters": {

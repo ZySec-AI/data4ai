@@ -9,6 +9,7 @@ from huggingface_hub.utils import HfHubHTTPError
 
 from data4ai.exceptions import AuthenticationError, PublishingError
 from data4ai.utils import generate_dataset_card
+from data4ai.error_handler import check_environment_variables
 
 logger = logging.getLogger("data4ai")
 
@@ -33,8 +34,10 @@ class HuggingFacePublisher:
         """Push dataset to HuggingFace Hub."""
         try:
             if not self.token:
+                # Check environment variables and provide helpful messages
+                check_environment_variables(required_for_operation=["HF_TOKEN"])
                 raise AuthenticationError(
-                    "HuggingFace token required. Set HF_TOKEN environment variable."
+                    "HuggingFace token is required for publishing datasets"
                 )
 
             # Validate dataset directory

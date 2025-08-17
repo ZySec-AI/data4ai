@@ -12,8 +12,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="DATA4AI_",
-        env_file=".env",
-        env_file_encoding="utf-8",
+        env_file=None,  # Disabled - only use environment variables from terminal
         case_sensitive=False,
         extra="ignore",
     )
@@ -25,15 +24,15 @@ class Settings(BaseSettings):
         description="OpenRouter API key for model access",
     )
     openrouter_model: str = Field(
-        default="meta-llama/llama-3-8b-instruct",
+        default="openai/gpt-4o-mini",
         alias="OPENROUTER_MODEL",
         description="Default model to use for generation",
     )
 
     # Site attribution for analytics
     site_url: str = Field(
-        default="https://www.zysec.ai",
-        description="Company website URL for attribution",
+        default="https://github.com/data4ai/data4ai",
+        description="Project website URL for attribution",
     )
     site_name: str = Field(
         default="Data4AI",
@@ -47,7 +46,7 @@ class Settings(BaseSettings):
         description="HuggingFace token for dataset publishing",
     )
     hf_organization: str = Field(
-        default="ZySecAI",
+        default="data4ai",
         alias="HF_ORG",
         description="HuggingFace organization name",
     )
