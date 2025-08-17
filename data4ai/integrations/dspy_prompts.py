@@ -1,18 +1,18 @@
 """DSPy integration for dynamic prompt generation."""
 
-import os
-import dspy
-from typing import List, Dict, Any, Optional
-from pathlib import Path
 import json
 import logging
+import os
+from typing import Any, Optional
+
+import dspy
 
 logger = logging.getLogger(__name__)
 
 
 class DatasetGenerationSignature(dspy.Signature):
     """DSPy signature for dataset generation."""
-    
+
     description = dspy.InputField(desc="Natural language description of the dataset to generate")
     schema_name = dspy.InputField(desc="Dataset schema name (alpaca, dolly, sharegpt, etc.)")
     count = dspy.InputField(desc="Number of examples to generate")
@@ -21,13 +21,13 @@ class DatasetGenerationSignature(dspy.Signature):
 
 class PromptOptimizer:
     """DSPy-based prompt optimizer for dataset generation."""
-    
+
     def __init__(self, model_name: str = "meta-llama/llama-3-8b-instruct"):
         """Initialize DSPy with the specified model."""
         self.model_name = model_name
         self._setup_dspy()
         self._setup_signatures()
-    
+
     def _setup_dspy(self):
         """Setup DSPy with OpenRouter configuration."""
         # Configure DSPy to use OpenRouter via LiteLLM format
@@ -38,7 +38,7 @@ class PromptOptimizer:
                 base_url="https://openrouter.ai/api/v1",
             )
         )
-    
+
     def _setup_signatures(self):
         """Setup DSPy signatures for different schemas."""
         self.signatures = {
@@ -47,24 +47,24 @@ class PromptOptimizer:
             "sharegpt": DatasetGenerationSignature,
             "custom": DatasetGenerationSignature,
         }
-    
+
     def generate_dynamic_prompt(
         self,
         description: str,
         schema_name: str,
         count: int,
-        examples: Optional[List[Dict[str, Any]]] = None,
+        examples: Optional[list[dict[str, Any]]] = None,
     ) -> str:
         """Generate a dynamic prompt using DSPy signature."""
         try:
             # For now, use fallback prompt as DSPy integration needs more work
             logger.info("Using fallback static prompt (DSPy integration in development)")
             return self._fallback_prompt(description, schema_name, count)
-                
+
         except Exception as e:
             logger.error(f"DSPy prompt generation failed: {e}")
             return self._fallback_prompt(description, schema_name, count)
-    
+
     def _fallback_prompt(self, description: str, schema_name: str, count: int) -> str:
         """Fallback to static prompt if DSPy fails."""
         base_prompt = f"""Generate {count} high-quality examples for a {schema_name} dataset based on this description: {description}
@@ -95,13 +95,13 @@ For {schema_name} schema, each example should have:"""
 Generate exactly {count} diverse, high-quality examples. Ensure the JSON is valid and properly formatted."""
 
         return base_prompt
-    
+
     def optimize_prompt_with_examples(
         self,
         description: str,
         schema_name: str,
         count: int,
-        example_data: List[Dict[str, Any]],
+        example_data: list[dict[str, Any]],
     ) -> str:
         """Optimize prompt using existing examples as few-shot learning."""
         try:
@@ -110,16 +110,16 @@ Generate exactly {count} diverse, high-quality examples. Ensure the JSON is vali
                 description = dspy.InputField(desc="Dataset description")
                 examples = dspy.InputField(desc="Example data to learn from")
                 new_examples = dspy.OutputField(desc="New examples following the same pattern")
-            
+
             predictor = dspy.Predict(FewShotSignature)
-            
+
             result = predictor(
                 description=description,
                 examples=json.dumps(example_data[:3])  # Use first 3 examples
             )
-            
+
             return result.new_examples
-            
+
         except Exception as e:
             logger.error(f"Few-shot optimization failed: {e}")
             return self.generate_dynamic_prompt(description, schema_name, count)
@@ -127,16 +127,16 @@ Generate exactly {count} diverse, high-quality examples. Ensure the JSON is vali
 
 class SchemaAwarePromptGenerator:
     """Schema-aware prompt generator using DSPy."""
-    
+
     def __init__(self, model_name: str = "meta-llama/llama-3-8b-instruct"):
         """Initialize with schema-specific prompt generators."""
         self.optimizer = PromptOptimizer(model_name)
         self.schema_prompts = self._create_schema_prompts()
-    
-    def _create_schema_prompts(self) -> Dict[str, str]:
+
+    def _create_schema_prompts(self) -> dict[str, str]:
         """Create schema-specific prompt templates."""
         return {
-            "alpaca": """You are an expert at creating high-quality instruction-following datasets. 
+            "alpaca": """You are an expert at creating high-quality instruction-following datasets.
 Generate {count} diverse examples for the Alpaca format based on: {description}
 
 Each example should have:
@@ -176,7 +176,7 @@ Focus on:
 - Helpful AI responses
 - Proper JSON formatting""",
         }
-    
+
     def generate_schema_prompt(
         self,
         description: str,
@@ -191,13 +191,13 @@ Focus on:
             # Fallback to template-based prompts
             template = self.schema_prompts.get(schema_name, self.schema_prompts["alpaca"])
             return template.format(description=description, count=count)
-    
+
     def generate_adaptive_prompt(
         self,
         description: str,
         schema_name: str,
         count: int,
-        previous_examples: Optional[List[Dict[str, Any]]] = None,
+        previous_examples: Optional[list[dict[str, Any]]] = None,
     ) -> str:
         """Generate an adaptive prompt that learns from previous examples."""
         if previous_examples and len(previous_examples) > 0:
@@ -222,9 +222,9 @@ def create_prompt_generator(
             def __init__(self, model_name: str):
                 self.model_name = model_name
                 self.schema_prompts = SchemaAwarePromptGenerator(model_name).schema_prompts
-            
+
             def generate_schema_prompt(self, description: str, schema_name: str, count: int, **kwargs) -> str:
                 template = self.schema_prompts.get(schema_name, self.schema_prompts["alpaca"])
                 return template.format(description=description, count=count)
-        
+
         return SimplePromptGenerator(model_name)

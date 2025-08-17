@@ -29,7 +29,7 @@ class Settings(BaseSettings):
         alias="OPENROUTER_MODEL",
         description="Default model to use for generation",
     )
-    
+
     # Site attribution for analytics
     site_url: str = Field(
         default="https://www.zysec.ai",
@@ -39,7 +39,7 @@ class Settings(BaseSettings):
         default="Data4AI",
         description="Project name for attribution",
     )
-    
+
     # HuggingFace configuration
     hf_token: Optional[str] = Field(
         default=None,
@@ -51,7 +51,7 @@ class Settings(BaseSettings):
         alias="HF_ORG",
         description="HuggingFace organization name",
     )
-    
+
     # Generation parameters
     temperature: float = Field(
         default=0.7,
@@ -74,25 +74,25 @@ class Settings(BaseSettings):
         default=None,
         description="Random seed for reproducibility",
     )
-    
+
     # Default schema
     default_schema: str = Field(
         default="alpaca",
         description="Default dataset schema",
     )
-    
+
     # DSPy configuration
     use_dspy: bool = Field(
         default=True,
         description="Use DSPy for dynamic prompt generation",
     )
-    
+
     # Paths
     output_dir: Path = Field(
         default=Path("outputs"),
         description="Default output directory",
     )
-    
+
     @field_validator("openrouter_api_key")
     @classmethod
     def validate_api_key(cls, v: str) -> str:
@@ -104,7 +104,7 @@ class Settings(BaseSettings):
             # Be lenient - just warn, don't fail
             return v
         return v
-    
+
     @field_validator("temperature")
     @classmethod
     def validate_temperature(cls, v: float) -> float:
@@ -112,7 +112,7 @@ class Settings(BaseSettings):
         if not 0.0 <= v <= 2.0:
             raise ValueError("Temperature must be between 0.0 and 2.0")
         return v
-    
+
     @field_validator("default_schema")
     @classmethod
     def validate_schema(cls, v: str) -> str:
@@ -123,20 +123,20 @@ class Settings(BaseSettings):
                 f"Invalid schema '{v}'. Must be one of: {', '.join(valid_schemas)}"
             )
         return v.lower()
-    
+
     def get_config_path(self) -> Path:
         """Get path to configuration file."""
         return Path.home() / ".data4ai" / "config.yaml"
-    
+
     def load_from_yaml(self, path: Optional[Path] = None) -> None:
         """Load configuration from YAML file."""
         import yaml
-        
+
         config_path = path or self.get_config_path()
         if config_path.exists():
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 config_data = yaml.safe_load(f)
-                
+
             # Update settings with YAML data
             if config_data:
                 # Handle nested configuration
@@ -148,19 +148,19 @@ class Settings(BaseSettings):
                             self.site_name = value
                         elif hasattr(self, f"openrouter_{key}"):
                             setattr(self, f"openrouter_{key}", value)
-                
+
                 # Handle other top-level keys
                 for key, value in config_data.items():
                     if key not in ["openrouter", "huggingface", "defaults"] and hasattr(self, key):
                         setattr(self, key, value)
-    
+
     def save_to_yaml(self, path: Optional[Path] = None) -> None:
         """Save current configuration to YAML file."""
         import yaml
-        
+
         config_path = path or self.get_config_path()
         config_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         config_data = {
             "openrouter": {
                 "api_key": self.openrouter_api_key,
@@ -180,7 +180,7 @@ class Settings(BaseSettings):
                 "seed": self.seed,
             },
         }
-        
+
         with open(config_path, "w") as f:
             yaml.dump(config_data, f, default_flow_style=False)
 

@@ -3,10 +3,10 @@
 import json
 import tempfile
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any
 
-import pytest
 import pandas as pd
+import pytest
 
 
 @pytest.fixture
@@ -20,16 +20,16 @@ def temp_dir():
 def sample_excel(temp_dir):
     """Create a sample Excel file for testing."""
     excel_path = temp_dir / "test.xlsx"
-    
+
     data = {
         "instruction": ["What is Python?", "Explain AI", ""],
         "input": ["", "In simple terms", ""],
         "output": ["Python is a programming language", "", ""],
     }
-    
+
     df = pd.DataFrame(data)
     df.to_excel(excel_path, index=False)
-    
+
     return excel_path
 
 
@@ -37,7 +37,7 @@ def sample_excel(temp_dir):
 def sample_jsonl(temp_dir):
     """Create a sample JSONL file."""
     jsonl_path = temp_dir / "data.jsonl"
-    
+
     data = [
         {
             "instruction": "What is Python?",
@@ -50,11 +50,11 @@ def sample_jsonl(temp_dir):
             "output": "AI is artificial intelligence",
         },
     ]
-    
+
     with open(jsonl_path, "w") as f:
         for entry in data:
             f.write(json.dumps(entry) + "\n")
-    
+
     return jsonl_path
 
 
@@ -88,7 +88,7 @@ def mock_api_key():
 
 
 @pytest.fixture
-def sample_alpaca_data() -> List[Dict[str, Any]]:
+def sample_alpaca_data() -> list[dict[str, Any]]:
     """Sample Alpaca format data."""
     return [
         {
@@ -105,7 +105,7 @@ def sample_alpaca_data() -> List[Dict[str, Any]]:
 
 
 @pytest.fixture
-def sample_dolly_data() -> List[Dict[str, Any]]:
+def sample_dolly_data() -> list[dict[str, Any]]:
     """Sample Dolly format data."""
     return [
         {
@@ -118,7 +118,7 @@ def sample_dolly_data() -> List[Dict[str, Any]]:
 
 
 @pytest.fixture
-def sample_sharegpt_data() -> List[Dict[str, Any]]:
+def sample_sharegpt_data() -> list[dict[str, Any]]:
     """Sample ShareGPT format data."""
     return [
         {

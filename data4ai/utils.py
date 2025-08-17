@@ -2,15 +2,20 @@
 
 import json
 import logging
-import sys
+from collections.abc import Generator
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Optional
 
 from rich.console import Console
 from rich.logging import RichHandler
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
-
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TaskProgressColumn,
+    TextColumn,
+)
 
 console = Console()
 
@@ -19,10 +24,10 @@ def setup_logging(level: str = "INFO", log_file: Optional[Path] = None) -> loggi
     """Set up application logging with Rich handler."""
     logger = logging.getLogger("data4ai")
     logger.setLevel(getattr(logging, level.upper()))
-    
+
     # Remove existing handlers
     logger.handlers.clear()
-    
+
     # Console handler with Rich
     console_handler = RichHandler(
         console=console,
@@ -32,7 +37,7 @@ def setup_logging(level: str = "INFO", log_file: Optional[Path] = None) -> loggi
     )
     console_handler.setFormatter(logging.Formatter("%(message)s"))
     logger.addHandler(console_handler)
-    
+
     # File handler if specified
     if log_file:
         file_handler = logging.FileHandler(log_file, encoding="utf-8")
@@ -42,13 +47,13 @@ def setup_logging(level: str = "INFO", log_file: Optional[Path] = None) -> loggi
             )
         )
         logger.addHandler(file_handler)
-    
+
     return logger
 
 
-def read_jsonl(file_path: Path) -> Generator[Dict[str, Any], None, None]:
+def read_jsonl(file_path: Path) -> Generator[dict[str, Any], None, None]:
     """Read JSONL file and yield each entry."""
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         for line_num, line in enumerate(f, 1):
             line = line.strip()
             if not line:
@@ -61,7 +66,7 @@ def read_jsonl(file_path: Path) -> Generator[Dict[str, Any], None, None]:
 
 
 def write_jsonl(
-    data: List[Dict[str, Any]], 
+    data: list[dict[str, Any]],
     file_path: Path,
     append: bool = False
 ) -> int:
@@ -75,14 +80,15 @@ def save_metadata(
     schema: str,
     model: str,
     row_count: int,
-    parameters: Dict[str, Any],
-    metrics: Optional[Dict[str, Any]] = None,
+    parameters: dict[str, Any],
+    metrics: Optional[dict[str, Any]] = None,
 ) -> Path:
     """Save generation metadata to JSON file (atomically)."""
-    from data4ai.atomic_writer import AtomicWriter
-    from data4ai import __version__
     from datetime import datetime, timezone
-    
+
+    from data4ai import __version__
+    from data4ai.atomic_writer import AtomicWriter
+
     metadata = {
         "version": __version__,
         "schema": schema,
@@ -92,14 +98,14 @@ def save_metadata(
         "parameters": parameters,
         "metrics": metrics or {},
     }
-    
+
     metadata_path = output_dir / "metadata.json"
     AtomicWriter.write_json(metadata, metadata_path)
-    
+
     return metadata_path
 
 
-def calculate_metrics(data: List[Dict[str, Any]], schema: str) -> Dict[str, Any]:
+def calculate_metrics(data: list[dict[str, Any]], schema: str) -> dict[str, Any]:
     """Calculate quality metrics for generated dataset."""
     metrics = {
         "total_rows": len(data),
@@ -111,13 +117,13 @@ def calculate_metrics(data: List[Dict[str, Any]], schema: str) -> Dict[str, Any]
         "min_output_length": float("inf"),
         "max_output_length": 0,
     }
-    
+
     if not data:
         return metrics
-    
+
     instruction_lengths = []
     output_lengths = []
-    
+
     for entry in data:
         # Get instruction field based on schema
         instruction_field = "instruction" if schema != "sharegpt" else None
@@ -126,19 +132,19 @@ def calculate_metrics(data: List[Dict[str, Any]], schema: str) -> Dict[str, Any]
             "dolly": "response",
             "sharegpt": None,
         }.get(schema)
-        
+
         if instruction_field and instruction_field in entry:
             length = len(entry[instruction_field])
             instruction_lengths.append(length)
             metrics["min_instruction_length"] = min(metrics["min_instruction_length"], length)
             metrics["max_instruction_length"] = max(metrics["max_instruction_length"], length)
-        
+
         if output_field and output_field in entry:
             length = len(entry[output_field])
             output_lengths.append(length)
             metrics["min_output_length"] = min(metrics["min_output_length"], length)
             metrics["max_output_length"] = max(metrics["max_output_length"], length)
-        
+
         # Check for empty entries
         if schema == "sharegpt":
             if not entry.get("conversations"):
@@ -146,21 +152,21 @@ def calculate_metrics(data: List[Dict[str, Any]], schema: str) -> Dict[str, Any]
         else:
             if not entry.get(instruction_field) or not entry.get(output_field):
                 metrics["empty_rows"] += 1
-    
+
     # Calculate averages
     if instruction_lengths:
         metrics["avg_instruction_length"] = sum(instruction_lengths) / len(instruction_lengths)
     if output_lengths:
         metrics["avg_output_length"] = sum(output_lengths) / len(output_lengths)
-    
+
     # Fix infinity values
     if metrics["min_instruction_length"] == float("inf"):
         metrics["min_instruction_length"] = 0
     if metrics["min_output_length"] == float("inf"):
         metrics["min_output_length"] = 0
-    
+
     metrics["completion_rate"] = (metrics["total_rows"] - metrics["empty_rows"]) / max(metrics["total_rows"], 1)
-    
+
     return metrics
 
 
@@ -188,10 +194,10 @@ def format_file_size(size_bytes: int) -> str:
 def validate_path(path: Path, must_exist: bool = False) -> Path:
     """Validate and resolve a file path."""
     resolved_path = path.resolve()
-    
+
     if must_exist and not resolved_path.exists():
         raise FileNotFoundError(f"Path does not exist: {resolved_path}")
-    
+
     return resolved_path
 
 
@@ -241,7 +247,7 @@ dataset = load_dataset("{dataset_name}")
 
 ## Generation Details
 
-This dataset was generated using [Data4AI](https://github.com/zysec/data4ai), 
+This dataset was generated using [Data4AI](https://github.com/zysec/data4ai),
 an AI-powered tool for creating high-quality instruction-tuning datasets.
 
 ## License
@@ -293,7 +299,7 @@ def _get_schema_description(schema: str) -> str:
     return descriptions.get(schema, "Custom schema format")
 
 
-def batch_items(items: List[Any], batch_size: int) -> Generator[List[Any], None, None]:
+def batch_items(items: list[Any], batch_size: int) -> Generator[list[Any], None, None]:
     """Yield batches of items."""
     for i in range(0, len(items), batch_size):
         yield items[i:i + batch_size]
@@ -311,20 +317,20 @@ def extract_json_from_text(text: str) -> Optional[Any]:
     """Extract JSON from text that might contain other content."""
     # Try to find JSON array or object
     import re
-    
+
     # Look for JSON array
     array_match = re.search(r'\[.*\]', text, re.DOTALL)
     if array_match:
         result = safe_json_parse(array_match.group())
         if result is not None:
             return result
-    
+
     # Look for JSON object
     object_match = re.search(r'\{.*\}', text, re.DOTALL)
     if object_match:
         result = safe_json_parse(object_match.group())
         if result is not None:
             return result
-    
+
     # Try parsing the whole text
     return safe_json_parse(text)
