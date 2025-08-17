@@ -240,10 +240,13 @@ jobs:
     
     - name: Install package
       run: |
+        echo "Installing package with type: ${{ matrix.install-type }}"
         if [ "${{ matrix.install-type }}" = "basic" ]; then
+          echo "Installing basic package..."
           pip install dist/*.whl
         else
-          pip install "dist/*.whl[all]"
+          echo "Installing package with extras: ${{ matrix.install-type }}"
+          pip install "dist/*.whl[${{ matrix.install-type }}]"
         fi
     
     - name: Test import
@@ -256,6 +259,16 @@ jobs:
       run: |
         data4ai version
         data4ai --help
+    
+    - name: Test Excel functionality
+      if: matrix.install-type == 'all'
+      run: |
+        python -c "from data4ai.excel_handler import ExcelHandler; print('Excel handler imported successfully')"
+    
+    - name: Test HF functionality
+      if: matrix.install-type == 'all'
+      run: |
+        python -c "from data4ai.publisher import HuggingFacePublisher; print('HF publisher imported successfully')"
 
 
 
