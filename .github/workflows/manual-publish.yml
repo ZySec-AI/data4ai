@@ -33,12 +33,31 @@ jobs:
         echo "Skip tests: ${{ github.event.inputs.skip-tests }}"
         echo "⚠️ WARNING: Publishing to PyPI - this will be publicly available!"
         echo "Make sure you have tested thoroughly before publishing."
+        
+        if [ "${{ github.event.inputs.skip-tests }}" = "true" ]; then
+          echo "🔍 NOTE: Tests will be skipped due to skip-tests=true"
+        else
+          echo "🔍 NOTE: Tests will run (skip-tests=false)"
+        fi
 
   validate:
     needs: validate-inputs
     runs-on: ubuntu-latest
     if: ${{ !needs.validate-inputs.outputs.skip-tests }}
+    continue-on-error: false
     steps:
+    - name: Check validate conditions
+      run: |
+        echo "🔍 Validate Job Conditions:"
+        echo "  - skip-tests: ${{ needs.validate-inputs.outputs.skip-tests }}"
+        echo "  - Condition met: ${{ !needs.validate-inputs.outputs.skip-tests }}"
+        
+        if [ "${{ needs.validate-inputs.outputs.skip-tests }}" = "true" ]; then
+          echo "⏭️ Skipping validation due to skip-tests=true"
+        else
+          echo "✅ Running validation (skip-tests=false)"
+        fi
+    
     - uses: actions/checkout@v4
     
     - name: Set up Python
@@ -87,7 +106,23 @@ jobs:
   build:
     needs: [validate-inputs, validate]
     runs-on: ubuntu-latest
+    if: always() && (needs.validate-inputs.result == 'success' && (needs.validate.result == 'success' || needs.validate.result == 'skipped'))
     steps:
+    - name: Check build conditions
+      run: |
+        echo "🔍 Build Job Conditions:"
+        echo "  - validate-inputs.result: ${{ needs.validate-inputs.result }}"
+        echo "  - validate.result: ${{ needs.validate.result }}"
+        echo "  - Condition met: ${{ always() && (needs.validate-inputs.result == 'success' && (needs.validate.result == 'success' || needs.validate.result == 'skipped')) }}"
+        
+        if [ "${{ needs.validate-inputs.result }}" != "success" ]; then
+          echo "⏭️ Skipping build due to validate-inputs failure"
+        elif [ "${{ needs.validate.result }}" != "success" ] && [ "${{ needs.validate.result }}" != "skipped" ]; then
+          echo "⏭️ Skipping build due to validate failure"
+        else
+          echo "✅ Running build (all conditions met)"
+        fi
+    
     - uses: actions/checkout@v4
     
     - name: Set up Python
@@ -149,15 +184,30 @@ jobs:
         path: dist/
 
   test-installation:
-    needs: build
+    needs: [validate-inputs, build]
     runs-on: ubuntu-latest
-    if: ${{ !needs.validate-inputs.outputs.skip-tests }}
+    if: ${{ !needs.validate-inputs.outputs.skip-tests && needs.build.result == 'success' }}
     strategy:
       matrix:
         python-version: ['3.11']
         install-type: ['basic', 'all']
     
     steps:
+    - name: Check test-installation conditions
+      run: |
+        echo "🔍 Test Installation Job Conditions:"
+        echo "  - skip-tests: ${{ needs.validate-inputs.outputs.skip-tests }}"
+        echo "  - build.result: ${{ needs.build.result }}"
+        echo "  - Condition met: ${{ !needs.validate-inputs.outputs.skip-tests && needs.build.result == 'success' }}"
+        
+        if [ "${{ needs.validate-inputs.outputs.skip-tests }}" = "true" ]; then
+          echo "⏭️ Skipping tests due to skip-tests=true"
+        elif [ "${{ needs.build.result }}" != "success" ]; then
+          echo "⏭️ Skipping tests due to build failure"
+        else
+          echo "✅ Running tests (all conditions met)"
+        fi
+    
     - uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
@@ -193,10 +243,39 @@ jobs:
 
 
   publish-pypi:
-    needs: [validate-inputs, build, test-installation]
+    needs: [validate-inputs, build]
     runs-on: ubuntu-latest
+    if: always() && (needs.validate-inputs.result == 'success' && needs.build.result == 'success')
     
     steps:
+    - name: Check publish conditions
+      run: |
+        echo "🔍 Publish Job Conditions:"
+        echo "  - validate-inputs.result: ${{ needs.validate-inputs.result }}"
+        echo "  - build.result: ${{ needs.build.result }}"
+        echo "  - Condition met: ${{ always() && (needs.validate-inputs.result == 'success' && needs.build.result == 'success') }}"
+        
+        if [ "${{ needs.validate-inputs.result }}" != "success" ]; then
+          echo "⏭️ Skipping publish due to validate-inputs failure"
+        elif [ "${{ needs.build.result }}" != "success" ]; then
+          echo "⏭️ Skipping publish due to build failure"
+        else
+          echo "✅ Running publish (all conditions met)"
+        fi
+    - name: Check job status
+      run: |
+        echo "🔍 Job Status Summary:"
+        echo "  - validate-inputs: ${{ needs.validate-inputs.result }}"
+        echo "  - validate: ${{ needs.validate.result }}"
+        echo "  - build: ${{ needs.build.result }}"
+        echo "  - test-installation: ${{ needs.test-installation.result || 'skipped' }}"
+        
+        if [ "${{ github.event.inputs.skip-tests }}" = "true" ]; then
+          echo "✅ Tests were intentionally skipped (skip-tests=true)"
+        else
+          echo "✅ Tests should have run (skip-tests=false)"
+        fi
+    
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:

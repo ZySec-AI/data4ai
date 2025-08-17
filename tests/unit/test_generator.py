@@ -164,7 +164,9 @@ class TestPromptBuilding:
 
     @patch("data4ai.generator.create_prompt_generator")
     @patch("data4ai.generator.settings")
-    def test_build_generation_prompt_with_examples(self, mock_settings, mock_create_prompt):
+    def test_build_generation_prompt_with_examples(
+        self, mock_settings, mock_create_prompt
+    ):
         """Test building generation prompt with previous examples."""
         # Mock API key to prevent ConfigurationError
         mock_settings.openrouter_api_key = "test-key"
