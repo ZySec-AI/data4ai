@@ -26,7 +26,7 @@ As of version 0.1.3+, Data4AI uses **ChatML** as the default dataset schema. Cha
 ```bash
 # No need to specify --dataset, ChatML is default
 data4ai prompt --repo my-dataset --description "Create Python questions" --count 100
-data4ai doc-to-dataset document.pdf --repo doc-dataset --count 50
+data4ai doc document.pdf --repo doc-dataset --count 50
 ```
 
 ### Explicit ChatML
@@ -39,8 +39,6 @@ data4ai prompt --repo my-dataset --dataset chatml --description "..." --count 10
 ```bash
 # Specify other schemas when needed
 data4ai prompt --repo my-dataset --dataset alpaca --description "..." --count 100
-data4ai prompt --repo my-dataset --dataset dolly --description "..." --count 100
-data4ai prompt --repo my-dataset --dataset sharegpt --description "..." --count 100
 ```
 
 ## Why ChatML?
@@ -74,14 +72,14 @@ result = generate_from_description(
     description="...",
     repo="...",
     count=100,
-    schema="alpaca"  # or "dolly", "sharegpt"
+    schema="alpaca"
 )
 ```
 
 ### Environment Configuration
 ```bash
 # Set your preferred default schema
-export DEFAULT_SCHEMA=chatml  # or alpaca, dolly, sharegpt
+export DEFAULT_SCHEMA=chatml  # or alpaca
 
 # Make it permanent
 echo 'export DEFAULT_SCHEMA=chatml' >> ~/.bashrc
@@ -89,13 +87,13 @@ echo 'export DEFAULT_SCHEMA=chatml' >> ~/.bashrc
 
 ## Schema Comparison
 
-| Feature | ChatML | Alpaca | Dolly | ShareGPT |
-|---------|--------|--------|-------|----------|
-| **System Prompts** | ✅ Yes | ❌ No | ❌ No | ❌ No |
-| **Multi-turn** | ✅ Yes | ❌ No | ❌ No | ✅ Yes |
-| **OpenAI Compatible** | ✅ Yes | ⚠️ Needs conversion | ⚠️ Needs conversion | ⚠️ Needs conversion |
-| **Anthropic Compatible** | ✅ Yes | ⚠️ Needs conversion | ⚠️ Needs conversion | ⚠️ Needs conversion |
-| **Best For** | Modern LLMs | Llama/Alpaca models | Databricks models | Vicuna models |
+| Feature | ChatML | Alpaca |
+|---------|--------|--------|
+| **System Prompts** | ✅ Yes | ❌ No |
+| **Multi-turn** | ✅ Yes | ❌ No |
+| **OpenAI Compatible** | ✅ Yes | ⚠️ Needs conversion |
+| **Anthropic Compatible** | ✅ Yes | ⚠️ Needs conversion |
+| **Best For** | Modern LLMs | Llama/Alpaca models |
 
 ## FAQ
 

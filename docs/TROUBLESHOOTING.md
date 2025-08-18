@@ -195,9 +195,8 @@ echo 'OPENROUTER_API_KEY="your-key"' | sudo tee -a /etc/environment
    ```
 
 2. **Check schema requirements:**
+   - ChatML: messages array with role/content
    - Alpaca: instruction, input, output
-   - Dolly: instruction, context, response
-   - ShareGPT: conversations
 
 ### Problem: Empty or corrupted output
 

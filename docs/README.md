@@ -13,7 +13,6 @@ Welcome to the Data4AI documentation! This directory contains comprehensive guid
 - [**Detailed Usage Guide**](DETAILED_USAGE.md) - Complete CLI reference and advanced usage
 - [**Examples**](EXAMPLES.md) - Code examples, recipes, and common patterns
 - [**Commands Reference**](COMMANDS.md) - Complete CLI command documentation
-- [**Advanced Generation**](ADVANCED_GENERATION.md) - Budget-based planning with doc-plan-generate
 - [**Features Overview**](FEATURES.md) - Complete feature list and capabilities
 - [**ChatML Default**](CHATML_DEFAULT.md) - Understanding the default schema
 
