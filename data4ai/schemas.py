@@ -53,7 +53,6 @@ class AlpacaSchema(BaseSchema):
         """Validate content requirements."""
         return bool(self.instruction and self.output)
 
-
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "AlpacaSchema":
         """Create instance from dictionary."""
@@ -121,7 +120,6 @@ class ChatMLSchema(BaseSchema):
         return len(self.messages) >= 1 and all(
             turn.value.strip() for turn in self.messages
         )
-
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ChatMLSchema":

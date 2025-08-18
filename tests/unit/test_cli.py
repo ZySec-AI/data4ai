@@ -202,18 +202,22 @@ class TestPushCommand:
         """Test successful push command."""
         mock_settings.hf_token = "test-token"
         mock_publisher = Mock()
-        mock_publisher.push_dataset.return_value = "https://huggingface.co/datasets/test/repo"
+        mock_publisher.push_dataset.return_value = (
+            "https://huggingface.co/datasets/test/repo"
+        )
         mock_publisher_class.return_value = mock_publisher
 
         # Create a temporary test directory with data
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("pathlib.Path.is_dir", return_value=True):
-                with patch("pathlib.Path.glob", return_value=[Path("data.jsonl")]):
-                    runner = CliRunner()
-                    result = runner.invoke(app, ["push", "--repo", "test"])
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.is_dir", return_value=True),
+            patch("pathlib.Path.glob", return_value=[Path("data.jsonl")]),
+        ):
+            runner = CliRunner()
+            result = runner.invoke(app, ["push", "--repo", "test"])
 
-                    assert result.exit_code == 0
-                    assert "View at:" in result.stdout
+            assert result.exit_code == 0
+            assert "View at:" in result.stdout
 
     def test_push_command_no_data(self):
         """Test push command with no data to push."""
@@ -229,22 +233,26 @@ class TestPushCommand:
         """Test push command with private flag."""
         mock_settings.hf_token = "test-token"
         mock_publisher = Mock()
-        mock_publisher.push_dataset.return_value = "https://huggingface.co/datasets/test/repo"
+        mock_publisher.push_dataset.return_value = (
+            "https://huggingface.co/datasets/test/repo"
+        )
         mock_publisher_class.return_value = mock_publisher
 
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("pathlib.Path.is_dir", return_value=True):
-                with patch("pathlib.Path.glob", return_value=[Path("data.jsonl")]):
-                    runner = CliRunner()
-                    result = runner.invoke(app, ["push", "--repo", "test", "--private"])
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.is_dir", return_value=True),
+            patch("pathlib.Path.glob", return_value=[Path("data.jsonl")]),
+        ):
+            runner = CliRunner()
+            result = runner.invoke(app, ["push", "--repo", "test", "--private"])
 
-                    assert result.exit_code == 0
-                    # Verify the push_dataset was called with correct parameters
-                    mock_publisher.push_dataset.assert_called_once()
-                    call_args = mock_publisher.push_dataset.call_args
-                    assert call_args.kwargs["repo_name"] == "test"
-                    assert call_args.kwargs["private"] == True
-                    assert call_args.kwargs["description"] == None
+            assert result.exit_code == 0
+            # Verify the push_dataset was called with correct parameters
+            mock_publisher.push_dataset.assert_called_once()
+            call_args = mock_publisher.push_dataset.call_args
+            assert call_args.kwargs["repo_name"] == "test"
+            assert call_args.kwargs["private"] is True
+            assert call_args.kwargs["description"] is None
 
 
 class TestCLIErrorHandling:
