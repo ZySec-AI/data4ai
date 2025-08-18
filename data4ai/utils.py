@@ -125,11 +125,10 @@ def calculate_metrics(data: list[dict[str, Any]], schema: str) -> dict[str, Any]
 
     for entry in data:
         # Get instruction field based on schema
-        instruction_field = "instruction" if schema != "sharegpt" else None
+        instruction_field = "instruction" if schema == "alpaca" else None
         output_field = {
             "alpaca": "output",
-            "dolly": "response",
-            "sharegpt": None,
+            "chatml": None,
         }.get(schema)
 
         if instruction_field and instruction_field in entry:
@@ -149,8 +148,8 @@ def calculate_metrics(data: list[dict[str, Any]], schema: str) -> dict[str, Any]
             metrics["max_output_length"] = max(metrics["max_output_length"], length)
 
         # Check for empty entries
-        if schema == "sharegpt":
-            if not entry.get("conversations"):
+        if schema == "chatml":
+            if not entry.get("messages"):
                 metrics["empty_rows"] += 1
         else:
             if not entry.get(instruction_field) or not entry.get(output_field):
@@ -166,9 +165,9 @@ def calculate_metrics(data: list[dict[str, Any]], schema: str) -> dict[str, Any]
 
     # Fix infinity values
     if metrics["min_instruction_length"] == float("inf"):
-        metrics["min_instruction_length"] = 0
+        metrics["min_instruction_length"] = None
     if metrics["min_output_length"] == float("inf"):
-        metrics["min_output_length"] = 0
+        metrics["min_output_length"] = None
 
     metrics["completion_rate"] = (metrics["total_rows"] - metrics["empty_rows"]) / max(
         metrics["total_rows"], 1
@@ -265,7 +264,7 @@ dataset = load_dataset("{dataset_name}")
 
 ## Generation Details
 
-This dataset was generated using [Data4AI](https://github.com/data4ai/data4ai),
+This dataset was generated using [Data4AI](https://github.com/zysec-ai/data4ai),
 an AI-powered tool for creating high-quality instruction-tuning datasets.
 
 ## License
@@ -297,19 +296,11 @@ def _get_schema_description(schema: str) -> str:
   "output": "The expected response"
 }
 ```""",
-        "dolly": """```json
+        "chatml": """```json
 {
-  "instruction": "The task or question",
-  "context": "Background information",
-  "response": "The expected response",
-  "category": "Optional category"
-}
-```""",
-        "sharegpt": """```json
-{
-  "conversations": [
-    {"from": "human", "value": "User message"},
-    {"from": "gpt", "value": "Assistant response"}
+  "messages": [
+    {"role": "user", "content": "User message"},
+    {"role": "assistant", "content": "Assistant response"}
   ]
 }
 ```""",
@@ -341,18 +332,94 @@ def extract_json_from_text(text: str) -> Optional[Any]:
     # Clean the text - remove common prefixes/suffixes
     text = text.strip()
 
-    # Try to find JSON array first (most common for datasets)
-    array_match = re.search(r"\[.*\]", text, re.DOTALL)
-    if array_match:
+    # Remove markdown code blocks if present
+    text = re.sub(r"```(?:json)?\s*", "", text)
+    text = re.sub(r"```\s*$", "", text)
+
+    # Try direct parsing first if the text looks like clean JSON
+    if text.strip().startswith("[") or text.strip().startswith("{"):
         try:
-            result = safe_json_parse(array_match.group())
+            result = safe_json_parse(text)
             if result is not None:
-                logger.debug(
-                    f"Successfully extracted JSON array with {len(result)} items"
-                )
+                logger.debug("Direct JSON parse successful")
                 return result
-        except Exception as e:
-            logger.debug(f"Failed to parse JSON array: {e}")
+        except Exception:
+            pass  # Continue with pattern matching
+
+    # Try to find and extract complete JSON array
+    array_patterns = [
+        r"\[.*\]",  # Greedy array pattern (most reliable for nested JSON)
+        r"\[.*?\](?=\s*$)",  # Array that ends the text
+    ]
+
+    for pattern in array_patterns:
+        array_match = re.search(pattern, text, re.DOTALL)
+        if array_match:
+            try:
+                result = safe_json_parse(array_match.group())
+                if result is not None:
+                    logger.debug(
+                        f"Successfully extracted JSON array with {len(result)} items"
+                    )
+                    return result
+            except Exception as e:
+                logger.debug(f"Failed to parse JSON array with pattern {pattern}: {e}")
+
+    # Try to fix truncated JSON arrays
+    if text.startswith("[") and not text.endswith("]"):
+        logger.debug("Attempting to fix truncated JSON array...")
+        # Find the last complete object
+        objects = []
+        depth = 0
+        current_obj = ""
+        in_string = False
+        escape_next = False
+
+        for _i, char in enumerate(text[1:], 1):  # Skip opening [
+            if escape_next:
+                escape_next = False
+                current_obj += char
+                continue
+
+            if char == "\\":
+                escape_next = True
+                current_obj += char
+                continue
+
+            if char == '"' and not escape_next:
+                in_string = not in_string
+                current_obj += char
+                continue
+
+            if in_string:
+                current_obj += char
+                continue
+
+            if char == "{":
+                depth += 1
+                current_obj += char
+            elif char == "}":
+                depth -= 1
+                current_obj += char
+                if depth == 0:
+                    # Complete object found
+                    try:
+                        obj = safe_json_parse(current_obj)
+                        if obj:
+                            objects.append(obj)
+                        current_obj = ""
+                    except Exception:
+                        current_obj = ""
+            elif char == "," and depth == 0:
+                current_obj = ""
+            else:
+                current_obj += char
+
+        if objects:
+            logger.info(
+                f"Recovered {len(objects)} complete objects from truncated JSON"
+            )
+            return objects
 
     # Look for JSON object
     object_match = re.search(r"\{.*\}", text, re.DOTALL)
@@ -379,3 +446,42 @@ def extract_json_from_text(text: str) -> Optional[Any]:
     logger.warning(f"Could not extract JSON from text. Preview: {preview}")
 
     return None
+
+
+def compute_taxonomy_coverage(data: list[dict[str, Any]]) -> dict[str, int]:
+    """Compute counts per taxonomy_level across examples.
+
+    Returns a dict with keys for the six Bloom levels and 'unspecified'.
+    """
+    levels = [
+        "remember",
+        "understand",
+        "apply",
+        "analyze",
+        "evaluate",
+        "create",
+    ]
+    counts = dict.fromkeys(levels, 0)
+    counts["unspecified"] = 0
+
+    for item in data or []:
+        lvl = str(item.get("taxonomy_level", "unspecified")).strip().lower()
+        if lvl not in counts:
+            lvl = "unspecified"
+        counts[lvl] += 1
+    return counts
+
+
+def compute_taxonomy_by_document(
+    data: list[dict[str, Any]],
+) -> dict[str, dict[str, int]]:
+    """Compute taxonomy coverage grouped by 'source_document' field.
+
+    If 'source_document' is missing, groups under 'unknown'.
+    """
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for item in data or []:
+        key = str(item.get("source_document") or "unknown")
+        groups.setdefault(key, []).append(item)
+
+    return {k: compute_taxonomy_coverage(v) for k, v in groups.items()}

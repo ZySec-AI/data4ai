@@ -10,11 +10,7 @@ import httpx
 import typer
 from rich.console import Console
 
-from data4ai.exceptions import (
-    ConfigurationError,
-    GenerationError,
-    ValidationError,
-)
+from data4ai.exceptions import ConfigurationError, GenerationError, ValidationError
 
 logger = logging.getLogger("data4ai")
 console = Console()
@@ -40,7 +36,7 @@ class ErrorHandler:
         "empty_file": "❌ File is empty: {path}",
         "corrupted_file": "❌ File appears to be corrupted: {path}",
         # Schema Errors
-        "schema_not_found": "❌ Unknown schema: {schema}. Available: alpaca, dolly, sharegpt",
+        "schema_not_found": "❌ Unknown schema: {schema}. Available: chatml, alpaca",
         "schema_mismatch": "❌ Data doesn't match {schema} schema. Missing columns: {columns}",
         "invalid_data": "❌ Invalid data in row {row}: {error}",
         # CSV/Excel Errors

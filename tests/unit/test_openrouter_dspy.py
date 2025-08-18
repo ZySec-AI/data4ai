@@ -46,7 +46,7 @@ class TestOpenRouterDSPyClient:
 
         assert headers["Authorization"] == "Bearer test-key"
         assert headers["Content-Type"] == "application/json"
-        assert headers["HTTP-Referer"] == "https://github.com/data4ai/data4ai"
+        assert headers["HTTP-Referer"] == "https://github.com/zysec-ai/data4ai"
         assert headers["X-Title"] == "Data4AI"
 
     @patch("httpx.Client")
@@ -180,18 +180,18 @@ class TestOpenRouterPromptOptimizer:
         assert "output: The expected response" in result
 
     @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
-    def test_fallback_prompt_dolly(self, mock_configure):
-        """Test fallback prompt for dolly schema."""
+    def test_fallback_prompt_chatml(self, mock_configure):
+        """Test fallback prompt for chatml schema."""
         optimizer = OpenRouterPromptOptimizer(model="test-model", api_key="test-key")
 
         result = optimizer._fallback_prompt(
-            description="test description", schema_name="dolly", count=3
+            description="test description", schema_name="chatml", count=3
         )
 
         assert "You are a dataset generator" in result
-        assert "instruction: The task or question" in result
-        assert "context: Additional context" in result
-        assert "response: The expected response" in result
+        assert "messages: List of messages with role and content" in result
+        assert "role" in result
+        assert "content" in result
 
 
 class TestCreateOpenRouterPromptGenerator:

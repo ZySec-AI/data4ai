@@ -22,7 +22,7 @@ class OpenRouterConfig:
     model: str = "openai/gpt-4o-mini"
     temperature: float = 0.7
     max_tokens: int = 2048
-    site_url: str = "https://github.com/data4ai/data4ai"
+    site_url: str = "https://github.com/zysec-ai/data4ai"
     site_name: str = "Data4AI"
     timeout: int = 30
 

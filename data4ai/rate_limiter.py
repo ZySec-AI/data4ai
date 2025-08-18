@@ -166,6 +166,8 @@ class AdaptiveRateLimiter:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
+        # Mark unused traceback as intentionally unused for linters/tools like vulture
+        del exc_tb
         self.release()
 
         # Handle exceptions

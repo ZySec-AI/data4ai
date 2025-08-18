@@ -24,7 +24,7 @@ class OpenRouterDSPyClient(dspy.LM):
         base_url: str = "https://openrouter.ai/api/v1",
         model: str = "openai/gpt-4o-mini",
         extra_headers: Optional[dict[str, str]] = None,
-        site_url: str = "https://github.com/data4ai/data4ai",
+        site_url: str = "https://github.com/zysec-ai/data4ai",
         site_name: str = "Data4AI",
         **kwargs,
     ):
@@ -160,7 +160,7 @@ class OpenRouterDSPyClient(dspy.LM):
 def configure_dspy_with_openrouter(
     model: str = "openai/gpt-4o-mini",
     api_key: Optional[str] = None,
-    site_url: str = "https://github.com/data4ai/data4ai",
+    site_url: str = "https://github.com/zysec-ai/data4ai",
     site_name: str = "Data4AI",
     **kwargs,
 ) -> None:
@@ -213,9 +213,7 @@ class OpenRouterPromptOptimizer:
             description = dspy.InputField(
                 desc="Natural language description of the dataset to generate"
             )
-            schema_name = dspy.InputField(
-                desc="Dataset schema name (alpaca, dolly, sharegpt, etc.)"
-            )
+            schema_name = dspy.InputField(desc="Dataset schema name (chatml, alpaca)")
             count = dspy.InputField(desc="Number of examples to generate")
             examples = dspy.OutputField(
                 desc="List of high-quality dataset examples in JSON format"
@@ -240,7 +238,7 @@ class OpenRouterPromptOptimizer:
                     desc="Natural language description of the dataset to generate"
                 )
                 schema_name = dspy.InputField(
-                    desc="Dataset schema name (alpaca, dolly, sharegpt, etc.)"
+                    desc="Dataset schema name (chatml, alpaca)"
                 )
                 count = dspy.InputField(desc="Number of examples to generate")
                 optimized_prompt = dspy.OutputField(
@@ -312,27 +310,45 @@ class OpenRouterPromptOptimizer:
         self, dspy_insight: str, description: str, schema_name: str, count: int
     ) -> str:
         """Enhance DSPy-generated insights with our structured template."""
-        enhanced_prompt = f"""You are a dataset generator. Your task is to create instruction-tuning examples for a {schema_name} dataset.
 
-DESCRIPTION: {description}
+        # Schema-specific task descriptions
 
-DSPY OPTIMIZATION INSIGHT:
-{dspy_insight}
+        enhanced_prompt = f"""{dspy_insight}
 
 CRITICAL REQUIREMENTS:
 1. You MUST respond with ONLY a valid JSON array
 2. Do NOT include any explanatory text, code examples, or other content
 3. Do NOT use markdown formatting
 4. The response must be parseable JSON
-5. NEVER use empty strings ("") for required fields like instruction or output
-6. Only the input field can be empty ("") when not needed
-7. Each example must be realistic and useful for training
-8. Generate the requested number of high-quality examples
-9. Apply the DSPy optimization insights above to improve quality
+5. Each example must be realistic and useful for training
+6. Generate the requested number of high-quality examples
+7. Apply the DSPy optimization insights above to improve quality
 
 For {schema_name} schema, each example should have:"""
 
-        if schema_name == "alpaca":
+        if schema_name == "chatml":
+            enhanced_prompt += """
+- messages: List of conversation messages with role and content (REQUIRED - cannot be empty)
+
+CRITICAL: The 'messages' array MUST contain at least 2 messages (user + assistant). NEVER return empty messages arrays.
+
+Example format:
+[
+  {{
+    "messages": [
+      {{"role": "user", "content": "What is 2+2?"}},
+      {{"role": "assistant", "content": "2+2 equals 4."}}
+    ]
+  }},
+  {{
+    "messages": [
+      {{"role": "system", "content": "You are a helpful assistant."}},
+      {{"role": "user", "content": "Translate 'hello' to French"}},
+      {{"role": "assistant", "content": "Hello in French is 'bonjour'."}}
+    ]
+  }}
+]"""
+        elif schema_name == "alpaca":
             enhanced_prompt += """
 - instruction: The task or question (REQUIRED - cannot be empty)
 - input: Additional context (can be empty string "")
@@ -352,7 +368,17 @@ Example format:
   }}
 ]"""
 
-        enhanced_prompt += """
+        # Schema-specific response format instructions
+        if schema_name == "chatml":
+            enhanced_prompt += """
+
+RESPONSE FORMAT: Return ONLY a JSON array with the requested number of examples. No other text.
+
+CRITICAL: Each 'messages' array MUST contain at least 2 messages (user + assistant). NEVER return empty messages arrays.
+
+Remember: Apply the DSPy insights above and return ONLY the JSON array, nothing else."""
+        else:
+            enhanced_prompt += """
 
 RESPONSE FORMAT: Return ONLY a JSON array with the requested number of examples. No other text.
 
@@ -364,7 +390,16 @@ Remember: Apply the DSPy insights above and return ONLY the JSON array, nothing 
 
     def _fallback_prompt(self, description: str, schema_name: str, count: int) -> str:
         """Fallback to static prompt if DSPy fails."""
-        base_prompt = f"""You are a dataset generator. Your task is to create instruction-tuning examples for a {schema_name} dataset.
+
+        # Schema-specific task descriptions
+        task_descriptions = {
+            "chatml": "conversation examples",
+            "alpaca": "instruction-tuning examples",
+        }
+
+        task_desc = task_descriptions.get(schema_name, "examples")
+
+        base_prompt = f"""You are a dataset generator. Your task is to create {task_desc} for a {schema_name} dataset.
 
 DESCRIPTION: {description}
 
@@ -373,14 +408,34 @@ CRITICAL REQUIREMENTS:
 2. Do NOT include any explanatory text, code examples, or other content
 3. Do NOT use markdown formatting
 4. The response must be parseable JSON
-5. NEVER use empty strings ("") for required fields like instruction or output
-6. Only the input field can be empty ("") when not needed
-7. Each example must be realistic and useful for training
-8. Generate high-quality examples (exact count will be specified in the user message)
+5. Each example must be realistic and useful for training
+6. Generate high-quality examples (exact count will be specified in the user message)
 
 For {schema_name} schema, each example should have:"""
 
-        if schema_name == "alpaca":
+        if schema_name == "chatml":
+            base_prompt += """
+- messages: List of messages with role and content (REQUIRED - cannot be empty)
+
+CRITICAL: The 'messages' array MUST contain at least 2 messages (user + assistant). NEVER return empty messages arrays.
+
+Example format:
+[
+  {{
+    "messages": [
+      {{"role": "user", "content": "What is 2+2?"}},
+      {{"role": "assistant", "content": "2+2 equals 4."}}
+    ]
+  }},
+  {{
+    "messages": [
+      {{"role": "system", "content": "You are a helpful assistant."}},
+      {{"role": "user", "content": "Translate 'hello' to French"}},
+      {{"role": "assistant", "content": "Hello in French is 'bonjour'."}}
+    ]
+  }}
+]"""
+        elif schema_name == "alpaca":
             base_prompt += """
 - instruction: The task or question (REQUIRED - cannot be empty)
 - input: Additional context (can be empty string "")
@@ -397,33 +452,6 @@ Example format:
     "instruction": "Write a Python function to calculate factorial",
     "input": "",
     "output": "def factorial(n):\\n    if n <= 1:\\n        return 1\\n    return n * factorial(n - 1)"
-  }}
-]"""
-        elif schema_name == "dolly":
-            base_prompt += """
-- instruction: The task or question
-- context: Additional context
-- response: The expected response
-
-Example format:
-[
-  {{
-    "instruction": "What is the capital of France?",
-    "context": "Geography question about European countries",
-    "response": "The capital of France is Paris."
-  }}
-]"""
-        elif schema_name == "sharegpt":
-            base_prompt += """
-- conversations: List of messages with role and content
-
-Example format:
-[
-  {{
-    "conversations": [
-      {{"from": "human", "value": "What is 2+2?"}},
-      {{"from": "gpt", "value": "2+2 equals 4."}}
-    ]
   }}
 ]"""
         else:

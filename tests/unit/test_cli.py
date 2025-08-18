@@ -55,7 +55,7 @@ class TestCreateSampleCommand:
         """Test creating CSV sample file."""
         runner = CliRunner()
         result = runner.invoke(
-            app, ["create-sample", "tests/samples/test.csv", "--schema", "dolly"]
+            app, ["create-sample", "tests/samples/test.csv", "--schema", "alpaca"]
         )
 
         # The actual function is being called, not the mock
@@ -130,7 +130,7 @@ class TestPromptCommand:
         )
 
         assert result.exit_code == 0
-        assert "Would generate 5 alpaca examples" in result.stdout
+        assert "Would generate 5" in result.stdout and "examples" in result.stdout
         assert "Dry run completed successfully" in result.stdout
 
     @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")

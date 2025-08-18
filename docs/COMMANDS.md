@@ -4,58 +4,28 @@ Complete reference for all available CLI commands.
 
 ## 🎯 Main Commands
 
-### `data4ai create-sample`
-Create a template file for the specified schema.
-
-```bash
-data4ai create-sample <path.xlsx> [--dataset <schema>]
-
-# Examples
-data4ai create-sample my_data.xlsx --dataset alpaca
-data4ai create-sample legal_data.xlsx --dataset dolly
-data4ai create-sample chat_data.xlsx --dataset sharegpt
-```
-
-### `data4ai file-to-dataset`
-Convert filled Excel/CSV file to dataset without AI completion.
-
-```bash
-data4ai file-to-dataset <path.xlsx> --repo <name> [--dataset <schema>]
-
-# Examples
-data4ai file-to-dataset my_data.xlsx --repo my-dataset
-data4ai file-to-dataset complete_data.xlsx --repo legal-dataset --dataset dolly
-```
-
-### `data4ai excel-to-dataset` (Deprecated)
-Convert filled Excel file to dataset without AI completion (deprecated, use file-to-dataset).
-
-```bash
-data4ai excel-to-dataset <path.xlsx> --repo <name> [--dataset <schema>]
-```
-
-### `data4ai run`
-Process Excel/CSV file with AI completion for partial rows.
-
-```bash
-data4ai run <path.xlsx> --repo <name> [options]
-
-# Examples
-data4ai run my_data.xlsx --repo my-dataset
-data4ai run partial_data.xlsx --repo my-dataset --max-rows 100 --temperature 0.7
-data4ai run data.xlsx --repo my-dataset --model "anthropic/claude-3-5-sonnet"
-```
-
 ### `data4ai prompt`
-Generate dataset from natural language description.
+Generate dataset from natural language description using AI.
 
 ```bash
 data4ai prompt --repo <name> --dataset <schema> --description "<text>" [options]
 
 # Examples
 data4ai prompt --repo my-dataset --dataset alpaca --description "Create programming questions"
-data4ai prompt --repo customer-support --dataset alpaca --description "Customer support Q&A" --count 200
-data4ai prompt --repo legal-data --dataset dolly --description "Legal summaries" --model "anthropic/claude-3-5-sonnet"
+data4ai prompt --repo customer-support --dataset chatml --description "Customer support conversations" --count 200
+data4ai prompt --repo legal-data --dataset alpaca --description "Legal Q&A" --model "anthropic/claude-3-5-sonnet"
+```
+
+### `data4ai doc`
+Generate dataset from document(s) - supports files and folders.
+
+```bash
+data4ai doc <path> --repo <name> [options]
+
+# Examples
+data4ai doc my_document.txt --repo doc-dataset --count 100
+data4ai doc ./documents/ --repo multi-doc-dataset --count 500
+data4ai doc research.pdf --repo research-qa --dataset chatml --count 200
 ```
 
 ### `data4ai push`
@@ -69,73 +39,20 @@ data4ai push --repo my-dataset
 data4ai push --repo my-dataset --private
 ```
 
-## 🔧 Utility Commands
-
-### `data4ai validate`
-Validate dataset quality and schema compliance.
-
-```bash
-data4ai validate --repo <name>
-
-# Examples
-data4ai validate --repo my-dataset
-```
-
-### `data4ai stats`
-Display dataset statistics and metrics.
-
-```bash
-data4ai stats --repo <name>
-
-# Examples
-data4ai stats --repo my-dataset
-```
-
-### `data4ai list-models`
-Show available OpenRouter models.
-
-```bash
-data4ai list-models
-
-# Examples
-data4ai list-models
-```
-
-### `data4ai config`
-Display or save current configuration.
-
-```bash
-data4ai config
-
-# Examples
-data4ai config
-```
-
-### `data4ai version`
-Show Data4AI version.
-
-```bash
-data4ai version
-
-# Examples
-data4ai version
-```
-
 ## ⚙️ Common Options
 
 | Option | Description | Default | Example |
 |--------|-------------|---------|---------|
 | `--repo <name>` | Output directory and HF repo name | Required | `--repo my-dataset` |
-| `--dataset <schema>` | Dataset schema (alpaca, dolly, sharegpt) | `alpaca` | `--dataset dolly` |
-| `--model <model>` | OpenRouter model to use | From env var | `--model anthropic/claude-3-5-sonnet` |
-| `--max-rows <N>` | Maximum rows to generate | `1000` | `--max-rows 500` |
-| `--count <N>` | Number of rows (prompt mode) | `500` | `--count 200` |
+| `--dataset <schema>` | Dataset schema (alpaca, chatml) | `alpaca` | `--dataset chatml` |
+| `--model <model>` | OpenRouter model to use | `openai/gpt-4o-mini` | `--model anthropic/claude-3-5-sonnet` |
+| `--count <N>` | Number of examples to generate | `500` | `--count 200` |
 | `--temperature <F>` | Sampling temperature (0.0-2.0) | `0.7` | `--temperature 0.8` |
-| `--seed <N>` | Random seed for reproducibility | Random | `--seed 42` |
-| `--huggingface` | Push to Hugging Face after generation | `false` | `--huggingface` |
-| `--private` | Make HF dataset private | `false` | `--private` |
+| `--batch-size <N>` | Examples per API call | `10` | `--batch-size 5` |
+| `--taxonomy <level>` | Bloom's taxonomy level | `balanced` | `--taxonomy advanced` |
 | `--verbose` | Show detailed output | `false` | `--verbose` |
 | `--dry-run` | Show what would be generated | `false` | `--dry-run` |
+| `--no-use-dspy` | Disable DSPy optimization | `false` | `--no-use-dspy` |
 
 ## 🚀 Quick Examples
 
@@ -148,28 +65,26 @@ export OPENROUTER_API_KEY="your_key_here"
 data4ai prompt --repo my-first-dataset --description "Create 10 programming questions" --count 10
 ```
 
-### Excel Template Workflow
+### Document-based Generation
 ```bash
-# Create template
-data4ai create-sample my_data.xlsx --dataset alpaca
+# Generate from a single document
+data4ai doc research_paper.pdf --repo research-qa --count 100
 
-# Edit in Excel, then generate
-data4ai run my_data.xlsx --repo my-dataset --max-rows 100
-```
-
-### Convert Complete Excel File
-```bash
-# Convert without AI (for complete files)
-data4ai file-to-dataset my_data.xlsx --repo my-dataset
+# Generate from multiple documents
+data4ai doc ./documents/ --repo knowledge-base --count 500 --taxonomy advanced
 ```
 
 ### Publish to Hugging Face
 ```bash
-# Generate and publish
-data4ai prompt --repo public-dataset --description "Educational content" --count 100 --huggingface
+# Set HF token
+export HF_TOKEN="your_hf_token"
 
-# Or publish existing dataset
-data4ai push --repo my-dataset --private
+# Generate and publish
+data4ai prompt --repo public-dataset --description "Educational content" --count 100
+data4ai push --repo public-dataset
+
+# Or make it private
+data4ai push --repo public-dataset --private
 ```
 
 ## 📊 Dataset Schemas
@@ -183,23 +98,31 @@ data4ai push --repo my-dataset --private
 }
 ```
 
-### Dolly Schema
+### ChatML Schema (Conversations)
 ```json
 {
-  "instruction": "Summarize this text",
-  "context": "Long text to summarize...",
-  "response": "Summary of the text..."
+  "messages": [
+    {"role": "user", "content": "What is Python?"},
+    {"role": "assistant", "content": "Python is a programming language..."}
+  ]
 }
 ```
 
-### ShareGPT Schema (Chat)
-```json
-{
-  "conversations": [
-    {"from": "human", "value": "Hello!"},
-    {"from": "gpt", "value": "Hi there!"}
-  ]
-}
+## 🎯 Taxonomy Levels
+
+Use `--taxonomy` to control cognitive complexity:
+
+- `basic` - Focus on Remember & Understand (beginner-friendly)
+- `balanced` - All Bloom's levels (default)
+- `advanced` - Focus on Analyze, Evaluate & Create (challenging)
+- `none` - No specific taxonomy requirements
+
+```bash
+# Beginner-friendly questions
+data4ai prompt --repo basics --description "Math concepts" --taxonomy basic
+
+# Advanced analysis tasks
+data4ai prompt --repo advanced --description "Research analysis" --taxonomy advanced
 ```
 
 ## 🔍 Help Commands
@@ -209,14 +132,9 @@ data4ai push --repo my-dataset --private
 data4ai --help
 
 # Command-specific help
-data4ai create-sample --help
-data4ai run --help
 data4ai prompt --help
+data4ai doc --help
 data4ai push --help
-data4ai validate --help
-data4ai stats --help
-data4ai list-models --help
-data4ai config --help
 ```
 
 ## 🚨 Troubleshooting
@@ -228,7 +146,10 @@ data4ai config --help
 # Check if data4ai is installed
 data4ai --version
 
-# Reinstall if needed
+# Install with uv
+uv add data4ai
+
+# Or with pip
 pip install data4ai
 ```
 
@@ -239,19 +160,13 @@ export OPENROUTER_API_KEY="your_key_here"
 
 **"Model not available"**
 ```bash
-# Check available models
-data4ai list-models
+# Use default model
+data4ai prompt --repo test --description "test"
 
-# Use a different model
+# Or specify a different model
 data4ai prompt --repo test --description "test" --model "openai/gpt-4o-mini"
-```
-
-**"Excel file not found"**
-```bash
-# Create template first
-data4ai create-sample my_data.xlsx --dataset alpaca
 ```
 
 ---
 
-**For more examples, see [GETTING_STARTED.md](GETTING_STARTED.md)**
+**For more examples, see [GETTING_STARTED.md](../GETTING_STARTED.md)**

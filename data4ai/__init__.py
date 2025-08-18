@@ -15,12 +15,10 @@ from pathlib import Path
 from typing import Any, Optional
 
 from data4ai.config import settings
-from data4ai.csv_handler import CSVHandler
 from data4ai.document_handler import DocumentHandler
-from data4ai.excel_handler import ExcelHandler
 from data4ai.generator import DatasetGenerator
 from data4ai.publisher import HuggingFacePublisher
-from data4ai.schemas import AlpacaSchema, DollySchema, ShareGPTSchema
+from data4ai.schemas import AlpacaSchema, ChatMLSchema
 from data4ai.utils import calculate_metrics, read_jsonl
 
 
@@ -28,7 +26,7 @@ from data4ai.utils import calculate_metrics, read_jsonl
 def generate_from_description(
     description: str,
     repo: str,
-    dataset: str = "alpaca",
+    dataset: str = "chatml",
     count: int = 100,
     model: Optional[str] = None,
     temperature: float = 0.7,
@@ -43,7 +41,7 @@ def generate_from_description(
     Args:
         description: Natural language description of the dataset to generate
         repo: Repository/output directory name
-        dataset: Dataset schema (alpaca, dolly, sharegpt)
+        dataset: Dataset schema (chatml, alpaca)
         count: Number of examples to generate
         model: Model to use (defaults to env var)
         temperature: Sampling temperature (0.0-2.0)
@@ -102,98 +100,10 @@ def generate_from_description(
     return result
 
 
-def generate_from_excel(
-    excel_path: str,
-    repo: str,
-    dataset: str = "alpaca",
-    max_rows: Optional[int] = None,
-    model: Optional[str] = None,
-    temperature: float = 0.7,
-    seed: Optional[int] = None,
-    batch_size: int = 10,
-    push_to_hf: bool = False,
-    private: bool = False,
-) -> dict[str, Any]:
-    """Generate dataset from Excel file with AI completion.
-
-    Args:
-        excel_path: Path to Excel file
-        repo: Repository/output directory name
-        dataset: Dataset schema (alpaca, dolly, sharegpt)
-        max_rows: Maximum rows to generate
-        model: Model to use (defaults to env var)
-        temperature: Sampling temperature (0.0-2.0)
-        seed: Random seed for reproducibility
-        batch_size: Batch size for generation
-        push_to_hf: Whether to push to HuggingFace Hub
-        private: Make HF dataset private
-
-    Returns:
-        Dictionary with generation results
-    """
-    generator = DatasetGenerator(
-        model=model,
-        temperature=temperature,
-        seed=seed,
-    )
-
-    output_dir = settings.output_dir / repo
-    result = generator.generate_from_excel_sync(
-        excel_path=Path(excel_path),
-        output_dir=output_dir,
-        schema_name=dataset,
-        max_rows=max_rows,
-        batch_size=batch_size,
-    )
-
-    # Add convenience fields
-    result["jsonl_path"] = output_dir / "data.jsonl"
-    result["schema"] = dataset
-    result["model"] = model or settings.openrouter_model
-    result["params"] = {
-        "temperature": temperature,
-        "seed": seed,
-        "batch_size": batch_size,
-        "max_rows": max_rows,
-    }
-
-    # Push to HuggingFace if requested
-    if push_to_hf:
-        publisher = HuggingFacePublisher(token=settings.hf_token)
-        url = publisher.push_dataset(
-            dataset_dir=output_dir,
-            repo_name=repo,
-            private=private,
-        )
-        result["huggingface_url"] = url
-
-    return result
-
-
-def create_sample_excel(path: str, dataset: str = "alpaca") -> None:
-    """Create an Excel template file for the specified dataset schema.
-
-    Args:
-        path: Path where to save the Excel template
-        dataset: Dataset schema (alpaca, dolly, sharegpt)
-    """
-    ExcelHandler.create_template(Path(path), dataset)
-
-
-def create_sample_csv(path: str, dataset: str = "alpaca") -> None:
-    """Create a CSV template file for the specified dataset schema.
-
-    Args:
-        path: Path where to save the CSV template
-        dataset: Dataset schema (alpaca, dolly, sharegpt)
-    """
-    CSVHandler.create_template(Path(path), dataset)
-
-
 def generate_from_document(
     document_path: str,
     repo: str,
-    dataset: str = "alpaca",
+    dataset: str = "chatml",
     extraction_type: str = "qa",
     count: int = 100,
     model: Optional[str] = None,
@@ -211,7 +121,7 @@ def generate_from_document(
     Args:
         document_path: Path to document file
         repo: Repository/output directory name
-        dataset: Dataset schema (alpaca, dolly, sharegpt)
+        dataset: Dataset schema (alpaca, chatml)
         extraction_type: Type of extraction (qa, summary, instruction)
         count: Number of examples to generate
         model: Model to use (defaults to env var)
@@ -276,7 +186,7 @@ def generate_from_document(
     return result
 
 
-def validate_dataset(repo: str, dataset: str = "alpaca") -> dict[str, Any]:
+def validate_dataset(repo: str, dataset: str = "chatml") -> dict[str, Any]:
     """Validate dataset quality and schema compliance.
 
     Args:
@@ -355,10 +265,8 @@ def get_dataset_stats(repo: str) -> dict[str, Any]:
 
     # Detect schema
     schema = "alpaca"  # Default
-    if dataset_data and "conversations" in dataset_data[0]:
-        schema = "sharegpt"
-    elif dataset_data and "response" in dataset_data[0]:
-        schema = "dolly"
+    if dataset_data and "messages" in dataset_data[0]:
+        schema = "chatml"
 
     # Calculate metrics
     metrics = calculate_metrics(dataset_data, schema)
@@ -412,7 +320,7 @@ class Data4AI:
         self,
         description: str,
         repo: str,
-        dataset: str = "alpaca",
+        dataset: str = "chatml",
         count: int = 100,
         **kwargs,
     ) -> dict[str, Any]:
@@ -427,21 +335,8 @@ class Data4AI:
             **{k: v for k, v in kwargs.items() if k not in ["model", "temperature"]},
         )
 
-    def generate_from_excel(
-        self, excel_path: str, repo: str, dataset: str = "alpaca", **kwargs
-    ) -> dict[str, Any]:
-        """Generate dataset from Excel. See module-level function for details."""
-        return generate_from_excel(
-            excel_path=excel_path,
-            repo=repo,
-            dataset=dataset,
-            model=kwargs.get("model", self.model),
-            temperature=kwargs.get("temperature", self.temperature),
-            **{k: v for k, v in kwargs.items() if k not in ["model", "temperature"]},
-        )
-
     def generate_from_document(
-        self, document_path: str, repo: str, dataset: str = "alpaca", **kwargs
+        self, document_path: str, repo: str, dataset: str = "chatml", **kwargs
     ) -> dict[str, Any]:
         """Generate dataset from document. See module-level function for details."""
         return generate_from_document(
@@ -453,11 +348,7 @@ class Data4AI:
             **{k: v for k, v in kwargs.items() if k not in ["model", "temperature"]},
         )
 
-    def create_sample_excel(self, path: str, dataset: str = "alpaca") -> None:
-        """Create Excel template. See module-level function for details."""
-        return create_sample_excel(path, dataset)
-
-    def validate_dataset(self, repo: str, dataset: str = "alpaca") -> dict[str, Any]:
+    def validate_dataset(self, repo: str, dataset: str = "chatml") -> dict[str, Any]:
         """Validate dataset. See module-level function for details."""
         return validate_dataset(repo, dataset)
 
@@ -470,16 +361,12 @@ __all__ = [
     # Core classes
     "DatasetGenerator",
     "DocumentHandler",
+    "ChatMLSchema",
     "AlpacaSchema",
-    "DollySchema",
-    "ShareGPTSchema",
     "Data4AI",
     # High-level functions
     "generate_from_description",
-    "generate_from_excel",
     "generate_from_document",
-    "create_sample_excel",
-    "create_sample_csv",
     "validate_dataset",
     "get_dataset_stats",
     # Version

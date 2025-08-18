@@ -1,0 +1,29 @@
+Introduction to Neural Networks
+
+Neural networks are computing systems inspired by biological neural networks. They consist of interconnected nodes (neurons) organized in layers:
+
+Input Layer: Receives the initial data
+Hidden Layers: Process and transform the data through weighted connections
+Output Layer: Produces the final prediction or classification
+
+Key Concepts:
+- Activation Functions: Determine neuron output (ReLU, Sigmoid, Tanh)
+- Backpropagation: Algorithm for training by adjusting weights
+- Gradient Descent: Optimization method to minimize loss
+- Epochs: Complete passes through the training dataset
+
+Common Architectures:
+1. Feedforward Networks: Information flows in one direction
+2. Convolutional Neural Networks (CNNs): Excellent for image processing
+3. Recurrent Neural Networks (RNNs): Handle sequential data
+4. Transformers: State-of-the-art for NLP tasks
+
+Training Process:
+- Initialize weights randomly
+- Forward pass: compute predictions
+- Calculate loss using loss function
+- Backward pass: compute gradients
+- Update weights using optimizer
+- Repeat until convergence
+
+Applications span computer vision, natural language processing, speech recognition, and game playing.

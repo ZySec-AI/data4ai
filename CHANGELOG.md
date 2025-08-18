@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2025-08-17
+
+### 🚀 Advanced Document Generation & Quality Features
+
+#### Major New Features
+- **Budget-Based Generation**: New `doc-plan-generate` command with token budget allocation
+- **Document-Level Planning**: Intelligent analysis and section-based example allocation
+- **DSPy-Only for Documents**: Removed static prompts, all document generation now uses DSPy
+- **Bloom's Taxonomy Integration**: Cognitive diversity with balanced/basic/advanced options
+- **Quality Verification**: Optional verification pass for answer accuracy
+- **Provenance Tracking**: Include source references with character offsets
+- **Long-Context Processing**: Merge chunks for better coherence
+- **PDF to Markdown Conversion**: Convert PDFs before processing for better quality
+- **Folder Processing**: Process entire folders of documents recursively
+- **ChatML as Default**: Changed default schema from Alpaca to ChatML
+
+#### CLI Enhancements
+- Added `doc-plan-generate` command for budget-based generation
+- Added `pdf-to-markdown` command for PDF conversion
+- Added quality flags: `--taxonomy`, `--provenance`, `--verify`, `--long-context`
+- Added `--chunk-tokens` for token-based chunking
+- Added `--file-types` for filtering document types in folders
+- Added `--dry-run` for previewing operations
+
+#### Technical Improvements
+- Strict JSON-only system messages for reliability
+- Dynamic count allocation (no fixed N in prompts)
+- Document-level context understanding
+- Section-based concept extraction
+- Enhanced error messages and recovery
+- Better token budget management
+
+#### Documentation
+- Comprehensive feature documentation
+- Advanced generation guide
+- Updated examples and tutorials
+- API reference improvements
+
 ## [0.1.1] - 2024-08-17
 
 ### 🔮 DSPy Integration Release

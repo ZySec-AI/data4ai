@@ -11,10 +11,11 @@ Generate high-quality synthetic datasets using state-of-the-art language models 
 ## ✨ Key Features
 
 - 🤖 **100+ AI Models** - Access to GPT-4, Claude, Llama, and more via OpenRouter
-- 📊 **Multiple Formats** - Support for Alpaca, Dolly, ShareGPT schemas
+- 📊 **Multiple Formats** - Support for ChatML (default), Alpaca, Dolly, ShareGPT schemas
 - 🔮 **DSPy Integration** - Dynamic prompt optimization for better quality
 - 📄 **Document Support** - Generate datasets from PDFs, Word docs, Markdown, and text files
-- 💾 **Excel/CSV Support** - Start from templates or existing data
+- 🎯 **Quality Features** - Optional Bloom's taxonomy, provenance tracking, and quality verification
+- 🤖 **Smart Generation** - Both prompt-based and document-based dataset creation
 - ☁️ **HuggingFace Hub** - Direct dataset publishing
 - ⚡ **Production Ready** - Rate limiting, checkpointing, deduplication
 
@@ -23,9 +24,7 @@ Generate high-quality synthetic datasets using state-of-the-art language models 
 ### Installation
 
 ```bash
-pip install data4ai              # Core features
-pip install data4ai[excel]       # With Excel support
-pip install data4ai[docs]        # With document support (PDF, DOCX, etc.)
+pip install data4ai              # All features included
 pip install data4ai[all]         # All features
 ```
 
@@ -40,6 +39,9 @@ export OPENROUTER_API_KEY="your_key_here"
 
 # Optional: Set a specific model (default: openai/gpt-4o-mini)
 export OPENROUTER_MODEL="anthropic/claude-3-5-sonnet"  # Or another model
+
+# Optional: Set default dataset schema (default: chatml)
+export DEFAULT_SCHEMA="chatml"  # Options: chatml, alpaca, dolly, sharegpt
 
 # Optional: For publishing to HuggingFace
 export HF_TOKEN="your_huggingface_token"
@@ -88,18 +90,7 @@ data4ai prompt \
   --count 100
 ```
 
-### 2. Complete Partial Data from Excel
-
-```bash
-# Create template
-data4ai create-sample template.xlsx
-
-# Fill some examples in Excel, leave others blank
-# Then generate completions
-data4ai run template.xlsx --repo my-dataset --max-rows 100
-```
-
-### 3. Generate from Documents
+### 2. Generate from Documents
 
 ```bash
 # From single PDF document
@@ -132,9 +123,84 @@ data4ai doc-to-dataset README.md \
   --repo docs-dataset \
   --type instruction \
   --advanced
+
+# Convert PDFs to Markdown for better processing
+data4ai pdf-to-markdown /path/to/pdfs --recursive
+
+# Generate with optional quality features
+data4ai doc-to-dataset document.pdf \
+  --repo high-quality-dataset \
+  --count 200 \
+  --taxonomy balanced \    # Use Bloom's taxonomy for diverse questions
+  --provenance \           # Include source references
+  --verify \               # Verify quality (2x API calls)
+  --long-context           # Merge chunks for better coherence
 ```
 
-### 4. Publish to HuggingFace
+### 4. Advanced DSPy Plan→Generate Pipeline (New!)
+
+Use the new budget-based generation for superior quality:
+
+```bash
+# Smart generation with token budget
+data4ai doc-plan-generate document.pdf \
+  --repo smart-dataset \
+  --token-budget 10000 \
+  --taxonomy balanced \
+  --difficulty balanced
+
+# Preview the plan first
+data4ai doc-plan-generate research-paper.pdf \
+  --repo research-qa \
+  --token-budget 5000 \
+  --dry-run
+
+# With custom constraints
+data4ai doc-plan-generate documents/ \
+  --repo advanced-dataset \
+  --token-budget 20000 \
+  --min-examples 50 \
+  --max-examples 200 \
+  --taxonomy advanced    # Focus on higher-order thinking
+```
+
+This new pipeline:
+- 🧠 Analyzes the entire document first
+- 📊 Creates an intelligent generation plan
+- 💰 Uses token budget instead of fixed counts
+- 🎯 Dynamically allocates examples to important sections
+- 🔬 Ensures Bloom's taxonomy coverage
+
+### 5. Traditional High-Quality Generation
+
+```bash
+# Basic generation (simple and fast)
+data4ai doc-to-dataset document.pdf --repo basic-dataset --count 100
+
+# With cognitive diversity using Bloom's Taxonomy
+data4ai doc-to-dataset document.pdf \
+  --repo taxonomy-dataset \
+  --count 100 \
+  --taxonomy balanced  # Creates questions at all cognitive levels
+
+# With source tracking for verifiable datasets
+data4ai doc-to-dataset research-papers/ \
+  --repo cited-dataset \
+  --count 500 \
+  --provenance  # Includes character offsets for each answer
+
+# Full quality mode for production datasets
+data4ai doc-to-dataset documents/ \
+  --repo production-dataset \
+  --count 1000 \
+  --chunk-tokens 250 \     # Token-based chunking
+  --taxonomy balanced \    # Cognitive diversity
+  --provenance \          # Source tracking
+  --verify \              # Quality verification
+  --long-context          # Optimized context usage
+```
+
+### 6. Publish to HuggingFace
 
 ```bash
 # Generate and publish
@@ -150,19 +216,23 @@ data4ai prompt \
 ```python
 from data4ai import generate_from_description, generate_from_document
 
-# Generate from description
+# Generate from description (uses ChatML by default)
 result = generate_from_description(
     description="Create Python interview questions",
     repo="python-interviews",
-    count=50
+    count=50,
+    schema="chatml"  # Optional, ChatML is default
 )
 
-# Generate from document
+# Generate from document with quality features
 result = generate_from_document(
     document_path="research-paper.pdf",
     repo="paper-qa",
     extraction_type="qa",
-    count=100
+    count=100,
+    taxonomy="balanced",      # Optional: Bloom's taxonomy
+    include_provenance=True,   # Optional: Source tracking
+    verify_quality=True        # Optional: Quality verification
 )
 
 print(f"Generated {result['row_count']} examples")
@@ -170,7 +240,18 @@ print(f"Generated {result['row_count']} examples")
 
 ## 📋 Supported Schemas
 
-**Alpaca** (Default - Instruction tuning)
+**ChatML** (Default - OpenAI format)
+```json
+{
+  "messages": [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "What is machine learning?"},
+    {"role": "assistant", "content": "Machine learning is..."}
+  ]
+}
+```
+
+**Alpaca** (Instruction tuning)
 ```json
 {
   "instruction": "What is machine learning?",
@@ -198,13 +279,33 @@ print(f"Generated {result['row_count']} examples")
 }
 ```
 
+## 🎯 Quality Features (Optional)
+
+All quality features are **optional** - use them when you need higher quality datasets:
+
+| Feature | Flag | Description | Performance Impact |
+|---------|------|-------------|-------------------|
+| **Token Chunking** | `--chunk-tokens N` | Use token count instead of characters | Minimal |
+| **Bloom's Taxonomy** | `--taxonomy balanced` | Create cognitively diverse questions | None |
+| **Provenance** | `--provenance` | Include source references | Minimal |
+| **Quality Verification** | `--verify` | Verify and improve examples | 2x API calls |
+| **Long Context** | `--long-context` | Merge chunks for coherence | May reduce API calls |
+
+### When to Use Quality Features
+
+- **Quick Prototyping**: No features needed - fast and simple
+- **Production Datasets**: Use `--taxonomy` and `--verify`
+- **Academic/Research**: Use all features for maximum quality
+- **Citation Required**: Always use `--provenance`
+
 ## ⚙️ Configuration
 
 Create `.env` file:
 ```bash
 OPENROUTER_API_KEY=your_key_here
 OPENROUTER_MODEL=openai/gpt-4o-mini  # Optional (this is the default)
-HF_TOKEN=your_huggingface_token                   # For publishing
+DEFAULT_SCHEMA=chatml                # Optional (this is the default)
+HF_TOKEN=your_huggingface_token      # For publishing
 ```
 
 Or use CLI:

@@ -92,3 +92,4 @@ Desktop.ini
 .directory
 .Trash-*
 test-env/*
+.claude/

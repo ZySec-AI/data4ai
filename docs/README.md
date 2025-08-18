@@ -13,36 +13,40 @@ Welcome to the Data4AI documentation! This directory contains comprehensive guid
 - [**Detailed Usage Guide**](DETAILED_USAGE.md) - Complete CLI reference and advanced usage
 - [**Examples**](EXAMPLES.md) - Code examples, recipes, and common patterns
 - [**Commands Reference**](COMMANDS.md) - Complete CLI command documentation
+- [**Advanced Generation**](ADVANCED_GENERATION.md) - Budget-based planning with doc-plan-generate
+- [**Features Overview**](FEATURES.md) - Complete feature list and capabilities
+- [**ChatML Default**](CHATML_DEFAULT.md) - Understanding the default schema
 
-### Technical Documentation
-- [**Project Structure**](PROJECT_STRUCTURE.md) - Codebase organization and architecture
-- [**Publishing Guide**](PUBLISHING.md) - PyPI publishing instructions for maintainers
-- [**Contributing Guide**](../CONTRIBUTING.md) - How to contribute to the project
-
-### Configuration & Setup
+### Configuration & Output
 - [**Environment Setup Guide**](ENVIRONMENT_SETUP.md) - Complete guide for setting up environment variables
+- [**Output Structure**](OUTPUT_STRUCTURE.md) - Where datasets are saved
 - [**Troubleshooting Guide**](TROUBLESHOOTING.md) - Common issues and solutions
-- [**.env.example**](../.env.example) - Example environment variables (reference only)
 
 ## 🗂️ Documentation Organization
 
 ```
 data4ai/
-├── User-Facing Docs (Root)
+├── Root Documentation
 │   ├── README.md           # Quick start & overview
-│   ├── GETTING_STARTED.md  # Detailed setup guide
+│   ├── GETTING_STARTED.md  # Step-by-step tutorial
 │   ├── CHANGELOG.md        # Release history
 │   └── CONTRIBUTING.md     # Contribution guide
 │
-└── docs/ (Detailed Documentation)
-    ├── README.md           # This index file
-    ├── DETAILED_USAGE.md   # Complete usage guide
-    ├── EXAMPLES.md         # Code examples & recipes
-    ├── COMMANDS.md         # CLI reference
-    ├── ENVIRONMENT_SETUP.md # Environment configuration guide
-    ├── TROUBLESHOOTING.md  # Problem solving guide
-    ├── PROJECT_STRUCTURE.md # Architecture details
-    └── PUBLISHING.md       # Release procedures
+├── docs/ (User Documentation)
+│   ├── README.md           # This index file
+│   ├── COMMANDS.md         # CLI reference
+│   ├── DETAILED_USAGE.md   # Complete usage guide
+│   ├── EXAMPLES.md         # Code examples & recipes
+│   ├── FEATURES.md         # Feature overview
+│   ├── ADVANCED_GENERATION.md # Budget-based generation
+│   ├── CHATML_DEFAULT.md   # Default schema info
+│   ├── ENVIRONMENT_SETUP.md # Environment setup
+│   ├── OUTPUT_STRUCTURE.md # Output organization
+│   └── TROUBLESHOOTING.md  # Problem solving
+│
+└── docs/maintainers/       # Maintainer Documentation
+    ├── PUBLISHING.md       # PyPI release process
+    └── OPENROUTER_DSPY.md  # Technical integration details
 ```
 
 ## 🗺️ Quick Navigation
@@ -52,10 +56,10 @@ data4ai/
 2. Follow the [Getting Started Guide](../GETTING_STARTED.md) for detailed setup
 3. Check [Examples](EXAMPLES.md) for common use cases
 
-### For Developers
-1. Review [Project Structure](PROJECT_STRUCTURE.md) to understand the codebase
-2. Check [Commands Reference](COMMANDS.md) for CLI implementation
-3. See [Publishing Guide](PUBLISHING.md) for release process
+### For Contributors
+1. Read [Contributing Guide](../CONTRIBUTING.md) for guidelines
+2. Check [Commands Reference](COMMANDS.md) for CLI details
+3. Review [Output Structure](OUTPUT_STRUCTURE.md) for data organization
 
 ### For Advanced Users
 1. Explore [Detailed Usage Guide](DETAILED_USAGE.md) for all features
@@ -69,10 +73,10 @@ data4ai/
 data4ai prompt --repo my-dataset --description "Your task" --count 100
 ```
 
-### Use Excel Template
+### Generate from Documents
 ```bash
-data4ai create-sample template.xlsx
-data4ai run template.xlsx --repo my-dataset
+data4ai doc research_paper.pdf --repo doc-dataset --count 100
+data4ai doc ./documents/ --repo multi-doc-dataset --count 500
 ```
 
 ### Publish to HuggingFace

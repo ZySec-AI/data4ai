@@ -1,7 +1,7 @@
 """Data schemas for different dataset formats."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -74,66 +74,19 @@ class AlpacaSchema(BaseSchema):
         )
 
 
-class DollySchema(BaseSchema):
-    """Dolly instruction-tuning format."""
-
-    instruction: str = Field(..., min_length=1, description="The instruction/prompt")
-    context: str = Field(default="", description="Context or background information")
-    response: str = Field(
-        ..., min_length=1, description="The response to the instruction"
-    )
-    category: Optional[str] = Field(default=None, description="Optional category/type")
-
-    @field_validator("instruction", "response")
-    @classmethod
-    def validate_not_empty(cls, v: str) -> str:
-        """Ensure required fields are not empty."""
-        if not v or not v.strip():
-            raise ValueError("Field cannot be empty or whitespace only")
-        return v.strip()
-
-    def to_jsonl_entry(self) -> dict[str, Any]:
-        """Convert to JSONL format."""
-        entry = {
-            "instruction": self.instruction,
-            "context": self.context,
-            "response": self.response,
-        }
-        if self.category:
-            entry["category"] = self.category
-        return entry
-
-    def validate_content(self) -> bool:
-        """Validate content requirements."""
-        return bool(self.instruction and self.response)
-
-    @classmethod
-    def get_columns(cls) -> list[str]:
-        """Get column names for Excel template."""
-        return ["instruction", "context", "response", "category"]
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "DollySchema":
-        """Create instance from dictionary."""
-        return cls(
-            instruction=data.get("instruction", ""),
-            context=data.get("context", ""),
-            response=data.get("response", ""),
-            category=data.get("category"),
-        )
-
-
 class ConversationTurn(BaseModel):
-    """Single conversation turn for ShareGPT format."""
+    """Single conversation turn for conversation formats."""
 
-    from_: str = Field(..., alias="from", description="Speaker role (human/gpt)")
+    from_: str = Field(
+        ..., alias="from", description="Speaker role (user/assistant/system)"
+    )
     value: str = Field(..., min_length=1, description="Message content")
 
     @field_validator("from_")
     @classmethod
     def validate_role(cls, v: str) -> str:
         """Validate speaker role."""
-        valid_roles = ["human", "gpt", "system", "assistant", "user"]
+        valid_roles = ["system", "assistant", "user"]
         if v.lower() not in valid_roles:
             raise ValueError(
                 f"Invalid role '{v}'. Must be one of: {', '.join(valid_roles)}"
@@ -144,25 +97,23 @@ class ConversationTurn(BaseModel):
         populate_by_name = True
 
 
-class ShareGPTSchema(BaseSchema):
-    """ShareGPT conversation format."""
+class ChatMLSchema(BaseSchema):
+    """ChatML conversation format."""
 
-    conversations: list[ConversationTurn] = Field(
-        ..., min_length=2, description="List of conversation turns"
+    messages: list[ConversationTurn] = Field(
+        ..., min_length=1, description="List of conversation messages"
     )
 
-    @field_validator("conversations")
+    @field_validator("messages")
     @classmethod
-    def validate_conversations(
-        cls, v: list[ConversationTurn]
-    ) -> list[ConversationTurn]:
-        """Validate conversation structure."""
-        if len(v) < 2:
-            raise ValueError("Conversations must have at least 2 turns")
+    def validate_messages(cls, v: list[ConversationTurn]) -> list[ConversationTurn]:
+        """Validate message structure."""
+        if len(v) < 1:
+            raise ValueError("Messages must have at least 1 turn")
 
-        # Ensure alternating roles
+        # Ensure no consecutive messages from same role (except system messages)
         for i in range(1, len(v)):
-            if v[i].from_ == v[i - 1].from_:
+            if v[i].from_ == v[i - 1].from_ and v[i].from_ != "system":
                 raise ValueError(f"Consecutive messages from same role at position {i}")
 
         return v
@@ -170,53 +121,66 @@ class ShareGPTSchema(BaseSchema):
     def to_jsonl_entry(self) -> dict[str, Any]:
         """Convert to JSONL format."""
         return {
-            "conversations": [
-                {"from": turn.from_, "value": turn.value} for turn in self.conversations
+            "messages": [
+                {"role": turn.from_, "content": turn.value} for turn in self.messages
             ]
         }
 
     def validate_content(self) -> bool:
         """Validate content requirements."""
-        return len(self.conversations) >= 2 and all(
-            turn.value.strip() for turn in self.conversations
+        return len(self.messages) >= 1 and all(
+            turn.value.strip() for turn in self.messages
         )
 
     @classmethod
     def get_columns(cls) -> list[str]:
         """Get column names for Excel template."""
         # For Excel, we'll use a simplified format
-        return ["human_message", "assistant_response", "conversation_continues"]
+        return [
+            "system_message",
+            "user_message",
+            "assistant_response",
+            "conversation_continues",
+        ]
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ShareGPTSchema":
+    def from_dict(cls, data: dict[str, Any]) -> "ChatMLSchema":
         """Create instance from dictionary."""
-        if "conversations" in data:
-            conversations = [
-                ConversationTurn(from_=turn["from"], value=turn["value"])
-                for turn in data["conversations"]
+        if "messages" in data:
+            messages = [
+                ConversationTurn(from_=msg["role"], value=msg["content"])
+                for msg in data["messages"]
             ]
+            # Validate that we have actual messages
+            if not messages:
+                raise ValueError("Messages array cannot be empty")
         else:
             # Build from simplified Excel format
-            conversations = []
-            if data.get("human_message"):
-                conversations.append(
-                    ConversationTurn(from_="human", value=data["human_message"])
+            messages = []
+            if data.get("system_message"):
+                messages.append(
+                    ConversationTurn(from_="system", value=data["system_message"])
+                )
+            if data.get("user_message"):
+                messages.append(
+                    ConversationTurn(from_="user", value=data["user_message"])
                 )
             if data.get("assistant_response"):
-                conversations.append(
-                    ConversationTurn(from_="gpt", value=data["assistant_response"])
+                messages.append(
+                    ConversationTurn(
+                        from_="assistant", value=data["assistant_response"]
+                    )
                 )
 
-        return cls(conversations=conversations)
+        return cls(messages=messages)
 
 
 class SchemaRegistry:
     """Registry for managing dataset schemas."""
 
     _schemas: dict[str, type[BaseSchema]] = {
+        "chatml": ChatMLSchema,
         "alpaca": AlpacaSchema,
-        "dolly": DollySchema,
-        "sharegpt": ShareGPTSchema,
     }
 
     @classmethod

@@ -3,13 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from data4ai.schemas import (
-    AlpacaSchema,
-    ConversationTurn,
-    DollySchema,
-    SchemaRegistry,
-    ShareGPTSchema,
-)
+from data4ai.schemas import AlpacaSchema, ChatMLSchema, ConversationTurn, SchemaRegistry
 
 
 class TestAlpacaSchema:
@@ -50,71 +44,62 @@ class TestAlpacaSchema:
             AlpacaSchema(instruction="Test", input="", output="")
 
 
-class TestDollySchema:
-    """Test Dolly schema."""
+class TestChatMLSchema:
+    """Test ChatML schema."""
 
-    def test_valid_dolly(self):
-        """Test valid Dolly format."""
-        data = DollySchema(
-            instruction="Explain AI",
-            context="For beginners",
-            response="AI is...",
-            category="education",
-        )
-
-        assert data.instruction == "Explain AI"
-        assert data.context == "For beginners"
-        assert data.response == "AI is..."
-        assert data.category == "education"
-        assert data.validate_content()
-
-    def test_dolly_optional_fields(self):
-        """Test optional fields."""
-        data = DollySchema(
-            instruction="Test",
-            context="",
-            response="Response",
-        )
-
-        assert data.category is None
-        jsonl = data.to_jsonl_entry()
-        assert "category" not in jsonl
-
-
-class TestShareGPTSchema:
-    """Test ShareGPT schema."""
-
-    def test_valid_sharegpt(self):
-        """Test valid ShareGPT format."""
-        data = ShareGPTSchema(
-            conversations=[
-                ConversationTurn(from_="human", value="Hello"),
-                ConversationTurn(from_="gpt", value="Hi!"),
+    def test_valid_chatml(self):
+        """Test valid ChatML format."""
+        data = ChatMLSchema(
+            messages=[
+                ConversationTurn(from_="user", value="Hello"),
+                ConversationTurn(from_="assistant", value="Hi!"),
             ]
         )
 
-        assert len(data.conversations) == 2
-        assert data.conversations[0].from_ == "human"
+        assert len(data.messages) == 2
+        assert data.messages[0].from_ == "user"
         assert data.validate_content()
 
-    def test_sharegpt_validation(self):
-        """Test conversation validation."""
-        # Too few turns
+    def test_chatml_to_jsonl(self):
+        """Test JSONL conversion."""
+        data = ChatMLSchema(
+            messages=[
+                ConversationTurn(from_="user", value="Test"),
+                ConversationTurn(from_="assistant", value="Response"),
+            ]
+        )
+
+        jsonl = data.to_jsonl_entry()
+        assert jsonl["messages"][0]["role"] == "user"
+        assert jsonl["messages"][0]["content"] == "Test"
+        assert jsonl["messages"][1]["role"] == "assistant"
+        assert jsonl["messages"][1]["content"] == "Response"
+
+    def test_chatml_validation(self):
+        """Test message validation."""
+        # Empty messages
         with pytest.raises(ValidationError):
-            ShareGPTSchema(
-                conversations=[
-                    ConversationTurn(from_="human", value="Hello"),
+            ChatMLSchema(messages=[])
+
+        # Same role consecutively (except system)
+        with pytest.raises(ValidationError):
+            ChatMLSchema(
+                messages=[
+                    ConversationTurn(from_="user", value="Hello"),
+                    ConversationTurn(from_="user", value="Again"),
                 ]
             )
 
-        # Same role consecutively
-        with pytest.raises(ValidationError):
-            ShareGPTSchema(
-                conversations=[
-                    ConversationTurn(from_="human", value="Hello"),
-                    ConversationTurn(from_="human", value="Again"),
-                ]
-            )
+        # System messages can be consecutive
+        data = ChatMLSchema(
+            messages=[
+                ConversationTurn(from_="system", value="System 1"),
+                ConversationTurn(from_="system", value="System 2"),
+                ConversationTurn(from_="user", value="Hello"),
+                ConversationTurn(from_="assistant", value="Hi"),
+            ]
+        )
+        assert data.validate_content()
 
 
 class TestSchemaRegistry:
@@ -123,8 +108,7 @@ class TestSchemaRegistry:
     def test_get_schema(self):
         """Test getting schema by name."""
         assert SchemaRegistry.get("alpaca") == AlpacaSchema
-        assert SchemaRegistry.get("dolly") == DollySchema
-        assert SchemaRegistry.get("sharegpt") == ShareGPTSchema
+        assert SchemaRegistry.get("chatml") == ChatMLSchema
 
     def test_unknown_schema(self):
         """Test unknown schema handling."""
@@ -135,5 +119,5 @@ class TestSchemaRegistry:
         """Test listing available schemas."""
         schemas = SchemaRegistry.list_schemas()
         assert "alpaca" in schemas
-        assert "dolly" in schemas
-        assert "sharegpt" in schemas
+        assert "chatml" in schemas
+        assert len(schemas) == 2  # Only 2 schemas now

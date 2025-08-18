@@ -3,34 +3,34 @@
 from unittest.mock import Mock, patch
 
 from data4ai.integrations.dspy_prompts import (
-    DatasetGenerationSignature,
+    DynamicPromptSignature,
     PromptOptimizer,
     SchemaAwarePromptGenerator,
     create_prompt_generator,
 )
 
 
-class TestDatasetGenerationSignature:
-    """Test DSPy signature for dataset generation."""
+class TestDynamicPromptSignature:
+    """Test DSPy signature for dynamic prompt generation."""
 
     def test_signature_creation(self):
         """Test that signature can be created with required fields."""
         # DSPy signatures define fields as class variables
-        signature_class = DatasetGenerationSignature
+        signature_class = DynamicPromptSignature
         # Test that the signature class exists and can be instantiated
         assert signature_class is not None
         # Test that it's a DSPy signature
         assert hasattr(signature_class, "__name__")
-        assert signature_class.__name__ == "DatasetGenerationSignature"
+        assert signature_class.__name__ == "DynamicPromptSignature"
 
     def test_signature_fields(self):
         """Test that signature has correct input and output fields."""
         # Test that the signature class has the expected structure
-        signature_class = DatasetGenerationSignature
+        signature_class = DynamicPromptSignature
 
         # Check that it's a DSPy signature class
         assert hasattr(signature_class, "__name__")
-        assert signature_class.__name__ == "DatasetGenerationSignature"
+        assert signature_class.__name__ == "DynamicPromptSignature"
         # Check that it inherits from dspy.Signature
         assert hasattr(signature_class, "__bases__")
 
@@ -38,9 +38,13 @@ class TestDatasetGenerationSignature:
 class TestPromptOptimizer:
     """Test DSPy prompt optimizer."""
 
+    @patch("data4ai.integrations.dspy_prompts.os.getenv")
     @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
-    def test_optimizer_initialization(self, mock_configure):
+    def test_optimizer_initialization(self, mock_configure, mock_getenv):
         """Test optimizer initialization with DSPy setup."""
+        # Mock os.getenv to return None for OPENROUTER_API_KEY
+        mock_getenv.return_value = None
+
         optimizer = PromptOptimizer("openai/gpt-4o-mini")
 
         assert optimizer.model_name == "openai/gpt-4o-mini"
@@ -54,13 +58,8 @@ class TestPromptOptimizer:
         """Test that signatures are set up correctly."""
         optimizer = PromptOptimizer("test-model")
 
-        assert "alpaca" in optimizer.signatures
-        assert "dolly" in optimizer.signatures
-        assert "sharegpt" in optimizer.signatures
-        assert "custom" in optimizer.signatures
-
-        for _schema_name, signature_class in optimizer.signatures.items():
-            assert signature_class == DatasetGenerationSignature
+        assert "dynamic_prompt" in optimizer.signatures
+        assert "schema_aware_generation" in optimizer.signatures
 
     @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
     def test_generate_dynamic_prompt_fallback(self, mock_configure):
@@ -79,30 +78,17 @@ class TestPromptOptimizer:
         assert "output" in prompt
 
     @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
-    def test_generate_dynamic_prompt_dolly_schema(self, mock_configure):
-        """Test dynamic prompt generation for Dolly schema."""
+    def test_generate_dynamic_prompt_chatml_schema(self, mock_configure):
+        """Test dynamic prompt generation for ChatML schema."""
         optimizer = PromptOptimizer("test-model")
 
         prompt = optimizer.generate_dynamic_prompt(
-            description="Create educational content", schema_name="dolly", count=3
+            description="Create conversations", schema_name="chatml", count=3
         )
 
-        assert "dolly schema" in prompt
-        assert "instruction" in prompt
-        assert "context" in prompt
-        assert "response" in prompt
-
-    @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
-    def test_generate_dynamic_prompt_sharegpt_schema(self, mock_configure):
-        """Test dynamic prompt generation for ShareGPT schema."""
-        optimizer = PromptOptimizer("test-model")
-
-        prompt = optimizer.generate_dynamic_prompt(
-            description="Create conversations", schema_name="sharegpt", count=2
-        )
-
-        assert "sharegpt schema" in prompt
-        assert "conversations" in prompt
+        assert "chatml" in prompt.lower()
+        assert "messages" in prompt
+        assert "role" in prompt
 
     @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
     def test_optimize_prompt_with_examples(self, mock_configure):
@@ -146,8 +132,7 @@ class TestSchemaAwarePromptGenerator:
 
         assert generator.optimizer == mock_optimizer
         assert "alpaca" in generator.schema_prompts
-        assert "dolly" in generator.schema_prompts
-        assert "sharegpt" in generator.schema_prompts
+        assert "chatml" in generator.schema_prompts
 
     @patch("data4ai.integrations.openrouter_dspy.configure_dspy_with_openrouter")
     def test_create_schema_prompts(self, mock_configure):
@@ -161,17 +146,10 @@ class TestSchemaAwarePromptGenerator:
         assert "input:" in alpaca_prompt
         assert "output:" in alpaca_prompt
 
-        # Test Dolly prompt
-        dolly_prompt = generator.schema_prompts["dolly"]
-        assert "question-answer datasets" in dolly_prompt
-        assert "instruction:" in dolly_prompt
-        assert "context:" in dolly_prompt
-        assert "response:" in dolly_prompt
-
-        # Test ShareGPT prompt
-        sharegpt_prompt = generator.schema_prompts["sharegpt"]
-        assert "conversational datasets" in sharegpt_prompt
-        assert "conversations:" in sharegpt_prompt
+        # Test ChatML prompt
+        chatml_prompt = generator.schema_prompts["chatml"]
+        assert "conversation" in chatml_prompt
+        assert "messages" in chatml_prompt
 
     @patch("data4ai.integrations.dspy_prompts.PromptOptimizer")
     def test_generate_schema_prompt_with_dspy(self, mock_optimizer_class):

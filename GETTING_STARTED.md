@@ -7,7 +7,7 @@ Quick start guide with copy-paste ready examples.
 ```bash
 # Install Data4AI (choose based on your needs)
 pip install data4ai              # Core features only
-pip install data4ai[excel]       # With Excel support
+pip install data4ai              # All features included
 pip install data4ai[hf]          # With HuggingFace publishing  
 pip install data4ai[all]         # All features (recommended)
 
@@ -85,17 +85,17 @@ ls outputs/my-first-dataset/
 cat outputs/my-first-dataset/data.jsonl | head -3
 ```
 
-### Example 2: Create Excel Template
+### Example 2: Document-based Generation
 
 ```bash
-# Create Excel template
-data4ai create-sample my_data.xlsx --dataset alpaca
+# Generate from a PDF document
+data4ai doc research_paper.pdf --repo research-qa --count 100
 
-# Open my_data.xlsx in Excel/LibreOffice/Numbers
-# Add a few examples, leave some rows blank
+# Generate from multiple documents in a folder
+data4ai doc ./documents/ --repo knowledge-base --count 500
 
-# Generate complete dataset
-data4ai run my_data.xlsx --repo my-excel-dataset --max-rows 50
+# Advanced document processing with taxonomy
+data4ai doc technical_manual.pdf --repo manual-qa --taxonomy advanced --count 200
 ```
 
 ### Example 3: Customer Support Dataset

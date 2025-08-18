@@ -79,10 +79,10 @@ dev = [
 data4ai = "data4ai.cli_wrapper:main"
 
 [project.urls]
-Homepage = "https://github.com/data4ai/data4ai"
-Documentation = "https://github.com/data4ai/data4ai/blob/main/README.md"
-Repository = "https://github.com/data4ai/data4ai"
-Issues = "https://github.com/data4ai/data4ai/issues"
+Homepage = "https://github.com/zysec-ai/data4ai"
+Documentation = "https://github.com/zysec-ai/data4ai/blob/main/README.md"
+Repository = "https://github.com/zysec-ai/data4ai"
+Issues = "https://github.com/zysec-ai/data4ai/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["data4ai"]

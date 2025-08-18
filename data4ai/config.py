@@ -31,7 +31,7 @@ class Settings(BaseSettings):
 
     # Site attribution for analytics
     site_url: str = Field(
-        default="https://github.com/data4ai/data4ai",
+        default="https://github.com/zysec-ai/data4ai",
         description="Project website URL for attribution",
     )
     site_name: str = Field(
@@ -76,7 +76,7 @@ class Settings(BaseSettings):
 
     # Default schema
     default_schema: str = Field(
-        default="alpaca",
+        default="chatml",
         description="Default dataset schema",
     )
 
@@ -116,7 +116,7 @@ class Settings(BaseSettings):
     @classmethod
     def validate_schema(cls, v: str) -> str:
         """Validate schema is supported."""
-        valid_schemas = ["alpaca", "dolly", "sharegpt"]
+        valid_schemas = ["chatml", "alpaca"]
         if v.lower() not in valid_schemas:
             raise ValueError(
                 f"Invalid schema '{v}'. Must be one of: {', '.join(valid_schemas)}"

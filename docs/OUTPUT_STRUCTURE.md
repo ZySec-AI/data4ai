@@ -1,22 +1,17 @@
-# Project Structure
+# Output Structure
 
-## Default Directory Layout
+## Where Data4AI Saves Your Datasets
 
-When you run Data4AI commands, files are organized as follows:
+When you generate datasets, Data4AI creates a clean, organized structure:
 
 ```
-data4ai/
-├── setup_env.sh            # Interactive environment setup script
-├── .env.example            # Example environment variables (reference only)
-├── outputs/                # Default output directory (gitignored)
-│   ├── my-dataset/         # Each dataset in its own folder
-│   │   ├── data.jsonl      # Generated dataset
-│   │   └── metadata.json   # Generation metadata
-│   └── another-dataset/
-│       ├── data.jsonl
-│       └── metadata.json
-└── .data4ai_checkpoint/    # Checkpoint files for resume (gitignored)
-    └── checkpoint_*.json
+outputs/                    # Default output directory
+├── my-dataset/            # Each dataset in its own folder
+│   ├── data.jsonl         # Your generated dataset
+│   └── metadata.json      # Generation details & metrics
+└── another-dataset/
+    ├── data.jsonl
+    └── metadata.json
 ```
 
 ## Output Directory
@@ -73,8 +68,8 @@ When generating large datasets, checkpoints are automatically saved:
 ## File Types
 
 - **`.jsonl`** - Dataset files in JSON Lines format
-- **`.xlsx`** - Excel templates for data input
-- **`.csv`** - CSV templates for data input
+- **`.pdf`** - PDF documents for processing
+- **`.md`** - Markdown documents for processing
 - **`.json`** - Metadata and checkpoint files
 
 All output files are gitignored by default to prevent accidental commits of generated data.

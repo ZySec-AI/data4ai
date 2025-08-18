@@ -171,13 +171,13 @@ echo 'OPENROUTER_API_KEY="your-key"' | sudo tee -a /etc/environment
 
 1. **Check file path:**
    ```bash
-   ls -la template.xlsx
+   ls -la research_paper.pdf
    pwd  # Check current directory
    ```
 
 2. **Use absolute path:**
    ```bash
-   data4ai run /full/path/to/file.xlsx --repo test
+   data4ai doc /full/path/to/document.pdf --repo test --count 100
    ```
 
 ### Problem: "Schema mismatch"
@@ -191,7 +191,7 @@ echo 'OPENROUTER_API_KEY="your-key"' | sudo tee -a /etc/environment
 
 1. **Create correct template:**
    ```bash
-   data4ai create-sample template.xlsx --dataset alpaca
+   data4ai prompt --repo test-dataset --description "Test generation" --count 10
    ```
 
 2. **Check schema requirements:**
@@ -321,12 +321,12 @@ result = generate_from_description(...)  # In sync context
 
 1. **Reduce batch size:**
    ```bash
-   data4ai run file.xlsx --batch-size 1
+   data4ai prompt --repo test --description "Test" --batch-size 1 --count 10
    ```
 
 2. **Process in chunks:**
    ```bash
-   data4ai run file.xlsx --max-rows 100
+   data4ai prompt --repo test --description "Test" --count 100
    ```
 
 ## 🆘 Getting Help
