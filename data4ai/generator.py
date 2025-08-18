@@ -1066,7 +1066,8 @@ class DatasetGenerator:
                     semaphore = asyncio.Semaphore(max_concurrent)
 
                     async def process_chunk_doc(
-                        i_doc: int, chunk_data: dict[str, Any]
+                        i_doc: int, chunk_data: dict[str, Any],
+                        levels=target_levels_doc, sem=semaphore,
                     ) -> list[dict[str, Any]]:
                         chunk_text = chunk_data["text"]
                         prompt_count = prompt_targets[i_doc]
@@ -1084,7 +1085,7 @@ class DatasetGenerator:
                                 "\n\nOUTPUT REQUIREMENTS:\n"
                                 "- Each example MUST include a 'taxonomy_level' field with one of: "
                                 "['remember','understand','apply','analyze','evaluate','create'].\n"
-                                f"- For this batch, taxonomy_level MUST be '{target_levels_doc[i_doc]}'."
+                                f"- For this batch, taxonomy_level MUST be '{levels[i_doc]}'."
                             )
                         elif extraction_type == "summary":
                             prompt = self._build_document_summary_prompt(
@@ -1118,7 +1119,7 @@ class DatasetGenerator:
                             },
                             {"role": "user", "content": prompt},
                         ]
-                        async with semaphore:
+                        async with sem:
                             try:
                                 response = await asyncio.wait_for(
                                     self.client.chat_completion(
@@ -1138,9 +1139,7 @@ class DatasetGenerator:
                                 if extraction_type == "qa" and entries:
                                     for e in entries:
                                         if "taxonomy_level" not in e:
-                                            e["taxonomy_level"] = target_levels_doc[
-                                                i_doc
-                                            ]
+                                            e["taxonomy_level"] = levels[i_doc]
                                 if verify_quality and entries:
                                     verified_entries = []
                                     for e in entries:
