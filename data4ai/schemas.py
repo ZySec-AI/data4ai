@@ -21,12 +21,6 @@ class BaseSchema(BaseModel, ABC):
 
     @classmethod
     @abstractmethod
-    def get_columns(cls) -> list[str]:
-        """Get column names for Excel template."""
-        pass
-
-    @classmethod
-    @abstractmethod
     def from_dict(cls, data: dict[str, Any]) -> "BaseSchema":
         """Create instance from dictionary."""
         pass
@@ -59,10 +53,6 @@ class AlpacaSchema(BaseSchema):
         """Validate content requirements."""
         return bool(self.instruction and self.output)
 
-    @classmethod
-    def get_columns(cls) -> list[str]:
-        """Get column names for Excel template."""
-        return ["instruction", "input", "output"]
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "AlpacaSchema":
@@ -132,16 +122,6 @@ class ChatMLSchema(BaseSchema):
             turn.value.strip() for turn in self.messages
         )
 
-    @classmethod
-    def get_columns(cls) -> list[str]:
-        """Get column names for Excel template."""
-        # For Excel, we'll use a simplified format
-        return [
-            "system_message",
-            "user_message",
-            "assistant_response",
-            "conversation_continues",
-        ]
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ChatMLSchema":

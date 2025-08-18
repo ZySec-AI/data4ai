@@ -16,7 +16,7 @@ from data4ai.utils import setup_logging
 
 app = typer.Typer(
     name="data4ai",
-    help="AI-powered dataset generation for instruction tuning",
+    help="Data4AI - AI-powered dataset generation for instruction tuning",
     add_completion=False,
 )
 console = Console()

@@ -44,8 +44,8 @@ class SchemaError(ValidationError):
     pass
 
 
-class ExcelError(Data4AIError):
-    """Excel file processing errors."""
+class DocumentError(Data4AIError):
+    """Document processing errors."""
 
     pass
 

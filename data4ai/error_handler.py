@@ -39,11 +39,9 @@ class ErrorHandler:
         "schema_not_found": "❌ Unknown schema: {schema}. Available: chatml, alpaca",
         "schema_mismatch": "❌ Data doesn't match {schema} schema. Missing columns: {columns}",
         "invalid_data": "❌ Invalid data in row {row}: {error}",
-        # CSV/Excel Errors
-        "csv_parse_error": "❌ Failed to parse CSV file: {error}",
-        "excel_parse_error": "❌ Failed to parse Excel file: {error}",
-        "no_partial_rows": "ℹ️ No partial rows found to complete.",
-        "all_rows_complete": "✅ All rows are already complete.",
+        # Document Processing Errors
+        "document_parse_error": "❌ Failed to parse document: {error}",
+        "unsupported_format": "❌ Unsupported document format: {format}",
         # Generation Errors
         "generation_failed": "❌ Failed to generate dataset: {error}",
         "parsing_failed": "⚠️ Failed to parse AI response for {count} items.",
