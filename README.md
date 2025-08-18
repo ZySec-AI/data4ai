@@ -11,7 +11,7 @@ Generate high-quality synthetic datasets using state-of-the-art language models 
 ## ✨ Key Features
 
 - 🤖 **100+ AI Models** - Access to GPT-4, Claude, Llama, and more via OpenRouter
-- 📊 **Multiple Formats** - Support for ChatML (default), Alpaca, Dolly, ShareGPT schemas
+- 📊 **Multiple Formats** - Support for ChatML (default) and Alpaca schemas
 - 🔮 **DSPy Integration** - Dynamic prompt optimization for better quality
 - 📄 **Document Support** - Generate datasets from PDFs, Word docs, Markdown, and text files
 - 🎯 **Quality Features** - Optional Bloom's taxonomy, provenance tracking, and quality verification
@@ -41,7 +41,7 @@ export OPENROUTER_API_KEY="your_key_here"
 export OPENROUTER_MODEL="anthropic/claude-3-5-sonnet"  # Or another model
 
 # Optional: Set default dataset schema (default: chatml)
-export DEFAULT_SCHEMA="chatml"  # Options: chatml, alpaca, dolly, sharegpt
+export DEFAULT_SCHEMA="chatml"  # Options: chatml, alpaca
 
 # Optional: For publishing to HuggingFace
 export HF_TOKEN="your_huggingface_token"
@@ -135,41 +135,7 @@ data4ai doc document.pdf \
   --long-context           # Merge chunks for better coherence
 ```
 
-### 4. Advanced DSPy Plan→Generate Pipeline (New!)
-
-Use the new budget-based generation for superior quality:
-
-```bash
-# Smart generation with token budget
-data4ai doc-plan-generate document.pdf \
-  --repo smart-dataset \
-  --token-budget 10000 \
-  --taxonomy balanced \
-  --difficulty balanced
-
-# Preview the plan first
-data4ai doc-plan-generate research-paper.pdf \
-  --repo research-qa \
-  --token-budget 5000 \
-  --dry-run
-
-# With custom constraints
-data4ai doc-plan-generate documents/ \
-  --repo advanced-dataset \
-  --token-budget 20000 \
-  --min-examples 50 \
-  --max-examples 200 \
-  --taxonomy advanced    # Focus on higher-order thinking
-```
-
-This new pipeline:
-- 🧠 Analyzes the entire document first
-- 📊 Creates an intelligent generation plan
-- 💰 Uses token budget instead of fixed counts
-- 🎯 Dynamically allocates examples to important sections
-- 🔬 Ensures Bloom's taxonomy coverage
-
-### 5. Traditional High-Quality Generation
+### 4. High-Quality Generation
 
 ```bash
 # Basic generation (simple and fast)
@@ -198,7 +164,7 @@ data4ai doc documents/ \
   --long-context          # Optimized context usage
 ```
 
-### 6. Publish to HuggingFace
+### 5. Publish to HuggingFace
 
 ```bash
 # Generate and publish
@@ -281,24 +247,6 @@ print(f"Generated {result['row_count']} examples")
 }
 ```
 
-**Dolly** (Context-based)
-```json
-{
-  "instruction": "Summarize this text",
-  "context": "Long text here...",
-  "response": "Summary..."
-}
-```
-
-**ShareGPT** (Conversations)
-```json
-{
-  "conversations": [
-    {"from": "human", "value": "Hello"},
-    {"from": "gpt", "value": "Hi there!"}
-  ]
-}
-```
 
 ## 🎯 Quality Features (Optional)
 
