@@ -976,11 +976,16 @@ class DatasetGenerator:
                             "create",
                         ]
 
-                        async def generate_level(level: str) -> list[dict[str, Any]]:
+                        async def generate_level(
+                            level: str,
+                            chunks=group_chunks,
+                            ctx=doc_text_ctx,
+                            doc_name_local=doc_name,
+                        ) -> list[dict[str, Any]]:
                             try:
                                 # Base DSPy prompt for 1 example
                                 base_prompt = self._build_document_qa_prompt(
-                                    doc_text_ctx or group_chunks[0]["text"],
+                                    ctx or chunks[0]["text"],
                                     schema_name,
                                     1,
                                     taxonomy=taxonomy or "balanced",
@@ -1022,11 +1027,11 @@ class DatasetGenerator:
                                 # Add taxonomy label and source document tag
                                 for e in entries or []:
                                     e.setdefault("taxonomy_level", level)
-                                    e["source_document"] = f"{doc_name}"
+                                    e["source_document"] = f"{doc_name_local}"
                                 return entries[:1] if entries else []
                             except Exception as e:
                                 logger.warning(
-                                    f"Failed to generate baseline level '{level}' for {doc_name}: {e}"
+                                    f"Failed to generate baseline level '{level}' for {doc_name_local}: {e}"
                                 )
                                 return []
 
@@ -1066,11 +1071,14 @@ class DatasetGenerator:
                     semaphore = asyncio.Semaphore(max_concurrent)
 
                     async def process_chunk_doc(
-                        i_doc: int, chunk_data: dict[str, Any],
-                        levels=target_levels_doc, sem=semaphore,
+                        i_doc: int,
+                        chunk_data: dict[str, Any],
+                        levels=target_levels_doc,
+                        sem=semaphore,
+                        pc_targets=prompt_targets,
                     ) -> list[dict[str, Any]]:
                         chunk_text = chunk_data["text"]
-                        prompt_count = prompt_targets[i_doc]
+                        prompt_count = pc_targets[i_doc]
                         # DSPy prompt based on extraction_type
                         if extraction_type == "qa":
                             prompt = self._build_document_qa_prompt(
