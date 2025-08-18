@@ -47,10 +47,11 @@ export DEFAULT_SCHEMA="chatml"  # Options: chatml, alpaca, dolly, sharegpt
 export HF_TOKEN="your_huggingface_token"
 ```
 
-#### Option 2: Interactive Setup
+#### Option 2: Using .env File
 ```bash
-# Use our setup helper
-source setup_env.sh
+# Create a .env file in your project directory
+echo 'OPENROUTER_API_KEY=your_key_here' > .env
+# The tool will automatically load from .env
 ```
 
 #### Option 3: Permanent Setup
@@ -63,7 +64,7 @@ source ~/.bashrc
 #### Check Your Setup
 ```bash
 # Verify environment variables are set
-data4ai env --check
+echo "OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:0:10}..." # Shows first 10 chars
 ```
 
 ### Generate Your First Dataset
@@ -94,41 +95,38 @@ data4ai prompt \
 
 ```bash
 # From single PDF document
-data4ai doc-to-dataset research-paper.pdf \
+data4ai doc research-paper.pdf \
   --repo paper-qa \
   --type qa \
   --count 100
 
 # From entire folder of documents
-data4ai doc-to-dataset /path/to/docs/folder \
+data4ai doc /path/to/docs/folder \
   --repo multi-doc-dataset \
   --type qa \
   --count 500 \
   --recursive
 
 # Process only specific file types in folder
-data4ai doc-to-dataset /path/to/docs \
+data4ai doc /path/to/docs \
   --repo pdf-only-dataset \
   --file-types pdf \
   --count 200
 
 # From Word document with summaries
-data4ai doc-to-dataset manual.docx \
+data4ai doc manual.docx \
   --repo manual-summaries \
   --type summary \
   --count 50
 
 # From Markdown with advanced extraction
-data4ai doc-to-dataset README.md \
+data4ai doc README.md \
   --repo docs-dataset \
   --type instruction \
   --advanced
 
-# Convert PDFs to Markdown for better processing
-data4ai pdf-to-markdown /path/to/pdfs --recursive
-
 # Generate with optional quality features
-data4ai doc-to-dataset document.pdf \
+data4ai doc document.pdf \
   --repo high-quality-dataset \
   --count 200 \
   --taxonomy balanced \    # Use Bloom's taxonomy for diverse questions
@@ -175,22 +173,22 @@ This new pipeline:
 
 ```bash
 # Basic generation (simple and fast)
-data4ai doc-to-dataset document.pdf --repo basic-dataset --count 100
+data4ai doc document.pdf --repo basic-dataset --count 100
 
 # With cognitive diversity using Bloom's Taxonomy
-data4ai doc-to-dataset document.pdf \
+data4ai doc document.pdf \
   --repo taxonomy-dataset \
   --count 100 \
   --taxonomy balanced  # Creates questions at all cognitive levels
 
 # With source tracking for verifiable datasets
-data4ai doc-to-dataset research-papers/ \
+data4ai doc research-papers/ \
   --repo cited-dataset \
   --count 500 \
   --provenance  # Includes character offsets for each answer
 
 # Full quality mode for production datasets
-data4ai doc-to-dataset documents/ \
+data4ai doc documents/ \
   --repo production-dataset \
   --count 1000 \
   --chunk-tokens 250 \     # Token-based chunking
@@ -209,6 +207,29 @@ data4ai prompt \
   --description "Educational content about machine learning" \
   --count 200 \
   --huggingface
+```
+
+## 📚 Available Commands
+
+### `data4ai prompt`
+Generate dataset from natural language description using AI.
+
+```bash
+data4ai prompt --repo <name> --description <text> [options]
+```
+
+### `data4ai doc`
+Generate dataset from document(s) - supports PDF, DOCX, MD, and TXT files.
+
+```bash
+data4ai doc <file_or_folder> --repo <name> [options]
+```
+
+### `data4ai push`
+Upload existing dataset to HuggingFace Hub.
+
+```bash
+data4ai push --repo <name> [options]
 ```
 
 ## 🐍 Python API
@@ -308,10 +329,6 @@ DEFAULT_SCHEMA=chatml                # Optional (this is the default)
 HF_TOKEN=your_huggingface_token      # For publishing
 ```
 
-Or use CLI:
-```bash
-data4ai config --save
-```
 
 ## 📖 Documentation
 
