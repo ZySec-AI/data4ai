@@ -86,5 +86,5 @@ jobs:
     - name: Test installation
       run: |
         pip install dist/*.whl
-        data4ai --version
+        data4ai --help
         python -c "from data4ai import __version__; print(__version__)"
