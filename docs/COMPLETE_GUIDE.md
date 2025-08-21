@@ -64,7 +64,7 @@ data4ai prompt --repo <name> --description <text> [options]
 
 **Options:**
 - `--repo, -r`: Output directory and repo name (required)
-- `--description, -desc`: Dataset description (required)  
+- `--description, -desc`: Dataset description (required)
 - `--count, -c`: Number of examples (default: 100)
 - `--dataset, -d`: Schema format - chatml, alpaca (default: chatml)
 - `--model, -m`: AI model to use

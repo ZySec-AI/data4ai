@@ -56,7 +56,7 @@ That's it! Your domain-specific dataset is ready in `medical-qa/data.jsonl` with
 Data4AI automatically applies **Bloom's Revised Taxonomy** to ensure cognitive diversity:
 
 - **Remember** (20%): Basic recall and recognition
-- **Understand** (20%): Comprehension and interpretation  
+- **Understand** (20%): Comprehension and interpretation
 - **Apply** (15%): Using knowledge in new situations
 - **Analyze** (15%): Breaking down complex information
 - **Evaluate** (15%): Making judgments and assessments
@@ -70,11 +70,11 @@ This cognitive balance is what makes Data4AI datasets so effective for training 
 {
   "messages": [
     {
-      "role": "user", 
+      "role": "user",
       "content": "How would you design a caching system for a high-traffic web application?"
     },
     {
-      "role": "assistant", 
+      "role": "assistant",
       "content": "I'd design a multi-tier caching system with: 1) Browser cache for static assets, 2) CDN for global content distribution, 3) Application-level cache (Redis/Memcached) for database queries, and 4) Database query cache. Key considerations include cache invalidation strategies, TTL policies, and cache warming..."
     }
   ],

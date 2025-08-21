@@ -104,15 +104,15 @@ def generate_dataset(
     model: Optional[str] = None
 ) -> Dict[str, Any]:
     """Generate a dataset from a natural language description.
-    
+
     Args:
         description: Natural language description of the dataset
         count: Number of examples to generate
         model: Optional model override
-        
+
     Returns:
         Dictionary containing generation results
-        
+
     Raises:
         ValueError: If description is empty
         APIError: If API call fails
@@ -139,13 +139,13 @@ def generate_dataset(
    ```bash
    # Format code
    black .
-   
+
    # Lint
    ruff check .
-   
+
    # Test
    pytest
-   
+
    # Type check
    mypy data4ai/
    ```
@@ -154,7 +154,7 @@ def generate_dataset(
    ```bash
    git commit -m "feat: add support for custom schemas"
    ```
-   
+
    Use conventional commit prefixes:
    - `feat:` New feature
    - `fix:` Bug fix

@@ -120,7 +120,7 @@ ai = Data4AI(
 # Generate dataset
 result = ai.generate_from_description(
     description="Create examples of Python code reviews",
-    repo="python-reviews", 
+    repo="python-reviews",
     dataset="alpaca",
     count=500
 )
@@ -149,7 +149,7 @@ datasets = [
         "taxonomy": "basic"
     },
     {
-        "description": "Create math word problems", 
+        "description": "Create math word problems",
         "repo": "math-problems",
         "count": 100,
         "taxonomy": "balanced"
@@ -226,7 +226,7 @@ result = generate_from_description(
 result = generate_from_description(
     description="Create customer support conversations",
     repo="support-chat",
-    dataset="chatml", 
+    dataset="chatml",
     count=200
 )
 
@@ -259,7 +259,7 @@ result = generate_from_description(
 result = generate_from_description(
     description="Advanced software architecture patterns",
     repo="architecture-advanced",
-    taxonomy="advanced", 
+    taxonomy="advanced",
     count=100
 )
 # Generates complex analysis and design questions
@@ -296,7 +296,7 @@ else:
 # Use different models for different tasks
 models = {
     "creative": "anthropic/claude-3-5-sonnet",
-    "factual": "openai/gpt-4o-mini", 
+    "factual": "openai/gpt-4o-mini",
     "coding": "deepseek/deepseek-coder"
 }
 
@@ -322,15 +322,15 @@ try:
         count=10
     )
     print(f"✅ Success: {result.row_count} examples generated")
-    
+
 except ConfigurationError as e:
     print(f"❌ Configuration error: {e}")
     print("Check your API keys and settings")
-    
+
 except GenerationError as e:
     print(f"❌ Generation error: {e}")
     print("Try reducing batch size or count")
-    
+
 except Exception as e:
     print(f"❌ Unexpected error: {e}")
 ```

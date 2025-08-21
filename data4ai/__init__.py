@@ -385,7 +385,7 @@ def __getattr__(name: str):
     dependencies until the attribute is actually accessed.
     """
     if name == "DatasetGenerator":
-        from data4ai.generator import DatasetGenerator as _DG
+        from data4ai.generator import DatasetGenerator as _DG  # noqa: N814
 
         return _DG
     raise AttributeError(f"module 'data4ai' has no attribute '{name}'")

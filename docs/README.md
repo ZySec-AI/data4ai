@@ -9,7 +9,7 @@ Welcome to the Data4AI documentation! This directory contains comprehensive guid
 - [**Getting Started Guide**](../GETTING_STARTED.md) - Step-by-step tutorial for beginners
 - [**CHANGELOG**](../CHANGELOG.md) - Version history and release notes
 
-### Usage Guides  
+### Usage Guides
 - [**Detailed Usage Guide**](DETAILED_USAGE.md) - Complete CLI reference and advanced usage
 - [**Examples**](EXAMPLES.md) - Code examples, recipes, and common patterns
 - [**Commands Reference**](COMMANDS.md) - Complete CLI command documentation

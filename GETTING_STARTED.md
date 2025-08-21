@@ -8,7 +8,7 @@ Quick start guide with copy-paste ready examples.
 # Install Data4AI (choose based on your needs)
 pip install data4ai              # Core features only
 pip install data4ai              # All features included
-pip install data4ai[hf]          # With HuggingFace publishing  
+pip install data4ai[hf]          # With HuggingFace publishing
 pip install data4ai[all]         # All features (recommended)
 
 # Or with pipx for CLI isolation
