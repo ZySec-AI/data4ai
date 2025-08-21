@@ -88,7 +88,7 @@ data4ai env --check
 
 Example output when configured:
 ```
-                 Environment Status                 
+                 Environment Status
 ┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┓
 ┃ Variable           ┃ Status ┃ Value               ┃ Required ┃
 ┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━┩

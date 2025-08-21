@@ -279,7 +279,7 @@ result = generate_from_description(...)  # In sync context
    ```bash
    # Lower = more focused (0.3-0.5)
    data4ai prompt --temperature 0.3 ...
-   
+
    # Higher = more creative (0.8-1.0)
    data4ai prompt --temperature 0.9 ...
    ```

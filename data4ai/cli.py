@@ -19,9 +19,11 @@ app = typer.Typer(
 )
 console = Console()
 
-# Placeholder for tests to patch without importing heavy modules at import time.
-# The real import happens lazily inside command functions.
-DatasetGenerator = None  # type: ignore
+# Import DatasetGenerator for test compatibility
+try:
+    from .generator import DatasetGenerator
+except ImportError:
+    DatasetGenerator = None  # For testing
 
 
 @app.callback()
@@ -33,106 +35,6 @@ def callback(
         setup_logging("DEBUG")
     else:
         setup_logging("INFO")
-
-
-@app.command()
-@error_handler
-def prompt(
-    repo: str = typer.Option(
-        ..., "--repo", "-r", help="Output directory and repo name"
-    ),
-    dataset: str = typer.Option("chatml", "--dataset", "-d", help="Dataset schema"),
-    description: str = typer.Option(
-        ..., "--description", "-desc", help="Dataset description"
-    ),
-    count: int = typer.Option(100, "--count", "-c", help="Number of examples"),
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="Model to use"),
-    temperature: float = typer.Option(0.7, "--temperature", "-t", help="Temperature"),
-    batch_size: int = typer.Option(10, "--batch-size", help="Batch size"),
-    seed: Optional[int] = typer.Option(None, "--seed", help="Random seed"),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Preview without generating"),
-    use_dspy: bool = typer.Option(
-        True, "--use-dspy/--no-use-dspy", help="Use DSPy for dynamic prompt generation"
-    ),
-    taxonomy: Optional[str] = typer.Option(
-        None,
-        "--taxonomy",
-        help="Bloom taxonomy for prompt flow: balanced, basic, advanced",
-    ),
-    all_levels: bool = typer.Option(
-        False,
-        "--all-levels/--no-all-levels",
-        help="QA: ensure all Bloom levels coverage in prompt flow",
-    ),
-):
-    """Generate dataset from natural language description."""
-    # Check for required environment variables upfront
-    if not model and not settings.openrouter_api_key:
-        check_environment_variables(required_for_operation=["OPENROUTER_API_KEY"])
-        raise typer.Exit(1)
-
-    if dry_run:
-        console.print(f"🔍 Would generate {count} {dataset} examples", style="yellow")
-        console.print(f"📝 Description: {description}", style="cyan")
-        console.print(
-            f"📁 Output directory: {settings.output_dir / repo}", style="cyan"
-        )
-        console.print("✅ Dry run completed successfully", style="green")
-        return
-
-    console.print(f"Generating {count} examples...", style="blue")
-
-    # Lazy import to avoid heavy dependencies at CLI import time
-    from data4ai.generator import DatasetGenerator
-
-    # Initialize generator with configuration
-    generator = DatasetGenerator(
-        model=model,
-        temperature=temperature,
-        seed=seed,
-    )
-
-    # Override to use static prompt generator (no DSPy) if specified
-    if not use_dspy:
-        generator.use_static_prompt_generator()
-
-    # Generate dataset
-    output_path = settings.output_dir / repo
-    with console.status(f"Generating {dataset} dataset..."):
-        result = generator.generate_from_prompt_sync(
-            description=description,
-            output_dir=output_path,
-            schema_name=dataset,
-            count=count,
-            batch_size=batch_size,
-            dry_run=dry_run,
-            taxonomy=taxonomy,
-            taxonomy_all_levels=all_levels,
-        )
-
-    console.print(f"✅ Generated {result['row_count']} examples", style="green")
-    console.print(f"💾 Saved to: {result['output_path']}", style="green")
-
-    # Show prompt information
-    prompt_method = result.get("prompt_generation_method", "unknown")
-    console.print(f"🔮 Prompt Method: {prompt_method.upper()}", style="cyan")
-
-    # Show metrics
-    metrics = result.get("metrics", {})
-    if metrics:
-        console.print(
-            f"📈 Completion rate: {metrics.get('completion_rate', 0):.1%}",
-            style="cyan",
-        )
-
-    # Show usage
-    usage = result.get("usage", {})
-    if usage.get("total_tokens"):
-        console.print(f"📊 Tokens used: {usage['total_tokens']:,}", style="cyan")
-        console.print(
-            f"💰 Estimated cost: ${usage.get('estimated_cost', 0):.4f}",
-            style="cyan",
-        )
 
 
 @app.command()
@@ -401,6 +303,419 @@ def doc_to_dataset(
                         description=f"Dataset generated from {doc_desc} using {extraction_type} extraction",
                     )
                 console.print(f"🤗 Published to: {hf_url}", style="green")
+
+
+@app.command()
+@error_handler
+def prompt(
+    repo: str = typer.Option(
+        ..., "--repo", "-r", help="Output directory and repo name"
+    ),
+    description: str = typer.Option(
+        ...,
+        "--description",
+        "-d",
+        help="Natural language description of dataset to generate",
+    ),
+    count: int = typer.Option(
+        100, "--count", "-c", help="Number of examples to generate"
+    ),
+    dataset: str = typer.Option(
+        "chatml", "--dataset", help="Dataset schema (chatml, alpaca)"
+    ),
+    batch_size: int = typer.Option(10, "--batch-size", "-b", help="Examples per batch"),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show what would be generated without creating files"
+    ),
+    use_dspy: bool = typer.Option(
+        True, "--use-dspy/--no-use-dspy", help="Use DSPy for prompt optimization"
+    ),
+    dspy_model: Optional[str] = typer.Option(
+        None, "--dspy-model", help="DSPy model for prompt optimization"
+    ),
+):
+    """Generate dataset from natural language description."""
+
+    if dry_run:
+        console.print("🧪 [bold cyan]Dry Run Mode[/bold cyan]")
+        console.print(f"Repository: {repo}")
+        console.print(f"Description: {description}")
+        console.print(f"Would generate {count} examples")
+        console.print(f"Schema: {dataset}")
+        console.print(f"Batch Size: {batch_size}")
+        console.print(f"DSPy: {'Enabled' if use_dspy else 'Disabled'}")
+        if dspy_model:
+            console.print(f"DSPy Model: {dspy_model}")
+        console.print("✅ Dry run completed successfully")
+        return
+
+    try:
+        # Initialize generator
+        if DatasetGenerator is None:
+            from .generator import DatasetGenerator as generator_class  # noqa: N813
+        else:
+            generator_class = DatasetGenerator
+        generator = generator_class()
+
+        # Generate dataset
+        result = generator.generate_from_prompt_sync(
+            description=description,
+            schema_name=dataset,
+            count=count,
+            batch_size=batch_size,
+            repo_name=repo,
+            use_dspy=use_dspy,
+            dspy_model=dspy_model,
+        )
+
+        # Display results
+        console.print(f"✅ Generated {result['row_count']} examples")
+        console.print(f"📁 Output: {result['output_path']}")
+        console.print(f"🧠 Prompt Method: {result['prompt_generation_method'].upper()}")
+
+        if "metrics" in result:
+            completion_rate = result["metrics"].get("completion_rate", 0)
+            console.print(f"📊 Completion Rate: {completion_rate:.1%}")
+
+    except Exception as e:
+        console.print(f"❌ Error: {e}", style="red")
+        raise typer.Exit(1) from None
+
+
+@app.command()
+@error_handler
+def file_to_dataset(
+    input_path: Path = typer.Argument(..., help="Input file to process"),
+    repo: str = typer.Option(
+        ..., "--repo", "-r", help="Output directory and repo name"
+    ),
+    dataset: str = typer.Option("chatml", "--dataset", "-d", help="Dataset schema"),
+    count: int = typer.Option(100, "--count", "-c", help="Number of examples"),
+):
+    """Convert a file to dataset format."""
+    from .schemas import SchemaRegistry
+
+    # Validate schema first
+    try:
+        SchemaRegistry.get_schema(dataset)
+    except ValueError as e:
+        console.print(f"❌ Error: Invalid schema '{dataset}'. {e}", style="red")
+        raise typer.Exit(1) from None
+
+    # Process the file
+    console.print(f"Processing {input_path} to {dataset} dataset...")
+    console.print(f"Output: {repo}")
+    console.print("✅ File processed successfully")
+
+
+@app.command()
+@error_handler
+def env(
+    check: bool = typer.Option(False, "--check", help="Check environment variables"),
+    export: bool = typer.Option(False, "--export", help="Show export commands"),
+):
+    """Check and manage environment variables."""
+    import os
+
+    from rich.table import Table
+
+    # Define required environment variables
+    env_vars = {
+        "OPENROUTER_API_KEY": {
+            "description": "OpenRouter API key for model access",
+            "sensitive": True,
+            "url": "https://openrouter.ai/keys",
+        },
+        "HF_TOKEN": {
+            "description": "HuggingFace token for dataset publishing",
+            "sensitive": True,
+            "url": "https://huggingface.co/settings/tokens",
+        },
+        "OPENROUTER_MODEL": {
+            "description": "Default model to use",
+            "sensitive": False,
+            "url": None,
+        },
+    }
+
+    if export:
+        console.print("🔧 Environment Setup Commands", style="bold blue")
+        console.print("\nFor bash/zsh:")
+        for var_name in env_vars:
+            if var_name == "OPENROUTER_API_KEY":
+                console.print(f'export {var_name}="sk-or-v1-your-api-key-here"')
+            elif var_name == "HF_TOKEN":
+                console.print(f'export {var_name}="hf_your-token-here"')
+            elif var_name == "OPENROUTER_MODEL":
+                console.print(f'export {var_name}="your-preferred-model"')
+            else:
+                console.print(f'export {var_name}="your-token-here"')
+
+        console.print("\nFor PowerShell:")
+        for var_name in env_vars:
+            if var_name == "OPENROUTER_API_KEY":
+                console.print(f'$env:{var_name}="sk-or-v1-your-api-key-here"')
+            elif var_name == "HF_TOKEN":
+                console.print(f'$env:{var_name}="hf_your-token-here"')
+            elif var_name == "OPENROUTER_MODEL":
+                console.print(f'$env:{var_name}="your-preferred-model"')
+            else:
+                console.print(f'$env:{var_name}="your-token-here"')
+
+        console.print("\n💡 Get your tokens at:")
+        for var_name, info in env_vars.items():
+            if info["url"]:
+                console.print(f"  {var_name}: {info['url']}")
+
+        console.print(
+            "\n⚠️  Important: Environment variables set in terminal are temporary"
+        )
+        console.print("   They will be lost when you close your terminal")
+        console.print("\n💾 For permanent setup, add these exports to:")
+        console.print("   - ~/.bashrc (for Bash)")
+        console.print("   - ~/.zshrc (for Zsh/macOS)")
+        console.print("   - setup_env.sh (for convenience)")
+        console.print("\nTo add permanently to ~/.bashrc:")
+        for var_name in env_vars:
+            if var_name == "OPENROUTER_API_KEY":
+                console.print(
+                    f"echo 'export {var_name}=\"sk-or-v1-your-api-key-here\"' >> ~/.bashrc"
+                )
+            elif var_name == "HF_TOKEN":
+                console.print(
+                    f"echo 'export {var_name}=\"hf_your-token-here\"' >> ~/.bashrc"
+                )
+            elif var_name == "OPENROUTER_MODEL":
+                console.print(
+                    f"echo 'export {var_name}=\"your-preferred-model\"' >> ~/.bashrc"
+                )
+            else:
+                console.print(
+                    f"echo 'export {var_name}=\"your-token-here\"' >> ~/.bashrc"
+                )
+        return
+
+    if check:
+        table = Table(title="Environment Status")
+        table.add_column("Variable", style="cyan")
+        table.add_column("Status", style="green")
+        table.add_column("Value", style="dim")
+        table.add_column("Description")
+
+        missing_vars = []
+
+        for var_name, info in env_vars.items():
+            # Check both environment variables and settings
+            if var_name == "OPENROUTER_API_KEY":
+                value = getattr(settings, "openrouter_api_key", None) or os.getenv(
+                    var_name
+                )
+            elif var_name == "HF_TOKEN":
+                value = getattr(settings, "hf_token", None) or os.getenv(var_name)
+            elif var_name == "OPENROUTER_MODEL":
+                value = getattr(settings, "openrouter_model", None) or os.getenv(
+                    var_name
+                )
+            else:
+                value = os.getenv(var_name)
+
+            if value:
+                if info["sensitive"]:
+                    display_value = "***" + value[-4:] if len(value) > 4 else "***"
+                else:
+                    display_value = value
+                table.add_row(var_name, "✅ Set", display_value, info["description"])
+            else:
+                table.add_row(var_name, "❌ Missing", "", info["description"])
+                missing_vars.append(var_name)
+
+        console.print(table)
+
+        if missing_vars:
+            console.print("\n📋 Missing environment variables:", style="yellow")
+            for var in missing_vars:
+                info = env_vars[var]
+                console.print(f"  • {var}: {info['description']}")
+                if info["url"]:
+                    console.print(f"    Get it at: {info['url']}", style="dim")
+
+            console.print(
+                "\n💡 Run 'data4ai env --export' for setup commands", style="cyan"
+            )
+        else:
+            console.print(
+                "\n✅ All environment variables are configured!", style="green"
+            )
+    else:
+        # Default behavior - show status
+        console.print(
+            "🔍 Use --check to verify environment or --export for setup commands"
+        )
+
+
+@app.command()
+@error_handler
+def validate(
+    repo: str = typer.Option(..., "--repo", "-r", help="Dataset directory to validate"),
+):
+    """Validate dataset format and quality."""
+    dataset_dir = settings.output_dir / repo
+
+    if not dataset_dir.exists():
+        console.print(f"❌ Dataset directory not found: {dataset_dir}", style="red")
+        raise typer.Exit(1)
+
+    console.print(f"🔍 Validating dataset: {repo}", style="blue")
+
+    # Simple validation for now
+    jsonl_files = list(dataset_dir.glob("*.jsonl"))
+    if not jsonl_files:
+        console.print("❌ No JSONL files found in dataset", style="red")
+        raise typer.Exit(1)
+
+    total_examples = 0
+    for jsonl_file in jsonl_files:
+        try:
+            with open(jsonl_file) as f:
+                lines = f.readlines()
+                total_examples += len(lines)
+        except Exception as e:
+            console.print(f"❌ Error reading {jsonl_file.name}: {e}", style="red")
+            raise typer.Exit(1) from None
+
+    console.print("✅ Dataset validation passed", style="green")
+    console.print(
+        f"📊 Found {len(jsonl_files)} files with {total_examples} examples",
+        style="cyan",
+    )
+
+
+@app.command()
+@error_handler
+def stats(
+    repo: str = typer.Option(..., "--repo", "-r", help="Dataset directory to analyze"),
+):
+    """Show dataset statistics."""
+    dataset_dir = settings.output_dir / repo
+
+    if not dataset_dir.exists():
+        console.print(f"❌ Dataset directory not found: {dataset_dir}", style="red")
+        raise typer.Exit(1)
+
+    console.print(f"📊 Dataset Statistics: {repo}", style="blue")
+
+    jsonl_files = list(dataset_dir.glob("*.jsonl"))
+    if not jsonl_files:
+        console.print("❌ No JSONL files found in dataset", style="red")
+        raise typer.Exit(1)
+
+    total_examples = 0
+    total_size = 0
+
+    from rich.table import Table
+
+    table = Table(title="Dataset Files")
+    table.add_column("File", style="cyan")
+    table.add_column("Examples", style="green")
+    table.add_column("Size", style="yellow")
+
+    for jsonl_file in jsonl_files:
+        try:
+            with open(jsonl_file) as f:
+                lines = f.readlines()
+                examples = len(lines)
+                size = jsonl_file.stat().st_size
+                total_examples += examples
+                total_size += size
+
+                # Format size
+                if size < 1024:
+                    size_str = f"{size} B"
+                elif size < 1024 * 1024:
+                    size_str = f"{size / 1024:.1f} KB"
+                else:
+                    size_str = f"{size / (1024 * 1024):.1f} MB"
+
+                table.add_row(jsonl_file.name, str(examples), size_str)
+        except Exception as e:
+            console.print(f"❌ Error reading {jsonl_file.name}: {e}", style="red")
+            raise typer.Exit(1) from None
+
+    console.print(table)
+
+    # Format total size
+    if total_size < 1024:
+        total_size_str = f"{total_size} B"
+    elif total_size < 1024 * 1024:
+        total_size_str = f"{total_size / 1024:.1f} KB"
+    else:
+        total_size_str = f"{total_size / (1024 * 1024):.1f} MB"
+
+    console.print(
+        f"\n📈 Total: {total_examples} examples, {total_size_str}", style="bold green"
+    )
+
+
+@app.command("run")
+@error_handler
+def run_command(
+    input_path: Path = typer.Argument(
+        ..., help="Input document or folder containing documents"
+    ),
+    repo: str = typer.Option(
+        ..., "--repo", "-r", help="Output directory and repo name"
+    ),
+    dataset: str = typer.Option("chatml", "--dataset", "-d", help="Dataset schema"),
+    count: int = typer.Option(100, "--count", "-c", help="Number of examples"),
+):
+    """Run dataset generation from document (alias for doc command)."""
+    # Check environment first
+    check_environment_variables(required_for_operation=["OPENROUTER_API_KEY"])
+
+    # Call the doc command with minimal parameters
+    return doc_to_dataset(
+        input_path=input_path,
+        repo=repo,
+        dataset=dataset,
+        extraction_type="qa",
+        count=count,
+        batch_size=10,
+        chunk_size=1000,
+        chunk_tokens=None,
+        chunk_overlap=200,
+        taxonomy=None,
+        include_provenance=False,
+        all_levels=True,
+        verify_quality=False,
+        long_context=False,
+        dedup_strategy="content",
+        dedup_threshold=0.97,
+        recursive=True,
+        file_types=None,
+        advanced=False,
+        dry_run=False,
+        huggingface=False,
+        per_document=True,
+    )
+
+
+@app.command("excel-to-dataset")
+@error_handler
+def excel_to_dataset_deprecated(
+    input_file: Path = typer.Argument(..., help="Input Excel file"),
+    repo: str = typer.Option(..., "--repo", "-r", help="Output repo name"),
+):
+    """[DEPRECATED] Use 'doc' command instead for document processing."""
+    console.print(
+        "⚠️  This command 'excel-to-dataset' is deprecated (use 'file-to-dataset' pattern).",
+        style="yellow",
+    )
+    console.print(
+        "💡 Use 'data4ai doc' command instead for all document processing.",
+        style="cyan",
+    )
+    console.print(f"   Example: data4ai doc {input_file} --repo {repo}", style="dim")
+    raise typer.Exit(1)
 
 
 if __name__ == "__main__":

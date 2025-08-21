@@ -33,7 +33,7 @@ jobs:
         echo "Skip tests: ${{ github.event.inputs.skip-tests }}"
         echo "⚠️ WARNING: Publishing to PyPI - this will be publicly available!"
         echo "Make sure you have tested thoroughly before publishing."
-        
+
         if [ "${{ github.event.inputs.skip-tests }}" = "true" ]; then
           echo "🔍 NOTE: Tests will be skipped due to skip-tests=true"
         else
@@ -51,46 +51,46 @@ jobs:
         echo "🔍 Validate Job Conditions:"
         echo "  - skip-tests: ${{ needs.validate-inputs.outputs.skip-tests }}"
         echo "  - Condition met: ${{ !needs.validate-inputs.outputs.skip-tests }}"
-        
+
         if [ "${{ needs.validate-inputs.outputs.skip-tests }}" = "true" ]; then
           echo "⏭️ Skipping validation due to skip-tests=true"
         else
           echo "✅ Running validation (skip-tests=false)"
         fi
-    
+
     - uses: actions/checkout@v4
       with:
         fetch-depth: 1
         timeout-minutes: 10
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -e .[dev,excel,hf]
-    
+
     - name: Run linting
       run: |
         ruff check .
         black --check .
-    
+
     - name: Run tests
       run: |
         pytest tests/ -v --cov=data4ai --cov-report=xml --cov-report=term
-    
+
     - name: Check version
       run: |
         python -c "
         import re
-        
+
         # Read pyproject.toml and extract version
         with open('pyproject.toml', 'r') as f:
             content = f.read()
-        
+
         # Find version using regex
         version_match = re.search(r'version\s*=\s*[\"\\']([^\"\\']+)[\"\\']', content)
         if version_match:
@@ -98,11 +98,11 @@ jobs:
         else:
             print('❌ Could not find version in pyproject.toml')
             exit(1)
-        
+
         requested_version = '${{ needs.validate-inputs.outputs.version }}'
-        
+
         print(f'Current version in pyproject.toml: {current_version}')
-        
+
         if requested_version:
             print(f'Requested version: {requested_version}')
             if requested_version != current_version:
@@ -125,7 +125,7 @@ jobs:
         echo "  - validate-inputs.result: ${{ needs.validate-inputs.result }}"
         echo "  - validate.result: ${{ needs.validate.result }}"
         echo "  - Condition met: ${{ needs.validate-inputs.result == 'success' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') }}"
-        
+
         if [ "${{ needs.validate-inputs.result }}" != "success" ]; then
           echo "⏭️ Skipping build due to validate-inputs failure"
         elif [ "${{ needs.validate.result }}" != "success" ] && [ "${{ needs.validate.result }}" != "skipped" ]; then
@@ -133,70 +133,70 @@ jobs:
         else
           echo "✅ Running build (all conditions met)"
         fi
-    
+
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-    
+
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
         pip install build twine
-    
+
     - name: Build package
       run: python -m build
-    
+
     - name: Check package
       run: twine check dist/*
-    
+
     - name: Validate package metadata
       run: |
         python -c "
         import subprocess
         import sys
         import glob
-        
+
         # Check package with twine
-        result = subprocess.run(['python', '-m', 'twine', 'check', 'dist/*'], 
+        result = subprocess.run(['python', '-m', 'twine', 'check', 'dist/*'],
                               capture_output=True, text=True)
-        
+
         if result.returncode != 0:
             print('❌ Package validation failed:')
             print(result.stderr)
             sys.exit(1)
-        
+
         print('✅ Package validation passed')
-        
+
         # Check if wheel was created
         wheels = glob.glob('dist/*.whl')
         if not wheels:
             print('❌ No wheel file found')
             sys.exit(1)
-        
+
         print(f'✅ Found wheel: {wheels[0]}')
-        
+
         # Show package info
         import re
         with open('pyproject.toml', 'r') as f:
             content = f.read()
-        
+
         # Extract package info using regex
         name_match = re.search(r'name\s*=\s*[\"\\']([^\"\\']+)[\"\\']', content)
         version_match = re.search(r'version\s*=\s*[\"\\']([^\"\\']+)[\"\\']', content)
         description_match = re.search(r'description\s*=\s*[\"\\']([^\"\\']+)[\"\\']', content)
-        
+
         package_name = name_match.group(1) if name_match else 'unknown'
         package_version = version_match.group(1) if version_match else 'unknown'
         package_description = description_match.group(1) if description_match else 'No description'
-        
+
         print(f'📦 Package: {package_name}')
         print(f'📋 Version: {package_version}')
         print(f'📝 Description: {package_description}')
         "
-    
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -211,7 +211,7 @@ jobs:
       matrix:
         python-version: ['3.11']
         install-type: ['basic', 'all']
-    
+
     steps:
     - name: Check test-installation conditions
       run: |
@@ -219,7 +219,7 @@ jobs:
         echo "  - skip-tests: ${{ needs.validate-inputs.outputs.skip-tests }}"
         echo "  - build.result: ${{ needs.build.result }}"
         echo "  - Condition met: ${{ !needs.validate-inputs.outputs.skip-tests && needs.build.result == 'success' }}"
-        
+
         if [ "${{ needs.validate-inputs.outputs.skip-tests }}" = "true" ]; then
           echo "⏭️ Skipping tests due to skip-tests=true"
         elif [ "${{ needs.build.result }}" != "success" ]; then
@@ -227,27 +227,27 @@ jobs:
         else
           echo "✅ Running tests (all conditions met)"
         fi
-    
+
     - uses: actions/checkout@v4
       with:
         fetch-depth: 1
         timeout-minutes: 10
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    
+
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
         name: dist
         path: dist/
-    
+
     - name: Install package
       run: |
         echo "Installing package with type: ${{ matrix.install-type }}"
-        
+
         # Find the wheel file
         WHEEL_FILE=$(find dist -name "*.whl" | head -1)
         if [ -z "$WHEEL_FILE" ]; then
@@ -255,7 +255,7 @@ jobs:
           exit 1
         fi
         echo "Found wheel file: $WHEEL_FILE"
-        
+
         if [ "${{ matrix.install-type }}" = "basic" ]; then
           echo "Installing basic package..."
           pip install "$WHEEL_FILE"
@@ -263,23 +263,23 @@ jobs:
           echo "Installing package with extras: ${{ matrix.install-type }}"
           pip install "$WHEEL_FILE[${{ matrix.install-type }}]"
         fi
-    
+
     - name: Test import
       run: |
         python -c "from data4ai import __version__; print(f'Version: {__version__}')"
         python -c "from data4ai import DatasetGenerator"
         python -c "from data4ai.cli import app; print('CLI app loaded successfully')"
-    
+
     - name: Test CLI
       run: |
         data4ai version
         data4ai --help
-    
+
     - name: Test Excel functionality
       if: matrix.install-type == 'all'
       run: |
         python -c "from data4ai.excel_handler import ExcelHandler; print('Excel handler imported successfully')"
-    
+
     - name: Test HF functionality
       if: matrix.install-type == 'all'
       run: |
@@ -291,7 +291,7 @@ jobs:
     needs: [validate-inputs, build]
     runs-on: ubuntu-latest
     if: needs.validate-inputs.result == 'success' && needs.build.result == 'success'
-    
+
     steps:
     - name: Check publish conditions
       run: |
@@ -299,7 +299,7 @@ jobs:
         echo "  - validate-inputs.result: ${{ needs.validate-inputs.result }}"
         echo "  - build.result: ${{ needs.build.result }}"
         echo "  - Condition met: ${{ needs.validate-inputs.result == 'success' && needs.build.result == 'success' }}"
-        
+
         if [ "${{ needs.validate-inputs.result }}" != "success" ]; then
           echo "⏭️ Skipping publish due to validate-inputs failure"
         elif [ "${{ needs.build.result }}" != "success" ]; then
@@ -314,43 +314,43 @@ jobs:
         echo "  - validate: ${{ needs.validate.result }}"
         echo "  - build: ${{ needs.build.result }}"
         echo "  - test-installation: ${{ needs.test-installation.result || 'skipped' }}"
-        
+
         if [ "${{ github.event.inputs.skip-tests }}" = "true" ]; then
           echo "✅ Tests were intentionally skipped (skip-tests=true)"
         else
           echo "✅ Tests should have run (skip-tests=false)"
         fi
-    
+
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
         name: dist
         path: dist/
-    
+
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
         skip-existing: ${{ !needs.validate-inputs.outputs.force }}
-    
+
     - name: Verify PyPI upload
       run: |
         echo "✅ Package published to PyPI successfully!"
         echo "🔗 Check: https://pypi.org/project/data4ai/"
         echo "📦 Package: data4ai"
-        
+
         # Show installation instructions
         echo ""
         echo "📋 Installation:"
         echo "pip install data4ai"
-        
+
         # Show optional dependencies
         echo ""
         echo "📋 Optional dependencies:"
         echo "pip install data4ai[excel]  # With Excel support"
         echo "pip install data4ai[hf]     # With HuggingFace support"
         echo "pip install data4ai[all]    # With all features"
-    
+
     - name: Create GitHub Release
       if: ${{ !needs.validate-inputs.outputs.force }}
       uses: softprops/action-gh-release@v1
@@ -361,27 +361,27 @@ jobs:
         name: Release v${{ needs.validate-inputs.outputs.version || '0.1.1' }}
         body: |
           ## 🚀 Release v${{ needs.validate-inputs.outputs.version || '0.1.1' }}
-          
+
           ### 📦 Package
           - **Name**: data4ai
           - **Version**: v${{ needs.validate-inputs.outputs.version || '0.1.1' }}
           - **PyPI**: https://pypi.org/project/data4ai/
-          
+
           ### 🔧 Installation
           ```bash
           pip install data4ai
           ```
-          
+
           ### 📋 Optional Dependencies
           ```bash
           pip install data4ai[excel]  # With Excel support
           pip install data4ai[hf]     # With HuggingFace support
           pip install data4ai[all]    # With all features
           ```
-          
+
           ### 📋 What's New
           Check the [CHANGELOG.md](https://github.com/zysec/data4ai/blob/main/CHANGELOG.md) for detailed changes.
-          
+
           ### 🐛 Issues
           If you encounter any issues, please [report them](https://github.com/zysec/data4ai/issues).
       env:

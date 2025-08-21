@@ -14,9 +14,18 @@ from data4ai.document_handler import DocumentHandler
 from data4ai.error_handler import async_error_handler, check_environment_variables
 from data4ai.exceptions import ConfigurationError, GenerationError, ValidationError
 from data4ai.schemas import SchemaRegistry
+from data4ai.utils import (
+    calculate_metrics,
+    extract_json_from_text,
+    save_metadata,
+    write_jsonl,
+)
+
 
 # Backwards-compatible, lazily-resolved factory used in tests
-def create_prompt_generator(model_name: str = "openai/gpt-4o-mini", use_dspy: bool = True):
+def create_prompt_generator(
+    model_name: str = "openai/gpt-4o-mini", use_dspy: bool = True
+):
     try:
         from data4ai.integrations.dspy_prompts import (
             create_prompt_generator as _create,
@@ -27,18 +36,18 @@ def create_prompt_generator(model_name: str = "openai/gpt-4o-mini", use_dspy: bo
         # Fallback to a simple static generator if DSPy is unavailable
         logger = logging.getLogger("data4ai")
         logger.warning(f"Falling back to static prompt generator: {e}")
+
         class _Simple:
             def __init__(self, model_name: str):
                 self.model_name = model_name
-            def generate_schema_prompt(self, description: str, schema_name: str, count: int, **_: Any) -> str:
+
+            def generate_schema_prompt(
+                self, description: str, schema_name: str, count: int, **_: Any
+            ) -> str:
                 return f"Generate {count} {schema_name} examples: {description}"
+
         return _Simple(model_name)
-from data4ai.utils import (
-    calculate_metrics,
-    extract_json_from_text,
-    save_metadata,
-    write_jsonl,
-)
+
 
 logger = logging.getLogger("data4ai")
 
@@ -91,16 +100,15 @@ class DatasetGenerator:
         self.prompt_generator = self._create_static_prompt_generator(self.model)
 
         # If configured to use DSPy, attempt to enable it, otherwise fall back
-        if settings.use_dspy:
-            if not self.enable_dspy_prompt_generator():
-                # Fallback to legacy DSPy integration factory (kept for tests)
-                try:
-                    self.prompt_generator = create_prompt_generator(
-                        model_name=self.model, use_dspy=True
-                    )
-                    logger.info("Using fallback DSPy prompt generator")
-                except Exception as e:
-                    logger.warning(f"Failed to initialize DSPy prompt generator: {e}")
+        if settings.use_dspy and not self.enable_dspy_prompt_generator():
+            # Fallback to legacy DSPy integration factory (kept for tests)
+            try:
+                self.prompt_generator = create_prompt_generator(
+                    model_name=self.model, use_dspy=True
+                )
+                logger.info("Using fallback DSPy prompt generator")
+            except Exception as e:
+                logger.warning(f"Failed to initialize DSPy prompt generator: {e}")
 
     @async_error_handler
     async def generate_from_prompt(
@@ -383,9 +391,8 @@ class DatasetGenerator:
                 examples=previous_examples,
             )
 
-        if (
-            hasattr(self.prompt_generator, "optimizer")
-            and hasattr(self.prompt_generator.optimizer, "generate_dynamic_prompt")
+        if hasattr(self.prompt_generator, "optimizer") and hasattr(
+            self.prompt_generator.optimizer, "generate_dynamic_prompt"
         ):
             logger.info(
                 f"Using DSPy-centric prompt generation via optimizer for {schema_name}"
@@ -400,7 +407,10 @@ class DatasetGenerator:
         # Static fallback when DSPy is not enabled
         logger.info(f"Using static prompt generation for {schema_name}")
         return self.prompt_generator.generate_schema_prompt(
-            description=description, schema_name=schema_name, count=count, use_dspy=False
+            description=description,
+            schema_name=schema_name,
+            count=count,
+            use_dspy=False,
         )
 
     def _get_system_prompt(self, schema_name: str) -> str:
@@ -1850,7 +1860,7 @@ Return ONLY a JSON object with the corrected or original example."""
                     "You are a dataset generator. Create conversation examples in ChatML format.\n\n"
                     f"Generate {count} examples based on this description: {description}\n\n"
                     "CRITICAL REQUIREMENTS:\n"
-                    "- Each entry MUST have a \"messages\" array with at least 2 messages (user + assistant)\n"
+                    '- Each entry MUST have a "messages" array with at least 2 messages (user + assistant)\n'
                     "- NEVER return empty messages arrays: []\n"
                     "- Return ONLY a valid JSON array with the requested number of examples"
                 )
@@ -1864,16 +1874,10 @@ Return ONLY a JSON object with the corrected or original example."""
                     "- Return ONLY a valid JSON array with the requested number of examples"
                 )
 
-    def _create_static_prompt_generator(self, model_name: str) -> "DatasetGenerator._SimplePromptGenerator":
+    def _create_static_prompt_generator(
+        self, model_name: str
+    ) -> "DatasetGenerator._SimplePromptGenerator":
         return DatasetGenerator._SimplePromptGenerator(model_name)
-
-        logger.info("Using DSPy for document instruction generation")
-
-        # Always use DSPy for instruction generation
-        prompt = self.document_prompt_optimizer.generate_instruction_prompt(
-            document_text=text, schema_name=schema_name, count=count
-        )
-        return prompt
 
     def _build_document_general_prompt(
         self, text: str, schema_name: str, count: int
