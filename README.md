@@ -8,11 +8,13 @@
 
 Generate high-quality synthetic datasets using state-of-the-art language models. Data4AI leverages **Bloom's Revised Taxonomy** and advanced DSPy optimization to create training data that produces superior model performance - the same secret sauce ZySec AI has been using to build efficient, powerful models for their enterprise customers.
 
+**Building domain-specific models is now as easy as a single command.** Whether you need medical LLMs, legal assistants, financial advisors, or any specialized AI - Data4AI generates the high-quality, object-oriented training data you need.
+
 ## 🎯 Why Data4AI?
 
 - **🧠 Cognitive Intelligence**: Built-in Bloom's Revised Taxonomy ensures diverse thinking patterns across all six cognitive levels
 - **🔬 Enterprise-Proven**: The same technology ZySec AI uses for customer model development
-- **⚡ One Command**: Generate production-ready datasets in minutes, not hours
+- **⚡ Domain-Specific Models Made Easy**: Generate specialized datasets for any field - medical, legal, finance, or any domain with just one command
 - **📊 Quality First**: Advanced DSPy integration and quality verification out of the box
 
 ## 🚀 Quick Start
@@ -31,23 +33,23 @@ export OPENROUTER_API_KEY="your_key_here"
 
 ### Generate Your First Dataset
 
-**From a simple description:**
+**From a simple description (any domain):**
 ```bash
 data4ai prompt \
-  --repo my-dataset \
-  --description "Create Python programming tutorials with exercises" \
+  --repo medical-qa \
+  --description "Medical diagnosis questions for common symptoms and conditions" \
   --count 100
 ```
 
-**From documents (PDFs, Word docs, etc.):**
+**From domain documents (PDFs, Word docs, etc.):**
 ```bash
-data4ai doc research-paper.pdf \
-  --repo paper-qa \
+data4ai doc legal-contracts.pdf \
+  --repo legal-qa \
   --count 100 \
   --taxonomy balanced
 ```
 
-That's it! Your dataset is ready in `my-dataset/data.jsonl` with professional-quality examples.
+That's it! Your domain-specific dataset is ready in `medical-qa/data.jsonl` with professional-quality examples.
 
 ## 🧠 Bloom's Taxonomy Integration
 
@@ -90,26 +92,51 @@ Notice the `taxonomy_level` field - every example is cognitively classified for 
 - **☁️ HuggingFace Integration** - Direct publishing to the Hub
 - **⚡ Production Ready** - Rate limiting, error recovery, deduplication
 
-## 📚 Example Commands
+## 📚 Domain-Specific Examples
 
+**🏥 Medical LLM Dataset:**
 ```bash
-# Generate from description with quality features
 data4ai prompt \
-  --repo coding-dataset \
-  --description "Advanced Python programming challenges" \
-  --count 200 \
-  --taxonomy balanced
-
-# Process documents with full quality pipeline
-data4ai doc documents/ \
-  --repo knowledge-base \
+  --repo medical-assistant \
+  --description "Medical diagnosis and treatment recommendations for common conditions" \
   --count 500 \
-  --taxonomy balanced \
-  --provenance \
-  --verify
+  --taxonomy balanced
+```
 
-# Publish to HuggingFace
-data4ai push --repo my-dataset --huggingface
+**⚖️ Legal AI Dataset:**
+```bash
+data4ai doc legal-documents/ \
+  --repo legal-advisor \
+  --count 1000 \
+  --taxonomy balanced \
+  --provenance
+```
+
+**💰 Financial Advisory Dataset:**
+```bash
+data4ai prompt \
+  --repo financial-advisor \
+  --description "Investment advice and financial planning for different risk profiles" \
+  --count 300 \
+  --taxonomy advanced
+```
+
+**🔬 Research Assistant Dataset:**
+```bash
+data4ai doc research-papers/ \
+  --repo research-assistant \
+  --count 800 \
+  --taxonomy balanced \
+  --verify
+```
+
+**🏗️ Engineering Dataset:**
+```bash
+data4ai prompt \
+  --repo engineering-qa \
+  --description "Software architecture and system design questions with detailed solutions" \
+  --count 400 \
+  --taxonomy balanced
 ```
 
 ## 🏢 Enterprise Heritage
