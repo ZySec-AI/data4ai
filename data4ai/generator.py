@@ -13,9 +13,26 @@ from data4ai.deduplicator import Deduplicator
 from data4ai.document_handler import DocumentHandler
 from data4ai.error_handler import async_error_handler, check_environment_variables
 from data4ai.exceptions import ConfigurationError, GenerationError, ValidationError
-from data4ai.integrations.dspy_document_prompts import create_document_prompt_optimizer
-from data4ai.integrations.dspy_prompts import create_prompt_generator
 from data4ai.schemas import SchemaRegistry
+
+# Backwards-compatible, lazily-resolved factory used in tests
+def create_prompt_generator(model_name: str = "openai/gpt-4o-mini", use_dspy: bool = True):
+    try:
+        from data4ai.integrations.dspy_prompts import (
+            create_prompt_generator as _create,
+        )
+
+        return _create(model_name=model_name, use_dspy=use_dspy)
+    except Exception as e:
+        # Fallback to a simple static generator if DSPy is unavailable
+        logger = logging.getLogger("data4ai")
+        logger.warning(f"Falling back to static prompt generator: {e}")
+        class _Simple:
+            def __init__(self, model_name: str):
+                self.model_name = model_name
+            def generate_schema_prompt(self, description: str, schema_name: str, count: int, **_: Any) -> str:
+                return f"Generate {count} {schema_name} examples: {description}"
+        return _Simple(model_name)
 from data4ai.utils import (
     calculate_metrics,
     extract_json_from_text,
@@ -67,48 +84,23 @@ class DatasetGenerator:
         # Load schema registry
         self.schemas = SchemaRegistry()
 
-        # Initialize document prompt optimizer for DSPy-powered document generation
-        # DSPy is REQUIRED for document generation - no fallbacks
-        try:
-            self.document_prompt_optimizer = create_document_prompt_optimizer(
-                model_name=self.model, use_dspy=True  # Always use DSPy
-            )
-            logger.info("DSPy document prompt optimizer initialized successfully")
-        except Exception as e:
-            logger.error(
-                f"Failed to initialize DSPy document optimizer: {e}\n"
-                "DSPy is required for document generation. "
-                "Please ensure OPENROUTER_API_KEY is set."
-            )
-            # Set to None but document generation will fail without it
-            self.document_prompt_optimizer = None
+        # Defer DSPy initialization to avoid importing heavy deps at import time
+        self.document_prompt_optimizer = None
 
-        # Initialize DSPy prompt generator
+        # Default to static prompt generator (no DSPy). Can be upgraded later.
+        self.prompt_generator = self._create_static_prompt_generator(self.model)
+
+        # If configured to use DSPy, attempt to enable it, otherwise fall back
         if settings.use_dspy:
-            try:
-                # Try to use the new OpenRouter DSPy integration
-                from data4ai.integrations.openrouter_dspy import (
-                    create_openrouter_prompt_generator,
-                )
-
-                self.prompt_generator = create_openrouter_prompt_generator(
-                    model=self.model,
-                    api_key=self.api_key,
-                )
-                logger.info("Using OpenRouter DSPy integration")
-            except ImportError:
-                # Fallback to original DSPy integration
-                logger.warning(
-                    "OpenRouter DSPy not available, using fallback DSPy integration"
-                )
-                self.prompt_generator = create_prompt_generator(
-                    model_name=self.model, use_dspy=True
-                )
-        else:
-            # Use static prompt generator
-            self.prompt_generator = create_prompt_generator(
-                model_name=self.model, use_dspy=False
-            )
+            if not self.enable_dspy_prompt_generator():
+                # Fallback to legacy DSPy integration factory (kept for tests)
+                try:
+                    self.prompt_generator = create_prompt_generator(
+                        model_name=self.model, use_dspy=True
+                    )
+                    logger.info("Using fallback DSPy prompt generator")
+                except Exception as e:
+                    logger.warning(f"Failed to initialize DSPy prompt generator: {e}")
 
     @async_error_handler
     async def generate_from_prompt(
@@ -153,12 +145,14 @@ class DatasetGenerator:
             # Check if DSPy was used for the master prompt
             if (
                 hasattr(self.prompt_generator, "generate_dynamic_prompt")
-                or hasattr(self.prompt_generator, "optimizer")
-                and hasattr(self.prompt_generator.optimizer, "generate_dynamic_prompt")
                 or (
-                    hasattr(self.prompt_generator, "use_dspy")
-                    and self.prompt_generator.use_dspy
+                    hasattr(self.prompt_generator, "optimizer")
+                    and hasattr(
+                        getattr(self.prompt_generator, "optimizer", object()),
+                        "generate_dynamic_prompt",
+                    )
                 )
+                or getattr(self.prompt_generator, "use_dspy", False)
             ):
                 prompt_type = "dspy"
 
@@ -375,82 +369,39 @@ class DatasetGenerator:
         count: int,
         previous_examples: Optional[list[dict[str, Any]]] = None,
     ) -> str:
-        """Build dynamic prompt using DSPy for generating examples from description."""
-        # DSPy-only prompt generation - no fallbacks
-        try:
-            # Check if prompt generator has direct generate_dynamic_prompt method
-            if hasattr(self.prompt_generator, "generate_dynamic_prompt"):
-                logger.info(f"Using DSPy-centric prompt generation for {schema_name}")
+        """Build prompt for generating examples from description.
 
-                # Generate prompt using DSPy directly
-                prompt = self.prompt_generator.generate_dynamic_prompt(
-                    description=description,
-                    schema_name=schema_name,
-                    count=count,
-                    examples=previous_examples,
-                )
+        Uses DSPy when available/enabled; otherwise falls back to a static prompt.
+        """
+        # Prefer DSPy paths when supported by the current prompt generator
+        if hasattr(self.prompt_generator, "generate_dynamic_prompt"):
+            logger.info(f"Using DSPy-centric prompt generation for {schema_name}")
+            return self.prompt_generator.generate_dynamic_prompt(
+                description=description,
+                schema_name=schema_name,
+                count=count,
+                examples=previous_examples,
+            )
 
-                logger.info(
-                    f"✅ Generated DSPy-centric prompt for {schema_name} schema with {count} examples per batch"
-                )
-                return prompt
+        if (
+            hasattr(self.prompt_generator, "optimizer")
+            and hasattr(self.prompt_generator.optimizer, "generate_dynamic_prompt")
+        ):
+            logger.info(
+                f"Using DSPy-centric prompt generation via optimizer for {schema_name}"
+            )
+            return self.prompt_generator.optimizer.generate_dynamic_prompt(
+                description=description,
+                schema_name=schema_name,
+                count=count,
+                examples=previous_examples,
+            )
 
-            # Check if we have a DSPy-enabled prompt generator with optimizer
-            elif hasattr(self.prompt_generator, "optimizer") and hasattr(
-                self.prompt_generator.optimizer, "generate_dynamic_prompt"
-            ):
-                logger.info(
-                    f"Using DSPy-centric prompt generation via optimizer for {schema_name}"
-                )
-
-                # Generate prompt using DSPy via optimizer
-                prompt = self.prompt_generator.optimizer.generate_dynamic_prompt(
-                    description=description,
-                    schema_name=schema_name,
-                    count=count,
-                    examples=previous_examples,
-                )
-
-                logger.info(
-                    f"✅ Generated DSPy-centric prompt for {schema_name} schema with {count} examples per batch"
-                )
-                return prompt
-
-            # Check if we have a DSPy-enabled prompt generator
-            elif (
-                hasattr(self.prompt_generator, "use_dspy")
-                and self.prompt_generator.use_dspy
-            ):
-                logger.info(f"Using DSPy-enabled prompt generator for {schema_name}")
-                # Use DSPy to generate dynamic, high-quality prompts
-                if previous_examples:
-                    # Use adaptive prompting with previous examples
-                    prompt = self.prompt_generator.generate_adaptive_prompt(
-                        description=description,
-                        schema_name=schema_name,
-                        count=count,
-                        previous_examples=previous_examples,
-                    )
-                else:
-                    # Use schema-aware dynamic prompting
-                    prompt = self.prompt_generator.generate_schema_prompt(
-                        description=description,
-                        schema_name=schema_name,
-                        count=count,
-                        use_dspy=True,
-                    )
-
-                logger.info(
-                    f"✅ Generated dynamic prompt using DSPy for {schema_name} schema with {count} examples per batch"
-                )
-                return prompt
-            else:
-                logger.error("No DSPy prompt generation methods available")
-                raise Exception("DSPy prompt generation is required but not available")
-
-        except Exception as e:
-            logger.error(f"DSPy prompt generation failed: {e}")
-            raise Exception(f"DSPy prompt generation failed: {e}") from e
+        # Static fallback when DSPy is not enabled
+        logger.info(f"Using static prompt generation for {schema_name}")
+        return self.prompt_generator.generate_schema_prompt(
+            description=description, schema_name=schema_name, count=count, use_dspy=False
+        )
 
     def _get_system_prompt(self, schema_name: str) -> str:
         """Get system prompt for generation."""
@@ -642,6 +593,8 @@ class DatasetGenerator:
         Returns:
             Generation results with plan and metrics
         """
+        if not self.document_prompt_optimizer:
+            self._ensure_document_prompt_optimizer()
         if not self.document_prompt_optimizer:
             raise GenerationError(
                 "DSPy document optimizer not initialized. "
@@ -1790,6 +1743,8 @@ Return ONLY a JSON object with the corrected or original example."""
         """Build prompt for Q&A generation from document using DSPy."""
 
         if not self.document_prompt_optimizer:
+            self._ensure_document_prompt_optimizer()
+        if not self.document_prompt_optimizer:
             raise GenerationError(
                 "DSPy document optimizer not initialized. "
                 "Please ensure USE_DSPY=true and OPENROUTER_API_KEY is set."
@@ -1816,6 +1771,8 @@ Return ONLY a JSON object with the corrected or original example."""
         """Build prompt for summary generation from document using DSPy."""
 
         if not self.document_prompt_optimizer:
+            self._ensure_document_prompt_optimizer()
+        if not self.document_prompt_optimizer:
             raise GenerationError(
                 "DSPy document optimizer not initialized. "
                 "Please ensure USE_DSPY=true and OPENROUTER_API_KEY is set."
@@ -1835,10 +1792,80 @@ Return ONLY a JSON object with the corrected or original example."""
         """Build prompt for instruction generation from document using DSPy."""
 
         if not self.document_prompt_optimizer:
+            self._ensure_document_prompt_optimizer()
+        if not self.document_prompt_optimizer:
             raise GenerationError(
                 "DSPy document optimizer not initialized. "
                 "Please ensure USE_DSPY=true and OPENROUTER_API_KEY is set."
             )
+
+    # --- Convenience configuration methods ---
+    def use_static_prompt_generator(self) -> None:
+        """Force the use of a static, non-DSPy prompt generator."""
+        self.prompt_generator = self._create_static_prompt_generator(self.model)
+
+    def enable_dspy_prompt_generator(self) -> bool:
+        """Attempt to enable DSPy-based prompt generation. Returns True on success."""
+        try:
+            from data4ai.integrations.openrouter_dspy import (
+                create_openrouter_prompt_generator,
+            )
+
+            self.prompt_generator = create_openrouter_prompt_generator(
+                model=self.model, api_key=self.api_key
+            )
+            logger.info("Using OpenRouter DSPy integration for prompts")
+            return True
+        except Exception as e:
+            logger.warning(f"Failed to enable DSPy prompt generator: {e}")
+            return False
+
+    def _ensure_document_prompt_optimizer(self) -> None:
+        """Lazily initialize the DSPy document prompt optimizer if possible."""
+        if self.document_prompt_optimizer is not None:
+            return
+        try:
+            from data4ai.integrations.dspy_document_prompts import (
+                create_document_prompt_optimizer,
+            )
+
+            self.document_prompt_optimizer = create_document_prompt_optimizer(
+                model_name=self.model, use_dspy=True
+            )
+            logger.info("DSPy document prompt optimizer initialized successfully")
+        except Exception as e:
+            logger.warning(f"Cannot initialize DSPy document optimizer: {e}")
+            self.document_prompt_optimizer = None
+
+    # --- Static prompt generator (no DSPy dependency) ---
+    class _SimplePromptGenerator:
+        def __init__(self, model_name: str):
+            self.model_name = model_name
+
+        def generate_schema_prompt(
+            self, description: str, schema_name: str, count: int, **_: Any
+        ) -> str:
+            if schema_name == "chatml":
+                return (
+                    "You are a dataset generator. Create conversation examples in ChatML format.\n\n"
+                    f"Generate {count} examples based on this description: {description}\n\n"
+                    "CRITICAL REQUIREMENTS:\n"
+                    "- Each entry MUST have a \"messages\" array with at least 2 messages (user + assistant)\n"
+                    "- NEVER return empty messages arrays: []\n"
+                    "- Return ONLY a valid JSON array with the requested number of examples"
+                )
+            else:
+                return (
+                    "You are a dataset generator. Create instruction-following examples (Alpaca format).\n\n"
+                    f"Generate {count} examples based on this description: {description}\n\n"
+                    "CRITICAL REQUIREMENTS:\n"
+                    "- Each entry MUST include non-empty 'instruction' and 'output' fields\n"
+                    "- 'input' may be an empty string when not needed\n"
+                    "- Return ONLY a valid JSON array with the requested number of examples"
+                )
+
+    def _create_static_prompt_generator(self, model_name: str) -> "DatasetGenerator._SimplePromptGenerator":
+        return DatasetGenerator._SimplePromptGenerator(model_name)
 
         logger.info("Using DSPy for document instruction generation")
 

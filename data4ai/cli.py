@@ -9,8 +9,6 @@ from rich.console import Console
 from data4ai.config import settings
 from data4ai.document_handler import DocumentHandler
 from data4ai.error_handler import check_environment_variables, error_handler
-from data4ai.generator import DatasetGenerator
-from data4ai.integrations.dspy_prompts import create_prompt_generator
 from data4ai.publisher import HuggingFacePublisher
 from data4ai.utils import setup_logging
 
@@ -20,6 +18,10 @@ app = typer.Typer(
     add_completion=False,
 )
 console = Console()
+
+# Placeholder for tests to patch without importing heavy modules at import time.
+# The real import happens lazily inside command functions.
+DatasetGenerator = None  # type: ignore
 
 
 @app.callback()
@@ -80,18 +82,19 @@ def prompt(
 
     console.print(f"Generating {count} examples...", style="blue")
 
-    # Initialize generator with DSPy configuration
+    # Lazy import to avoid heavy dependencies at CLI import time
+    from data4ai.generator import DatasetGenerator
+
+    # Initialize generator with configuration
     generator = DatasetGenerator(
         model=model,
         temperature=temperature,
         seed=seed,
     )
 
-    # Override DSPy setting if specified
+    # Override to use static prompt generator (no DSPy) if specified
     if not use_dspy:
-        generator.prompt_generator = create_prompt_generator(
-            model_name=model or settings.openrouter_model, use_dspy=False
-        )
+        generator.use_static_prompt_generator()
 
     # Generate dataset
     output_path = settings.output_dir / repo
@@ -303,6 +306,9 @@ def doc_to_dataset(
 
         console.print("✅ Dry run completed", style="green")
         return
+
+    # Lazy import to avoid heavy dependencies at CLI import time
+    from data4ai.generator import DatasetGenerator
 
     # Initialize generator with quality options (only for actual generation)
     generator = DatasetGenerator()

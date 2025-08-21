@@ -16,7 +16,6 @@ from typing import Any, Optional
 
 from data4ai.config import settings
 from data4ai.document_handler import DocumentHandler
-from data4ai.generator import DatasetGenerator
 from data4ai.publisher import HuggingFacePublisher
 from data4ai.schemas import AlpacaSchema, ChatMLSchema
 from data4ai.utils import calculate_metrics, read_jsonl
@@ -60,6 +59,9 @@ def generate_from_description(
         - model: Model used
         - params: Generation parameters
     """
+    # Lazy import to avoid heavy dependencies at package import time
+    from data4ai.generator import DatasetGenerator
+
     generator = DatasetGenerator(
         model=model,
         temperature=temperature,
@@ -141,6 +143,9 @@ def generate_from_document(
         - document_type: Type of document processed
         - chunks_processed: Number of document chunks processed
     """
+    # Lazy import to avoid heavy dependencies at package import time
+    from data4ai.generator import DatasetGenerator
+
     generator = DatasetGenerator(
         model=model,
         temperature=temperature,
@@ -359,7 +364,6 @@ class Data4AI:
 
 __all__ = [
     # Core classes
-    "DatasetGenerator",
     "DocumentHandler",
     "ChatMLSchema",
     "AlpacaSchema",
@@ -372,3 +376,16 @@ __all__ = [
     # Version
     "__version__",
 ]
+
+
+def __getattr__(name: str):
+    """Lazy attribute loader to avoid importing heavy modules on package import.
+
+    This allows `from data4ai import DatasetGenerator` without importing DSPy
+    dependencies until the attribute is actually accessed.
+    """
+    if name == "DatasetGenerator":
+        from data4ai.generator import DatasetGenerator as _DG
+
+        return _DG
+    raise AttributeError(f"module 'data4ai' has no attribute '{name}'")
