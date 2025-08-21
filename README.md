@@ -1,324 +1,141 @@
 # Data4AI 🚀
 
-> **AI-powered dataset generation for instruction tuning and model fine-tuning**
+> **Professional-grade AI dataset generation - The same technology ZySec AI uses to build small, powerful models for enterprise customers**
 
 [![PyPI version](https://badge.fury.io/py/data4ai.svg)](https://pypi.org/project/data4ai/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
-Generate high-quality synthetic datasets using state-of-the-art language models through OpenRouter API. Perfect for creating training data for LLM fine-tuning.
+Generate high-quality synthetic datasets using state-of-the-art language models. Data4AI leverages **Bloom's Revised Taxonomy** and advanced DSPy optimization to create training data that produces superior model performance - the same secret sauce ZySec AI has been using to build efficient, powerful models for their enterprise customers.
 
-## ✨ Key Features
+## 🎯 Why Data4AI?
 
-- 🤖 **100+ AI Models** - Access to GPT-4, Claude, Llama, and more via OpenRouter
-- 📊 **Multiple Formats** - Support for ChatML (default) and Alpaca schemas
-- 🔮 **DSPy Integration** - Dynamic prompt optimization for better quality
-- 📄 **Document Support** - Generate datasets from PDFs, Word docs, Markdown, and text files
-- 🎯 **Quality Features** - Optional Bloom's taxonomy, provenance tracking, and quality verification
-- 🤖 **Smart Generation** - Both prompt-based and document-based dataset creation
-- ☁️ **HuggingFace Hub** - Direct dataset publishing
-- ⚡ **Production Ready** - Rate limiting, checkpointing, deduplication
+- **🧠 Cognitive Intelligence**: Built-in Bloom's Revised Taxonomy ensures diverse thinking patterns across all six cognitive levels
+- **🔬 Enterprise-Proven**: The same technology ZySec AI uses for customer model development
+- **⚡ One Command**: Generate production-ready datasets in minutes, not hours
+- **📊 Quality First**: Advanced DSPy integration and quality verification out of the box
 
 ## 🚀 Quick Start
 
 ### Installation
-
 ```bash
-pip install data4ai              # All features included
-pip install data4ai[all]         # All features
+uv pip install data4ai
 ```
 
-### Set Up Environment Variables
+### Get Your API Key
+Get your OpenRouter API key from [openrouter.ai/keys](https://openrouter.ai/keys) for access to 100+ AI models.
 
-Data4AI requires environment variables to be set in your terminal:
-
-#### Option 1: Quick Setup (Current Session)
 ```bash
-# Get your API key from https://openrouter.ai/keys
 export OPENROUTER_API_KEY="your_key_here"
-
-# Optional: Set a specific model (default: openai/gpt-4o-mini)
-export OPENROUTER_MODEL="anthropic/claude-3-5-sonnet"  # Or another model
-
-# Optional: Set default dataset schema (default: chatml)
-export DEFAULT_SCHEMA="chatml"  # Options: chatml, alpaca
-
-# Optional: For publishing to HuggingFace
-export HF_TOKEN="your_huggingface_token"
-```
-
-#### Option 2: Using .env File
-```bash
-# Create a .env file in your project directory
-echo 'OPENROUTER_API_KEY=your_key_here' > .env
-# The tool will automatically load from .env
-```
-
-#### Option 3: Permanent Setup
-```bash
-# Add to your shell config (~/.bashrc, ~/.zshrc, or ~/.profile)
-echo 'export OPENROUTER_API_KEY="your_key_here"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-#### Check Your Setup
-```bash
-# Verify environment variables are set
-echo "OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:0:10}..." # Shows first 10 chars
 ```
 
 ### Generate Your First Dataset
 
+**From a simple description:**
 ```bash
-# Generate from description
 data4ai prompt \
   --repo my-dataset \
-  --description "Create 10 Python programming questions with answers" \
-  --count 10
-
-# View results
-cat my-dataset/data.jsonl
-```
-
-## 📚 Common Use Cases
-
-### 1. Generate from Natural Language
-
-```bash
-data4ai prompt \
-  --repo customer-support \
-  --description "Create customer support Q&A for a SaaS product" \
+  --description "Create Python programming tutorials with exercises" \
   --count 100
 ```
 
-### 2. Generate from Documents
-
+**From documents (PDFs, Word docs, etc.):**
 ```bash
-# From single PDF document
 data4ai doc research-paper.pdf \
   --repo paper-qa \
-  --type qa \
-  --count 100
-
-# From entire folder of documents
-data4ai doc /path/to/docs/folder \
-  --repo multi-doc-dataset \
-  --type qa \
-  --count 500 \
-  --recursive
-
-# Process only specific file types in folder
-data4ai doc /path/to/docs \
-  --repo pdf-only-dataset \
-  --file-types pdf \
-  --count 200
-
-# From Word document with summaries
-data4ai doc manual.docx \
-  --repo manual-summaries \
-  --type summary \
-  --count 50
-
-# From Markdown with advanced extraction
-data4ai doc README.md \
-  --repo docs-dataset \
-  --type instruction \
-  --advanced
-
-# Generate with optional quality features
-data4ai doc document.pdf \
-  --repo high-quality-dataset \
-  --count 200 \
-  --taxonomy balanced \    # Use Bloom's taxonomy for diverse questions
-  --provenance \           # Include source references
-  --verify \               # Verify quality (2x API calls)
-  --long-context           # Merge chunks for better coherence
-```
-
-### 4. High-Quality Generation
-
-```bash
-# Basic generation (simple and fast)
-data4ai doc document.pdf --repo basic-dataset --count 100
-
-# With cognitive diversity using Bloom's Taxonomy
-data4ai doc document.pdf \
-  --repo taxonomy-dataset \
   --count 100 \
-  --taxonomy balanced  # Creates questions at all cognitive levels
-
-# With source tracking for verifiable datasets
-data4ai doc research-papers/ \
-  --repo cited-dataset \
-  --count 500 \
-  --provenance  # Includes character offsets for each answer
-
-# Full quality mode for production datasets
-data4ai doc documents/ \
-  --repo production-dataset \
-  --count 1000 \
-  --chunk-tokens 250 \     # Token-based chunking
-  --taxonomy balanced \    # Cognitive diversity
-  --provenance \          # Source tracking
-  --verify \              # Quality verification
-  --long-context          # Optimized context usage
+  --taxonomy balanced
 ```
 
-### 5. Publish to HuggingFace
+That's it! Your dataset is ready in `my-dataset/data.jsonl` with professional-quality examples.
 
-```bash
-# Generate and publish
-data4ai prompt \
-  --repo my-public-dataset \
-  --description "Educational content about machine learning" \
-  --count 200 \
-  --huggingface
-```
+## 🧠 Bloom's Taxonomy Integration
 
-## 📚 Available Commands
+Data4AI automatically applies **Bloom's Revised Taxonomy** to ensure cognitive diversity:
 
-### `data4ai prompt`
-Generate dataset from natural language description using AI.
+- **Remember** (20%): Basic recall and recognition
+- **Understand** (20%): Comprehension and interpretation  
+- **Apply** (15%): Using knowledge in new situations
+- **Analyze** (15%): Breaking down complex information
+- **Evaluate** (15%): Making judgments and assessments
+- **Create** (15%): Synthesizing new ideas and solutions
 
-```bash
-data4ai prompt --repo <name> --description <text> [options]
-```
+This cognitive balance is what makes Data4AI datasets so effective for training models that can think across all levels of complexity.
 
-### `data4ai doc`
-Generate dataset from document(s) - supports PDF, DOCX, MD, and TXT files.
+## 📊 Sample Output Quality
 
-```bash
-data4ai doc <file_or_folder> --repo <name> [options]
-```
-
-### `data4ai push`
-Upload existing dataset to HuggingFace Hub.
-
-```bash
-data4ai push --repo <name> [options]
-```
-
-## 🐍 Python API
-
-```python
-from data4ai import generate_from_description, generate_from_document
-
-# Generate from description (uses ChatML by default)
-result = generate_from_description(
-    description="Create Python interview questions",
-    repo="python-interviews",
-    count=50,
-    schema="chatml"  # Optional, ChatML is default
-)
-
-# Generate from document with quality features
-result = generate_from_document(
-    document_path="research-paper.pdf",
-    repo="paper-qa",
-    extraction_type="qa",
-    count=100,
-    taxonomy="balanced",      # Optional: Bloom's taxonomy
-    include_provenance=True,   # Optional: Source tracking
-    verify_quality=True        # Optional: Quality verification
-)
-
-print(f"Generated {result['row_count']} examples")
-```
-
-## 📋 Supported Schemas
-
-**ChatML** (Default - OpenAI format)
 ```json
 {
   "messages": [
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "What is machine learning?"},
-    {"role": "assistant", "content": "Machine learning is..."}
-  ]
+    {
+      "role": "user", 
+      "content": "How would you design a caching system for a high-traffic web application?"
+    },
+    {
+      "role": "assistant", 
+      "content": "I'd design a multi-tier caching system with: 1) Browser cache for static assets, 2) CDN for global content distribution, 3) Application-level cache (Redis/Memcached) for database queries, and 4) Database query cache. Key considerations include cache invalidation strategies, TTL policies, and cache warming..."
+    }
+  ],
+  "taxonomy_level": "create"
 }
 ```
 
-**Alpaca** (Instruction tuning)
-```json
-{
-  "instruction": "What is machine learning?",
-  "input": "Explain in simple terms",
-  "output": "Machine learning is..."
-}
-```
+Notice the `taxonomy_level` field - every example is cognitively classified for optimal training balance.
 
+## 🌟 Key Features
 
-## 🎯 Quality Features (Optional)
+- **🤖 100+ AI Models** - GPT-4, Claude, Llama, and more via OpenRouter
+- **📄 Multi-Format Support** - PDFs, Word docs, Markdown, text files
+- **🎯 ChatML & Alpaca** - Industry-standard dataset formats
+- **☁️ HuggingFace Integration** - Direct publishing to the Hub
+- **⚡ Production Ready** - Rate limiting, error recovery, deduplication
 
-All quality features are **optional** - use them when you need higher quality datasets:
+## 📚 Example Commands
 
-| Feature | Flag | Description | Performance Impact |
-|---------|------|-------------|-------------------|
-| **Token Chunking** | `--chunk-tokens N` | Use token count instead of characters | Minimal |
-| **Bloom's Taxonomy** | `--taxonomy balanced` | Create cognitively diverse questions | None |
-| **Provenance** | `--provenance` | Include source references | Minimal |
-| **Quality Verification** | `--verify` | Verify and improve examples | 2x API calls |
-| **Long Context** | `--long-context` | Merge chunks for coherence | May reduce API calls |
-
-### When to Use Quality Features
-
-- **Quick Prototyping**: No features needed - fast and simple
-- **Production Datasets**: Use `--taxonomy` and `--verify`
-- **Academic/Research**: Use all features for maximum quality
-- **Citation Required**: Always use `--provenance`
-
-## ⚙️ Configuration
-
-Create `.env` file:
 ```bash
-OPENROUTER_API_KEY=your_key_here
-OPENROUTER_MODEL=openai/gpt-4o-mini  # Optional (this is the default)
-DEFAULT_SCHEMA=chatml                # Optional (this is the default)
-HF_TOKEN=your_huggingface_token      # For publishing
+# Generate from description with quality features
+data4ai prompt \
+  --repo coding-dataset \
+  --description "Advanced Python programming challenges" \
+  --count 200 \
+  --taxonomy balanced
+
+# Process documents with full quality pipeline
+data4ai doc documents/ \
+  --repo knowledge-base \
+  --count 500 \
+  --taxonomy balanced \
+  --provenance \
+  --verify
+
+# Publish to HuggingFace
+data4ai push --repo my-dataset --huggingface
 ```
 
+## 🏢 Enterprise Heritage
+
+Data4AI embodies the same quality standards and methodologies that ZySec AI has refined through building custom models for enterprise customers. When you use Data4AI, you're leveraging battle-tested technology that has powered real-world AI deployments.
 
 ## 📖 Documentation
 
-- [Detailed Usage Guide](docs/DETAILED_USAGE.md) - Complete CLI reference
-- [Examples](docs/EXAMPLES.md) - Code examples and recipes
-- [API Documentation](docs/API.md) - Python API reference
-- [Publishing Guide](docs/PUBLISHING.md) - PyPI publishing instructions
-- [All Documentation](docs/README.md) - Complete documentation index
+For advanced features, configuration options, and detailed guides:
 
-## 🛠️ Development
+- [Complete Documentation](docs/README.md)
+- [Advanced Usage](docs/DETAILED_USAGE.md)
+- [Quality Features](docs/FEATURES.md)
+- [API Reference](docs/API.md)
 
-```bash
-# Clone repository
-git clone https://github.com/zysec/data4ai.git
-cd data4ai
+## 🚀 Quick Links
 
-# Install for development
-pip install -e ".[dev]"
-
-# Run tests
-pytest
-
-# Check code quality
-ruff check .
-black --check .
-```
-
-## 🤝 Contributing
-
-Contributions welcome! Please check our [Contributing Guide](CONTRIBUTING.md).
+- **Installation**: `uv pip install data4ai`
+- **Get API Key**: [openrouter.ai/keys](https://openrouter.ai/keys)
+- **GitHub**: [github.com/zysec-ai/data4ai](https://github.com/zysec-ai/data4ai)
+- **PyPI**: [pypi.org/project/data4ai](https://pypi.org/project/data4ai)
 
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file.
 
-## 🔗 Links
-
-- [PyPI Package](https://pypi.org/project/data4ai/)
-- [GitHub Repository](https://github.com/zysec/data4ai)
-- [Documentation](https://github.com/zysec/data4ai/tree/main/docs)
-- [Issue Tracker](https://github.com/zysec/data4ai/issues)
-
 ---
 
-**Made with ❤️ by [ZySec AI](https://zysec.ai)**
+**Made with ❤️ by [ZySec AI](https://zysec.ai)** - Empowering enterprises with intelligent AI solutions.
