@@ -1,168 +1,242 @@
-# Data4AI 🚀
-
-> **Professional-grade AI dataset generation - The same technology ZySec AI uses to build small, powerful models for enterprise customers**
+# Data4AI 🤖
 
 [![PyPI version](https://badge.fury.io/py/data4ai.svg)](https://pypi.org/project/data4ai/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub Stars](https://img.shields.io/github/stars/zysec-ai/data4ai.svg)](https://github.com/zysec-ai/data4ai/stargazers)
 
-Generate high-quality synthetic datasets using state-of-the-art language models. Data4AI leverages **Bloom's Revised Taxonomy** and advanced DSPy optimization to create training data that produces superior model performance - the same secret sauce ZySec AI has been using to build efficient, powerful models for their enterprise customers.
+> **Generate high-quality AI training datasets from simple descriptions or documents**
 
-**Building domain-specific models is now as easy as a single command.** Whether you need medical LLMs, legal assistants, financial advisors, or any specialized AI - Data4AI generates the high-quality, object-oriented training data you need.
+Data4AI makes it easy to create instruction-tuning datasets for training and fine-tuning language models. Whether you're building domain-specific models or need quality training data, Data4AI has you covered.
 
-## 🎯 Why Data4AI?
+## ✨ Features
 
-- **🧠 Cognitive Intelligence**: Built-in Bloom's Revised Taxonomy ensures diverse thinking patterns across all six cognitive levels
-- **🔬 Enterprise-Proven**: The same technology ZySec AI uses for customer model development
-- **⚡ Domain-Specific Models Made Easy**: Generate specialized datasets for any field - medical, legal, finance, or any domain with just one command
-- **📊 Quality First**: Advanced DSPy integration and quality verification out of the box
+- 🎯 **Simple Commands** - Generate datasets from descriptions or documents  
+- 📚 **Multiple Formats** - Support for ChatML, Alpaca, and custom schemas
+- 🔄 **Smart Processing** - Automatic chunking, deduplication, and quality validation
+- 🏷️ **Cognitive Taxonomy** - Built-in Bloom's taxonomy for balanced learning
+- ☁️ **Direct Upload** - Push datasets directly to HuggingFace Hub
+- 🌐 **100+ Models** - Access to GPT, Claude, Llama, and more via OpenRouter
 
 ## 🚀 Quick Start
 
-### Installation
+### Install
 ```bash
-uv pip install data4ai
+pip install data4ai
 ```
 
-### Get Your API Key
-Get your OpenRouter API key from [openrouter.ai/keys](https://openrouter.ai/keys) for access to 100+ AI models.
-
+### Get API Key
+Get your free API key from [OpenRouter](https://openrouter.ai/keys):
 ```bash
 export OPENROUTER_API_KEY="your_key_here"
 ```
 
 ### Generate Your First Dataset
 
-**From a simple description (any domain):**
+**From a description:**
 ```bash
 data4ai prompt \
-  --repo medical-qa \
-  --description "Medical diagnosis questions for common symptoms and conditions" \
+  --repo my-dataset \
+  --description "Python programming questions for beginners" \
   --count 100
 ```
 
-**From domain documents (PDFs, Word docs, etc.):**
+**From documents:**
 ```bash
-data4ai doc legal-contracts.pdf \
-  --repo legal-qa \
-  --count 100 \
-  --taxonomy balanced
+data4ai doc document.pdf \
+  --repo doc-dataset \
+  --count 100
 ```
 
-That's it! Your domain-specific dataset is ready in `medical-qa/data.jsonl` with professional-quality examples.
+**From YouTube videos:**
+```bash
+data4ai youtube @3Blue1Brown \
+  --repo math-videos \
+  --count 100
+```
 
-## 🧠 Bloom's Taxonomy Integration
+**Upload to HuggingFace:**
+```bash
+data4ai push --repo my-dataset
+```
 
-Data4AI automatically applies **Bloom's Revised Taxonomy** to ensure cognitive diversity:
+That's it! Your dataset is ready at `outputs/datasets/my-dataset/data.jsonl` 🎉
 
-- **Remember** (20%): Basic recall and recognition
-- **Understand** (20%): Comprehension and interpretation
-- **Apply** (15%): Using knowledge in new situations
-- **Analyze** (15%): Breaking down complex information
-- **Evaluate** (15%): Making judgments and assessments
-- **Create** (15%): Synthesizing new ideas and solutions
+## 📖 Documentation
 
-This cognitive balance is what makes Data4AI datasets so effective for training models that can think across all levels of complexity.
+- **[Examples](docs/EXAMPLES.md)** - Real-world usage examples
+- **[Commands](docs/COMMANDS.md)** - Complete CLI reference  
+- **[Features](docs/FEATURES.md)** - Advanced features and options
+- **[YouTube Integration](docs/YOUTUBE.md)** - Extract datasets from YouTube videos
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Runnable Examples](examples/)** - Ready-to-run example scripts
 
-## 📊 Sample Output Quality
+## 🤝 Community
+
+### Contributing
+We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for:
+- Development setup
+- Code style guidelines  
+- Testing requirements
+- Pull request process
+
+### Getting Help
+- 🐛 **Bug reports**: [GitHub Issues](https://github.com/zysec-ai/data4ai/issues)
+- 💬 **Questions**: [GitHub Discussions](https://github.com/zysec-ai/data4ai/discussions)
+- 📧 **Contact**: [research@zysec.ai](mailto:research@zysec.ai)
+
+### Project Structure
+```
+data4ai/
+├── data4ai/           # Core library code
+├── docs/             # User documentation  
+├── tests/            # Test suite
+├── README.md         # You are here
+├── CONTRIBUTING.md   # How to contribute
+└── CHANGELOG.md      # Release history
+```
+
+## 🎯 Use Cases
+
+**🏥 Medical Training Data**
+```bash
+data4ai prompt --repo medical-qa \
+  --description "Medical diagnosis Q&A for common symptoms" \
+  --count 500
+```
+
+**⚖️ Legal Assistant Data** 
+```bash
+data4ai doc legal-docs/ --repo legal-assistant --count 1000
+```
+
+**💻 Code Training Data**
+```bash
+data4ai prompt --repo code-qa \
+  --description "Python debugging and best practices" \
+  --count 300
+```
+
+**📺 Educational Video Content**
+```bash
+# Programming tutorials
+data4ai youtube --search "python tutorial,programming" --repo python-course --count 200
+
+# Educational channels  
+data4ai youtube @3Blue1Brown --repo math-education --count 150
+
+# Conference talks
+data4ai youtube @pycon --repo conference-talks --count 100
+```
+
+## 🛠️ Advanced Usage
+
+### Quality Control
+```bash
+data4ai doc document.pdf \
+  --repo high-quality \
+  --verify \
+  --taxonomy advanced \
+  --dedup-strategy content
+```
+
+### Batch Processing
+```bash
+data4ai doc documents/ \
+  --repo batch-dataset \
+  --count 1000 \
+  --batch-size 20 \
+  --recursive
+```
+
+### Custom Models
+```bash
+export OPENROUTER_MODEL="anthropic/claude-3-5-sonnet"
+data4ai prompt --repo custom-model --description "..." --count 100
+```
+
+## 🏗️ Architecture
+
+Data4AI is built with:
+- **Async Processing** - Fast concurrent generation
+- **DSPy Integration** - Advanced prompt optimization  
+- **Quality Validation** - Automatic content verification
+- **Atomic Writes** - Safe file operations
+- **Schema Validation** - Ensures data consistency
+
+## 📊 Sample Output
 
 ```json
 {
   "messages": [
     {
-      "role": "user",
-      "content": "How would you design a caching system for a high-traffic web application?"
+      "role": "user", 
+      "content": "How do I handle exceptions in Python?"
     },
     {
       "role": "assistant",
-      "content": "I'd design a multi-tier caching system with: 1) Browser cache for static assets, 2) CDN for global content distribution, 3) Application-level cache (Redis/Memcached) for database queries, and 4) Database query cache. Key considerations include cache invalidation strategies, TTL policies, and cache warming..."
+      "content": "In Python, use try-except blocks to handle exceptions: ..."
     }
   ],
-  "taxonomy_level": "create"
+  "taxonomy_level": "understand"
 }
 ```
 
-Notice the `taxonomy_level` field - every example is cognitively classified for optimal training balance.
+## 🔧 Configuration
 
-## 🌟 Key Features
-
-- **🤖 100+ AI Models** - GPT-4, Claude, Llama, and more via OpenRouter
-- **📄 Multi-Format Support** - PDFs, Word docs, Markdown, text files
-- **🎯 ChatML & Alpaca** - Industry-standard dataset formats
-- **☁️ HuggingFace Integration** - Direct publishing to the Hub
-- **⚡ Production Ready** - Rate limiting, error recovery, deduplication
-
-## 📚 Domain-Specific Examples
-
-**🏥 Medical LLM Dataset:**
+### Environment Variables
 ```bash
-data4ai prompt \
-  --repo medical-assistant \
-  --description "Medical diagnosis and treatment recommendations for common conditions" \
-  --count 500 \
-  --taxonomy balanced
+# Required
+export OPENROUTER_API_KEY="your_key"
+
+# Optional  
+export OPENROUTER_MODEL="openai/gpt-4o-mini"  # Default model
+export HF_TOKEN="your_hf_token"               # For HuggingFace uploads
+export OUTPUT_DIR="./outputs/datasets"       # Default output directory
 ```
 
-**⚖️ Legal AI Dataset:**
-```bash
-data4ai doc legal-documents/ \
-  --repo legal-advisor \
-  --count 1000 \
-  --taxonomy balanced \
-  --provenance
+### Config File
+Create `.data4ai.yaml` in your project:
+```yaml
+default_model: "anthropic/claude-3-5-sonnet"
+default_schema: "chatml" 
+default_count: 100
+quality_check: true
 ```
 
-**💰 Financial Advisory Dataset:**
-```bash
-data4ai prompt \
-  --repo financial-advisor \
-  --description "Investment advice and financial planning for different risk profiles" \
-  --count 300 \
-  --taxonomy advanced
-```
+## 🚀 Roadmap
 
-**🔬 Research Assistant Dataset:**
-```bash
-data4ai doc research-papers/ \
-  --repo research-assistant \
-  --count 800 \
-  --taxonomy balanced \
-  --verify
-```
+- [ ] **Custom Schema Support** - Define your own data formats
+- [ ] **Local Model Support** - Use local LLMs (Ollama, vLLM)
+- [ ] **Multi-language Datasets** - Generate data in multiple languages  
+- [ ] **Dataset Analytics** - Advanced quality metrics and visualization
+- [ ] **API Service** - RESTful API for dataset generation
 
-**🏗️ Engineering Dataset:**
-```bash
-data4ai prompt \
-  --repo engineering-qa \
-  --description "Software architecture and system design questions with detailed solutions" \
-  --count 400 \
-  --taxonomy balanced
-```
+## 📈 Performance
 
-## 🏢 Enterprise Heritage
+- **Speed**: Generate 100 examples in ~2 minutes
+- **Quality**: Built-in validation and deduplication
+- **Scale**: Tested with datasets up to 100K examples
+- **Memory**: Efficient streaming for large documents
 
-Data4AI embodies the same quality standards and methodologies that ZySec AI has refined through building custom models for enterprise customers. When you use Data4AI, you're leveraging battle-tested technology that has powered real-world AI deployments.
+## ⭐ Show Your Support
 
-## 📖 Documentation
-
-For advanced features, configuration options, and detailed guides:
-
-- [Complete Documentation](docs/README.md)
-- [Advanced Usage](docs/DETAILED_USAGE.md)
-- [Quality Features](docs/FEATURES.md)
-- [API Reference](docs/API.md)
-
-## 🚀 Quick Links
-
-- **Installation**: `uv pip install data4ai`
-- **Get API Key**: [openrouter.ai/keys](https://openrouter.ai/keys)
-- **GitHub**: [github.com/zysec-ai/data4ai](https://github.com/zysec-ai/data4ai)
-- **PyPI**: [pypi.org/project/data4ai](https://pypi.org/project/data4ai)
+If Data4AI helps you, please:
+- ⭐ Star this repository
+- 🐦 Share on social media  
+- 🤝 Contribute improvements
+- 💝 Sponsor the project
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file.
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🏢 About ZySecAI
+
+Data4AI is developed by [ZySecAI](https://zysec.ai), a research organization focused on advancing AI safety and capabilities. We're committed to making AI development more accessible and democratic.
 
 ---
 
-**Made with ❤️ by [ZySec AI](https://zysec.ai)** - Empowering enterprises with intelligent AI solutions.
+<div align="center">
+  <b>Made with ❤️ by ZySec AI to the open source community</b>
+</div>

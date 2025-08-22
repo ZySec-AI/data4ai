@@ -337,4 +337,13 @@ except Exception as e:
 
 ---
 
-**For more details, see [GETTING_STARTED.md](../GETTING_STARTED.md) and [COMMANDS.md](COMMANDS.md)**
+## 📁 Runnable Example Scripts
+
+For complete, ready-to-run examples, see the [`examples/`](../examples/) directory:
+
+- **[01_basic_cli_examples.sh](../examples/01_basic_cli_examples.sh)** - Core CLI commands and options
+- **[02_python_api_examples.py](../examples/02_python_api_examples.py)** - Python API usage patterns  
+- **[03_youtube_integration_examples.sh](../examples/03_youtube_integration_examples.sh)** - YouTube content extraction
+- **[04_document_processing_examples.sh](../examples/04_document_processing_examples.sh)** - Document-based generation
+
+**For more details, see [README.md](../README.md) and [COMMANDS.md](COMMANDS.md)**

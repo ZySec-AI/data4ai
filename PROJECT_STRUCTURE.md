@@ -43,17 +43,7 @@ data4ai/
 │   ├── DETAILED_USAGE.md      # Complete usage guide
 │   ├── EXAMPLES.md            # Code examples
 │   ├── FEATURES.md            # Feature overview
-│   ├── ADVANCED_GENERATION.md # Budget-based generation
-│   ├── CHATML_DEFAULT.md      # Default schema info
-│   ├── ENVIRONMENT_SETUP.md   # Environment setup
-│   ├── OUTPUT_STRUCTURE.md    # Output organization
-│   ├── TROUBLESHOOTING.md     # Problem solving
-│   │
-│   └── maintainers/           # Maintainer documentation
-│       ├── README.md          # Maintainer doc index
-│       ├── PUBLISHING.md      # PyPI release process
-│       ├── PYPI_UPLOAD.md     # PyPI upload guide
-│       └── OPENROUTER_DSPY.md # Technical integration
+│   └── TROUBLESHOOTING.md     # Problem solving
 │
 ├── tests/                     # Test suite
 │   ├── __init__.py
@@ -75,7 +65,6 @@ data4ai/
 │       └── metadata.json      # Generation metadata
 │
 ├── README.md                  # Project overview & quick start
-├── GETTING_STARTED.md         # Detailed setup guide
 ├── CHANGELOG.md               # Release history
 ├── CONTRIBUTING.md            # Contribution guidelines
 ├── LICENSE                    # MIT license

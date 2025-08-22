@@ -240,7 +240,7 @@ class DatasetGenerator:
             # Collect results and final prompts
             for i, result in enumerate(batch_results):
                 if isinstance(result, Exception):
-                    logger.error(f"Batch {i+1} failed with exception: {result}")
+                    logger.error(f"Batch {i + 1} failed with exception: {result}")
                 else:
                     entries, final_prompt = result
                     dataset.extend(entries)
@@ -248,7 +248,7 @@ class DatasetGenerator:
                     prompts_used[i]["final_prompt"] = final_prompt
 
             logger.info(
-                f"🎉 Concurrent processing complete! Generated {len(dataset)}/{count} examples ({(len(dataset)/count)*100:.1f}%)"
+                f"🎉 Concurrent processing complete! Generated {len(dataset)}/{count} examples ({(len(dataset) / count) * 100:.1f}%)"
             )
 
             # Write output
@@ -753,7 +753,6 @@ class DatasetGenerator:
         use_advanced: bool = False,
         recursive: bool = True,
         dry_run: bool = False,
-        per_document: bool = True,
         dedup_strategy: str = "content",
         dedup_threshold: float = 0.97,
     ) -> dict[str, Any]:
@@ -852,8 +851,14 @@ class DatasetGenerator:
             dataset: list[dict[str, Any]] = []
             chunks = doc_data["chunks"]
 
-            # If per-document output is requested and multiple source docs are present, process per group
-            if per_document:
+            # Check if we have folder structure to organize output
+            folder_structure = doc_data.get("folder_structure")
+            has_subfolders = folder_structure and folder_structure.get(
+                "has_subfolders", False
+            )
+
+            # If we have subfolders, organize output by folder structure
+            if has_subfolders:
                 from collections import defaultdict
 
                 def _merge_chunks_for_long_context(
@@ -1196,7 +1201,7 @@ class DatasetGenerator:
                         "chunks_processed": len(group_chunks),
                         "total_documents": len(groups),
                         "input_type": doc_data.get("input_type", "file"),
-                        "per_document": True,
+                        "organized_by_folders": True,
                         "taxonomy_all_levels": (
                             taxonomy_all_levels if extraction_type == "qa" else False
                         ),
@@ -1222,15 +1227,12 @@ class DatasetGenerator:
                     )
                     total_rows += len(group_entries)
 
-                return {
-                    "row_count": total_rows,
-                    "output_path": str(output_dir),
-                    "metrics": {},
-                    "document_type": doc_data["document_type"],
-                    "chunks_processed": doc_data.get("total_chunks", 0),
-                    "total_documents": doc_data.get("total_documents", 1),
-                    "per_document": True,
-                }
+                # After creating folder-organized datasets, also create combined dataset
+                logger.info("Creating combined dataset from all folders...")
+
+                # Continue to create combined dataset below
+                # Reset dataset to empty for combined processing
+                dataset = []
 
             # Optional long-context merging
             if long_context and len(chunks) > 1:
@@ -1282,7 +1284,7 @@ class DatasetGenerator:
                 )
 
             # If combined mode with QA and all-levels requested, pre-generate coverage per document
-            if (not per_document) and extraction_type == "qa" and taxonomy_all_levels:
+            if (not has_subfolders) and extraction_type == "qa" and taxonomy_all_levels:
                 from collections import defaultdict
 
                 groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -1477,7 +1479,7 @@ CRITICAL CHATML REQUIREMENTS:
                 async with semaphore:
                     try:
                         logger.info(
-                            f"🔄 Chunk {idx+1}/{len(chunks)}: API call (timeout 30s)"
+                            f"🔄 Chunk {idx + 1}/{len(chunks)}: API call (timeout 30s)"
                         )
                         response = await asyncio.wait_for(
                             self.client.chat_completion(
@@ -1489,11 +1491,8 @@ CRITICAL CHATML REQUIREMENTS:
                         )
                         response_text = response["choices"][0]["message"]["content"]
                         entries = self._parse_response(response_text, schema_name)
-                        # Tag entries with source_document for per-document reporting
-                        for e in entries or []:
-                            e["source_document"] = f"{doc_name}"
 
-                        # Tag entries with source_document for combined-mode coverage and reporting
+                        # Tag entries with source_document for per-document reporting
                         src_doc = None
                         try:
                             src_doc = Path(
@@ -1503,6 +1502,7 @@ CRITICAL CHATML REQUIREMENTS:
                             ).name
                         except Exception:
                             src_doc = "document"
+
                         for e in entries or []:
                             if src_doc:
                                 e["source_document"] = src_doc
@@ -1548,13 +1548,13 @@ CRITICAL CHATML REQUIREMENTS:
                     not (
                         extraction_type == "qa"
                         and taxonomy_all_levels
-                        and not per_document
+                        and not has_subfolders
                     )
                     and len(dataset) >= count
                 ):
                     break
             if not (
-                extraction_type == "qa" and taxonomy_all_levels and not per_document
+                extraction_type == "qa" and taxonomy_all_levels and not has_subfolders
             ):
                 dataset = dataset[:count]
 
@@ -1611,6 +1611,7 @@ CRITICAL CHATML REQUIREMENTS:
                 "chunks_processed": min(len(chunks), count),
                 "total_documents": doc_data.get("total_documents", 1),
                 "input_type": doc_data.get("input_type", "file"),
+                "organized_by_folders": has_subfolders,
             }
 
             # Add quality parameters if used
@@ -1646,11 +1647,12 @@ CRITICAL CHATML REQUIREMENTS:
 
             return {
                 "row_count": len(dataset),
-                "output_path": str(jsonl_path),
+                "output_path": str(output_dir if has_subfolders else jsonl_path),
                 "metrics": metrics,
                 "document_type": doc_data["document_type"],
                 "chunks_processed": min(len(chunks), count),
                 "total_documents": doc_data.get("total_documents", 1),
+                "organized_by_folders": has_subfolders,
             }
 
         except Exception as e:

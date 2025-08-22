@@ -223,67 +223,169 @@ def generate_dataset_card(
     description: Optional[str] = None,
     tags: Optional[list[str]] = None,
 ) -> str:
-    """Generate a README card for the dataset."""
-    # Add tags section if provided
-    tags_section = ""
-    if tags:
-        tags_section = f"""
----
+    """Generate a professional README card for the dataset."""
+    # Default tags if none provided
+    if tags is None:
+        tags = ["ZySecAI", "Data4AI", "instruction-tuning", "dataset", schema]
+    else:
+        # Ensure our core tags are included
+        core_tags = ["ZySecAI", "Data4AI"]
+        for tag in core_tags:
+            if tag not in tags:
+                tags.insert(0, tag)
+
+    # Add YAML frontmatter with tags
+    tags_section = f"""---
 tags:
-{chr(10).join(f"  - {tag}" for tag in tags)}
+{chr(10).join(f"- {tag}" for tag in tags)}
+task_categories:
+- text-generation
+- question-answering
+language:
+- en
+pretty_name: {dataset_name}
+size_categories:
+- {_get_size_category(row_count)}
+---
+
 """
 
-    return f"""# {dataset_name}
+    return f"""{tags_section}# {dataset_name}
 
-## Dataset Description
+<div align="center">
+  <img src="https://img.shields.io/badge/Data4AI-Dataset-blue" alt="Data4AI Dataset">
+  <img src="https://img.shields.io/badge/ZySecAI-Research-green" alt="ZySecAI Research">
+  <img src="https://img.shields.io/badge/Format-{schema.upper()}-orange" alt="Format">
+  <img src="https://img.shields.io/badge/Size-{row_count}_examples-red" alt="Size">
+</div>
 
-This dataset was generated using Data4AI with the {schema} schema format.
+## 📖 Dataset Description
 
-{description or "An AI-generated instruction-tuning dataset."}
+{description or f"A high-quality instruction-tuning dataset generated using **Data4AI** with the {schema.upper()} format. This dataset is designed for training and fine-tuning large language models for instruction-following tasks."}
 
-## Dataset Statistics
+**Key Features:**
+- 🎯 High-quality synthetic data generation
+- 🔄 Consistent formatting across all examples
+- 📊 Comprehensive quality metrics and validation
+- 🚀 Ready for immediate use in model training
 
-- **Format**: {schema}
-- **Size**: {row_count} examples
-- **Model**: {model}
-- **Generated**: {datetime.now(timezone.utc).strftime("%Y-%m-%d")}{tags_section}
+## 📊 Dataset Statistics
 
-## Schema Format
+| Metric | Value |
+|--------|-------|
+| **Format** | {schema.upper()} |
+| **Total Examples** | {row_count:,} |
+| **Generation Model** | {model} |
+| **Generated** | {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")} |
+| **Language** | English |
+| **License** | See model license |
 
-The dataset follows the **{schema}** format with the following structure:
+## 🔧 Schema Format
+
+The dataset follows the **{schema.upper()}** format with the following structure:
 
 {_get_schema_description(schema)}
 
-## Usage
+## 🚀 Quick Start
+
+### Loading the Dataset
 
 ```python
 from datasets import load_dataset
 
+# Load the full dataset
 dataset = load_dataset("{dataset_name}")
+
+# Load specific split (if available)
+train_dataset = load_dataset("{dataset_name}", split="train")
 ```
 
-## Generation Details
+### Using with Transformers
 
-This dataset was generated using [Data4AI](https://github.com/zysec-ai/data4ai),
-an AI-powered tool for creating high-quality instruction-tuning datasets.
+```python
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from datasets import load_dataset
 
-## License
+# Load model and tokenizer
+model_name = "{model}"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
 
-Please refer to the model's license for usage restrictions.
+# Load dataset
+dataset = load_dataset("{dataset_name}")
 
-## Citation
+# Example usage for training
+# (Add your training code here)
+```
 
-If you use this dataset, please cite:
+## 🛠️ Generation Details
+
+This dataset was generated using **[Data4AI](https://github.com/zysec-ai/data4ai)**, an advanced AI-powered tool for creating high-quality instruction-tuning datasets.
+
+### Generation Parameters
+- **Base Model**: {model}
+- **Schema**: {schema.upper()}
+- **Quality Assurance**: Automated validation and filtering
+- **Data Sources**: Carefully curated and processed
+
+### Quality Assurance
+- ✅ Format validation for all examples
+- ✅ Content quality filtering
+- ✅ Deduplication and uniqueness checks
+- ✅ Comprehensive metrics analysis
+
+## 🏢 About ZySecAI
+
+[ZySecAI](https://zysec.ai) is a leading AI research organization focused on developing secure, reliable, and high-performance AI systems. Our mission is to advance the state of artificial intelligence through cutting-edge research and practical applications.
+
+## 🤝 Contributing
+
+We welcome contributions to improve this dataset! Please check our [contributing guidelines](https://github.com/zysec-ai/data4ai/blob/main/CONTRIBUTING.md) for more information.
+
+## 📄 License
+
+This dataset is released under the same license as the underlying model ({model}). Please refer to the original model's license for specific usage terms and restrictions.
+
+## 📚 Citation
+
+If you use this dataset in your research or applications, please cite:
 
 ```bibtex
-@misc{{{dataset_name},
-  title={{{dataset_name}}},
-  author={{Data4AI Project}},
-  year={{2024}},
-  publisher={{HuggingFace}}
+@misc{{{dataset_name.replace("-", "_")},
+  title={{{dataset_name}: A High-Quality Instruction-Tuning Dataset}},
+  author={{ZySecAI Research Team}},
+  year={{{datetime.now(timezone.utc).year}}},
+  publisher={{Hugging Face}},
+  url={{https://huggingface.co/datasets/{dataset_name}}},
+  note={{Generated using Data4AI framework}}
 }}
 ```
-"""
+
+## 🔗 Links
+
+- 🏠 **Data4AI GitHub**: [https://github.com/zysec-ai/data4ai](https://github.com/zysec-ai/data4ai)
+- 🌐 **ZySecAI Website**: [https://zysec.ai](https://zysec.ai)
+- 📧 **Contact**: [research@zysec.ai](mailto:research@zysec.ai)
+
+---
+
+<div align="center">
+  <b>Generated with ❤️ by the ZySecAI Research Team</b>
+</div>"""
+
+
+def _get_size_category(row_count: int) -> str:
+    """Get HuggingFace size category for dataset."""
+    if row_count < 1000:
+        return "n<1K"
+    elif row_count < 10000:
+        return "1K<n<10K"
+    elif row_count < 100000:
+        return "10K<n<100K"
+    elif row_count < 1000000:
+        return "100K<n<1M"
+    else:
+        return "n>1M"
 
 
 def _get_schema_description(schema: str) -> str:

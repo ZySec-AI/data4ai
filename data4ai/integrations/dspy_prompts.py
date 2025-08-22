@@ -175,7 +175,7 @@ Example format:
 
         base_prompt += f"""
 
-Generate exactly {count} diverse, high-quality examples. Ensure the JSON is valid and properly formatted."""
+Generate exactly {count} diverse, high-quality examples. Ensure the JSON is valid and properly formatted. All examples must be fully self-contained and understandable without external references; never write phrases like "according to the document/video" or "see above"."""
 
         return base_prompt
 
@@ -253,7 +253,8 @@ CRITICAL REQUIREMENTS:
 3. Do NOT use markdown formatting
 4. The response must be parseable JSON
 5. Each example must be realistic and useful for training
-6. Generate exactly {count} examples"""
+6. Generate exactly {count} examples
+7. Each example must be fully self-contained and meaningful without referencing external material (no "as shown", "in the document", or similar)"""
 
         # Add schema-specific instructions
         if schema_name == "chatml":

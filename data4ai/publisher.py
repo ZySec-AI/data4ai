@@ -94,7 +94,7 @@ class HuggingFacePublisher:
                         row_count=metadata.get("row_count", 0),
                         model=metadata.get("model", "unknown"),
                         description=description,
-                        tags=["data4ai"],
+                        tags=["ZySecAI", "Data4AI", "instruction-tuning", "dataset"],
                     )
                 else:
                     dataset_card = generate_dataset_card(
@@ -103,7 +103,7 @@ class HuggingFacePublisher:
                         row_count=0,
                         model="unknown",
                         description=description,
-                        tags=["data4ai"],
+                        tags=["ZySecAI", "Data4AI", "instruction-tuning", "dataset"],
                     )
 
                 with open(readme_path, "w") as f:

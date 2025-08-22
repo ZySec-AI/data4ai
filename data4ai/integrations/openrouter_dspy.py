@@ -335,6 +335,9 @@ CRITICAL REQUIREMENTS:
 6. Generate the requested number of high-quality examples
 7. Apply the DSPy optimization insights above to improve quality
 
+SELF-CONTAINMENT:
+- Each example must be fully self-contained and meaningful without referencing external material (no "as shown", "in the document", or similar phrases). Include any essential context directly in the example.
+
 For {schema_name} schema, each example should have:"""
 
         if schema_name == "chatml":
@@ -421,6 +424,7 @@ CRITICAL REQUIREMENTS:
 4. The response must be parseable JSON
 5. Each example must be realistic and useful for training
 6. Generate high-quality examples (exact count will be specified in the user message)
+7. Ensure every example is fully self-contained and understandable without external references (avoid phrases like "according to the document/video" or "see above"). Include necessary context inline.
 
 For {schema_name} schema, each example should have:"""
 

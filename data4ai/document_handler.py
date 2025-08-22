@@ -446,6 +446,52 @@ class DocumentHandler:
             return texts
 
     @staticmethod
+    def _analyze_folder_structure(
+        root_folder: Path, file_paths: list[Path]
+    ) -> dict[str, Any]:
+        """Analyze folder structure to organize documents by subfolder.
+
+        Args:
+            root_folder: The root folder being scanned
+            file_paths: List of document file paths found
+
+        Returns:
+            Dictionary with folder structure information
+        """
+        structure = {}
+
+        # Group files by their relative subfolder
+        for file_path in file_paths:
+            try:
+                # Get relative path from root
+                relative_path = file_path.relative_to(root_folder)
+
+                # Get the parent folder (subfolder)
+                if len(relative_path.parts) > 1:
+                    # File is in a subfolder
+                    subfolder = relative_path.parts[0]
+                    if subfolder not in structure:
+                        structure[subfolder] = []
+                    structure[subfolder].append(file_path)
+                else:
+                    # File is in root folder
+                    if "root" not in structure:
+                        structure["root"] = []
+                    structure["root"].append(file_path)
+
+            except ValueError:
+                # File is not under root_folder, add to root
+                if "root" not in structure:
+                    structure["root"] = []
+                structure["root"].append(file_path)
+
+        return {
+            "root_folder": str(root_folder),
+            "subfolders": structure,
+            "has_subfolders": len([k for k in structure if k != "root"]) > 0,
+        }
+
+    @staticmethod
     def extract_chunks_from_multiple(
         file_paths: list[Path],
         chunk_size: int = 1000,
@@ -708,6 +754,13 @@ class DocumentHandler:
                 except Exception:
                     pass
 
+            # Analyze folder structure if input was a folder
+            folder_structure = None
+            if input_type == "folder" and isinstance(input_path, Path):
+                folder_structure = DocumentHandler._analyze_folder_structure(
+                    input_path, file_paths
+                )
+
             return {
                 "document_type": "mixed" if len(doc_types) > 1 else list(doc_types)[0],
                 "document_names": [fp.name for fp in file_paths],
@@ -716,6 +769,7 @@ class DocumentHandler:
                 "total_chunks": len(chunks),
                 "total_documents": len(file_paths),
                 "input_type": input_type,
+                "folder_structure": folder_structure,
                 "metadata": {
                     "chunk_size": chunk_size,
                     "total_file_size": total_size,
