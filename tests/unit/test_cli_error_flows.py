@@ -243,9 +243,9 @@ class TestCLIErrorFlows:
 
             for cmd_args, expected_code in commands_to_test:
                 result = self.runner.invoke(app, cmd_args)
-                assert result.exit_code == expected_code, (
-                    f"Command {cmd_args[0]} should exit with code {expected_code}"
-                )
+                assert (
+                    result.exit_code == expected_code
+                ), f"Command {cmd_args[0]} should exit with code {expected_code}"
 
 
 class TestErrorMessageContent:

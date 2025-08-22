@@ -162,9 +162,9 @@ class YouTubeHandler:
                                 "title": parts[1],
                                 "id": parts[2],
                                 "duration": parts[3] if len(parts) > 3 else "Unknown",
-                                "upload_date": parts[4]
-                                if len(parts) > 4
-                                else "Unknown",
+                                "upload_date": (
+                                    parts[4] if len(parts) > 4 else "Unknown"
+                                ),
                             }
                         )
 
@@ -208,15 +208,15 @@ class YouTubeHandler:
                                     "url": parts[0],
                                     "title": parts[1],
                                     "id": video_id,
-                                    "duration": parts[3]
-                                    if len(parts) > 3
-                                    else "Unknown",
-                                    "upload_date": parts[4]
-                                    if len(parts) > 4
-                                    else "Unknown",
-                                    "channel": parts[5]
-                                    if len(parts) > 5
-                                    else "Unknown",
+                                    "duration": (
+                                        parts[3] if len(parts) > 3 else "Unknown"
+                                    ),
+                                    "upload_date": (
+                                        parts[4] if len(parts) > 4 else "Unknown"
+                                    ),
+                                    "channel": (
+                                        parts[5] if len(parts) > 5 else "Unknown"
+                                    ),
                                     "search_keyword": keyword,
                                 }
                                 keyword_videos.append(video)
@@ -259,7 +259,9 @@ class YouTubeHandler:
         if not videos_to_process:
             return created_files
 
-        logger.info(f"Processing {len(videos_to_process)} videos with {max_workers} threads")
+        logger.info(
+            f"Processing {len(videos_to_process)} videos with {max_workers} threads"
+        )
 
         # Process videos in parallel
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -282,7 +284,9 @@ class YouTubeHandler:
                     # Create error file
                     output_file = output_dir / f"{video['id']}.md"
                     with open(output_file, "w", encoding="utf-8") as f:
-                        f.write(f"# {video['title']}\n\n❌ Error processing video: {str(e)}")
+                        f.write(
+                            f"# {video['title']}\n\n❌ Error processing video: {str(e)}"
+                        )
                     created_files.append(output_file)
 
         return created_files
@@ -675,9 +679,13 @@ Return ONLY the structured markdown notes."""
                     stats["skipped"] += 1
 
                     # Update session tracking
-                    self.session_manager.update_content_item_status(
-                        session_data, video_id, "skipped", "extraction"
-                    ) if self.session_manager else None
+                    (
+                        self.session_manager.update_content_item_status(
+                            session_data, video_id, "skipped", "extraction"
+                        )
+                        if self.session_manager
+                        else None
+                    )
 
                     checkpoint_manager.update_stage_progress(
                         "extraction", skipped_items=[video_id]

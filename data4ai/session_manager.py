@@ -261,9 +261,11 @@ class SessionManager:
                         "total_processed": data.get("total_processed", 0),
                         "total_pending": data.get("total_pending", 0),
                         "total_failed": data.get("total_failed", 0),
-                        "progress": f"{completed_stages}/{total_stages}"
-                        if total_stages > 0
-                        else "0/0",
+                        "progress": (
+                            f"{completed_stages}/{total_stages}"
+                            if total_stages > 0
+                            else "0/0"
+                        ),
                         "file": str(session_file),
                     }
                 )

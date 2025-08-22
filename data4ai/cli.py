@@ -212,7 +212,9 @@ def doc_to_dataset(
         console.print("🔍 Dry run mode - simulating generation", style="yellow")
         console.print(f"📄 Would process: {input_path}", style="cyan")
         console.print(f"📊 Would generate: {count} {dataset} examples", style="cyan")
-        console.print(f"📁 Would save to: {Path('outputs/datasets') / repo}", style="cyan")
+        console.print(
+            f"📁 Would save to: {Path('outputs/datasets') / repo}", style="cyan"
+        )
 
         if input_path.is_dir() and "documents" in locals():
             console.print(

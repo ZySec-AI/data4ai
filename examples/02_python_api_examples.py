@@ -11,6 +11,7 @@ from pathlib import Path
 # Add the parent directory to the path so we can import data4ai
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+
 def check_environment():
     """Check if required environment variables are set"""
     required_vars = ["OPENROUTER_API_KEY"]
@@ -29,6 +30,7 @@ def check_environment():
     print("✅ Environment variables are configured")
     return True
 
+
 def example_1_quick_start():
     """Example 1: Quick start with simple generation"""
     print("\n🎯 Example 1: Quick Start")
@@ -43,7 +45,7 @@ def example_1_quick_start():
             repo="python-qa-example",
             dataset="alpaca",
             count=5,
-            dry_run=True  # Preview mode
+            dry_run=True,  # Preview mode
         )
 
         print(f"✅ Would generate {result.get('count', 5)} examples")
@@ -56,6 +58,7 @@ def example_1_quick_start():
     except Exception as e:
         print(f"❌ Error: {e}")
 
+
 def example_2_document_generation():
     """Example 2: Document-based generation"""
     print("\n📄 Example 2: Document-based Generation")
@@ -66,7 +69,8 @@ def example_2_document_generation():
 
         # Create a sample document for demonstration
         sample_doc = Path("sample_document.txt")
-        sample_doc.write_text("""
+        sample_doc.write_text(
+            """
         Python Programming Basics
 
         Python is a high-level, interpreted programming language known for its
@@ -77,7 +81,8 @@ def example_2_document_generation():
         3. Functions and Classes
         4. Error Handling
         5. File I/O Operations
-        """)
+        """
+        )
 
         # Generate from the document
         result = generate_from_documents(
@@ -86,7 +91,7 @@ def example_2_document_generation():
             dataset="chatml",
             count=10,
             taxonomy="basic",
-            dry_run=True
+            dry_run=True,
         )
 
         print(f"✅ Would generate {result.get('count', 10)} Q&A pairs from document")
@@ -100,6 +105,7 @@ def example_2_document_generation():
         print(f"❌ Import error: {e}")
     except Exception as e:
         print(f"❌ Error: {e}")
+
 
 def example_3_object_oriented_api():
     """Example 3: Object-oriented API usage"""
@@ -115,7 +121,7 @@ def example_3_object_oriented_api():
             openrouter_model="openai/gpt-4o-mini",
             temperature=0.8,
             hf_token=os.getenv("HF_TOKEN"),
-            hf_org=os.getenv("HF_ORG", "YourOrg")
+            hf_org=os.getenv("HF_ORG", "YourOrg"),
         )
 
         # Generate dataset
@@ -124,7 +130,7 @@ def example_3_object_oriented_api():
             repo="python-reviews",
             dataset="alpaca",
             count=25,
-            dry_run=True
+            dry_run=True,
         )
 
         print(f"✅ Would generate {result.get('count', 25)} code review examples")
@@ -143,6 +149,7 @@ def example_3_object_oriented_api():
     except Exception as e:
         print(f"❌ Error: {e}")
 
+
 def example_4_batch_processing():
     """Example 4: Batch processing multiple datasets"""
     print("\n📦 Example 4: Batch Processing")
@@ -160,22 +167,22 @@ def example_4_batch_processing():
                 "repo": "cooking-recipes",
                 "count": 20,
                 "taxonomy": "basic",
-                "dataset": "alpaca"
+                "dataset": "alpaca",
             },
             {
                 "description": "Create math word problems for middle school",
                 "repo": "math-problems",
                 "count": 30,
                 "taxonomy": "balanced",
-                "dataset": "alpaca"
+                "dataset": "alpaca",
             },
             {
                 "description": "Create programming interview questions",
                 "repo": "interview-qa",
                 "count": 25,
                 "taxonomy": "advanced",
-                "dataset": "chatml"
-            }
+                "dataset": "chatml",
+            },
         ]
 
         print("📋 Batch processing configuration:")
@@ -188,7 +195,7 @@ def example_4_batch_processing():
             print(f"   Taxonomy: {dataset['taxonomy']}")
             print(f"   Schema: {dataset['dataset']}")
 
-            total_examples += dataset['count']
+            total_examples += dataset["count"]
 
             # In real usage, you would uncomment this:
             # result = generate_from_description(
@@ -208,6 +215,7 @@ def example_4_batch_processing():
     except Exception as e:
         print(f"❌ Error: {e}")
 
+
 def example_5_custom_configuration():
     """Example 5: Custom configuration and error handling"""
     print("\n⚙️ Example 5: Custom Configuration & Error Handling")
@@ -220,7 +228,7 @@ def example_5_custom_configuration():
         # Set custom environment variables for this example
         custom_config = {
             "OPENROUTER_MODEL": "anthropic/claude-3-5-sonnet",
-            "TEMPERATURE": "0.7"
+            "TEMPERATURE": "0.7",
         }
 
         print("🔧 Custom configuration:")
@@ -238,7 +246,7 @@ def example_5_custom_configuration():
                 temperature=0.7,
                 taxonomy="balanced",
                 batch_size=5,
-                dry_run=True
+                dry_run=True,
             )
 
             print(f"✅ Would generate {result.get('count', 15)} ML education examples")
@@ -260,6 +268,7 @@ def example_5_custom_configuration():
     except ImportError as e:
         print(f"❌ Import error: {e}")
 
+
 def example_6_schema_comparison():
     """Example 6: Comparing different schema formats"""
     print("\n📊 Example 6: Schema Format Comparison")
@@ -269,13 +278,13 @@ def example_6_schema_comparison():
         "alpaca": {
             "description": "Instruction-following format",
             "fields": ["instruction", "input", "output"],
-            "use_case": "Fine-tuning instruction-following models"
+            "use_case": "Fine-tuning instruction-following models",
         },
         "chatml": {
             "description": "Conversation format",
             "fields": ["messages"],
-            "use_case": "Chat/dialogue model training"
-        }
+            "use_case": "Chat/dialogue model training",
+        },
     }
 
     print("📋 Available schemas:")
@@ -290,6 +299,7 @@ def example_6_schema_comparison():
     print("   data4ai prompt --dataset alpaca ...")
     print("   # For conversations:")
     print("   data4ai prompt --dataset chatml ...")
+
 
 def main():
     """Run all examples"""
@@ -322,6 +332,7 @@ def main():
         print("\n\n👋 Examples interrupted by user")
     except Exception as e:
         print(f"\n❌ Unexpected error running examples: {e}")
+
 
 if __name__ == "__main__":
     main()

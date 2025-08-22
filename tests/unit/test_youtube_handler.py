@@ -385,5 +385,3 @@ https://youtube.com/watch?v=dQw4w9WgXcQ|Python Tutorial|dQw4w9WgXcQ|300|20240101
 
             assert len(result) == 1
             mock_search.assert_called_once_with("python tutorial", 10)
-
-

@@ -146,8 +146,10 @@ class ContentTracker:
                 for item in path.iterdir():
                     if item.is_file():
                         # Check if file matches any include pattern
-                        if any(item.match(pattern) for pattern in patterns) and not should_exclude(item):
-                                files_info.append(ContentTracker.get_file_info(item))
+                        if any(
+                            item.match(pattern) for pattern in patterns
+                        ) and not should_exclude(item):
+                            files_info.append(ContentTracker.get_file_info(item))
 
                     elif item.is_dir() and recursive and not should_exclude(item):
                         scan_path(item, depth + 1)
@@ -200,9 +202,9 @@ class ContentTracker:
             "upload_date": video_info.get("upload_date", ""),
             "channel": video_info.get("channel", ""),
             "transcript_length": len(transcript) if transcript else 0,
-            "transcript_hash": ContentTracker.calculate_content_hash(transcript)
-            if transcript
-            else "",
+            "transcript_hash": (
+                ContentTracker.calculate_content_hash(transcript) if transcript else ""
+            ),
         }
 
         content_str = json.dumps(hash_content, sort_keys=True)

@@ -106,7 +106,9 @@ class TestYouTubeIntegration:
     @patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"})
     @patch("data4ai.integrations.youtube_handler.YouTubeHandler")
     @patch("data4ai.generator.DatasetGenerator")
-    def test_youtube_search_command_success(self, mock_generator_class, mock_handler_class, cli_runner):
+    def test_youtube_search_command_success(
+        self, mock_generator_class, mock_handler_class, cli_runner
+    ):
         """Test successful YouTube search processing via CLI."""
         mock_handler = MagicMock()
         mock_handler_class.return_value = mock_handler
@@ -116,7 +118,7 @@ class TestYouTubeIntegration:
         mock_generator_class.return_value = mock_generator
         mock_generator.generate_from_document_sync.return_value = {
             "row_count": 25,
-            "output_path": "/tmp/search-repo/data.jsonl"
+            "output_path": "/tmp/search-repo/data.jsonl",
         }
 
         result = cli_runner.invoke(
@@ -145,7 +147,9 @@ class TestYouTubeIntegration:
     @patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"})
     @patch("data4ai.integrations.youtube_handler.YouTubeHandler")
     @patch("data4ai.generator.DatasetGenerator")
-    def test_youtube_url_command_success(self, mock_generator_class, mock_handler_class, cli_runner):
+    def test_youtube_url_command_success(
+        self, mock_generator_class, mock_handler_class, cli_runner
+    ):
         """Test successful YouTube URL processing via CLI."""
         mock_handler = MagicMock()
         mock_handler_class.return_value = mock_handler
@@ -155,7 +159,7 @@ class TestYouTubeIntegration:
         mock_generator_class.return_value = mock_generator
         mock_generator.generate_from_document_sync.return_value = {
             "row_count": 10,
-            "output_path": "/tmp/video-repo/data.jsonl"
+            "output_path": "/tmp/video-repo/data.jsonl",
         }
 
         result = cli_runner.invoke(
@@ -235,17 +239,23 @@ class TestYouTubeIntegration:
             # Mock the client's complete method
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
-            mock_response.choices[
-                0
-            ].message.content = "## Processed Knowledge\n\nThis is processed content."
+            mock_response.choices[0].message.content = (
+                "## Processed Knowledge\n\nThis is processed content."
+            )
 
             with (
-                patch.object(handler.client, "chat_completion", return_value=mock_response),
+                patch.object(
+                    handler.client, "chat_completion", return_value=mock_response
+                ),
                 patch.object(handler, "_get_video_transcript") as mock_transcript_fn,
                 patch.object(
                     handler, "_get_channel_videos", return_value=mock_youtube_data
                 ),
-                patch.object(handler, "_create_knowledge_notes", return_value="## Processed Knowledge\n\nThis is processed content."),
+                patch.object(
+                    handler,
+                    "_create_knowledge_notes",
+                    return_value="## Processed Knowledge\n\nThis is processed content.",
+                ),
             ):
                 # Mock transcript extraction
                 mock_transcript_fn.side_effect = [
@@ -320,7 +330,9 @@ class TestYouTubeIntegration:
 
     @patch("subprocess.run")
     @patch.object(YouTubeHandler, "_process_videos")
-    def test_youtube_handler_with_real_yt_dlp_interface(self, mock_process, mock_subprocess):
+    def test_youtube_handler_with_real_yt_dlp_interface(
+        self, mock_process, mock_subprocess
+    ):
         """Test YouTube handler with realistic yt-dlp interface mocking."""
         handler = YouTubeHandler("test-key", "test-model")
 
