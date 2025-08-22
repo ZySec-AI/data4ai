@@ -53,6 +53,8 @@ data4ai push --repo my-dataset --private
 | `--verbose` | Show detailed output | `false` | `--verbose` |
 | `--dry-run` | Show what would be generated | `false` | `--dry-run` |
 | `--no-use-dspy` | Disable DSPy optimization | `false` | `--no-use-dspy` |
+| `--version` | Show version and check for updates | - | `--version` |
+| `--no-update-check` | Skip automatic update checks | `false` | `--no-update-check` |
 
 ## 🚀 Quick Examples
 

@@ -216,6 +216,12 @@ ai.publish_to_huggingface(repo="education", private=False)
 - Default settings
 - Validation and error handling
 
+### Automatic Updates
+- Version checking on CLI usage
+- Non-intrusive update notifications
+- Cached checks (daily maximum)
+- Option to disable: `--no-update-check` or `DATA4AI_NO_UPDATE_CHECK=1`
+
 ## 🔐 Security & Privacy
 
 ### Secure API Management

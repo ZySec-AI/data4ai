@@ -29,9 +29,50 @@ except ImportError:
 def _version_callback(value: bool):
     if value:
         from data4ai import __version__
+        from data4ai.version_checker import VersionChecker
 
         console.print(f"data4ai {__version__}")
+
+        # Check for updates
+        checker = VersionChecker()
+        has_update, current_ver, latest_ver = checker.check_for_updates()
+
+        if has_update and latest_ver:
+            console.print(
+                checker.format_update_message(current_ver, latest_ver), style="yellow"
+            )
+        elif latest_ver:
+            console.print("✅ You're using the latest version!", style="green")
+
         raise typer.Exit()
+
+
+def _check_for_updates_background():
+    """Check for updates in background (non-blocking)."""
+    try:
+        from data4ai.version_checker import VersionChecker
+
+        checker = VersionChecker()
+
+        # Only check if cache is stale or missing
+        cache_data = checker._load_cache()
+        if cache_data:
+            return  # Skip if we have recent cache
+
+        # Quick check for updates
+        has_update, current_ver, latest_ver = checker.check_for_updates()
+
+        if has_update and latest_ver:
+            # Show a brief, non-intrusive message
+            console.print(
+                f"\n💡 Data4AI v{latest_ver} is available! "
+                f"(current: v{current_ver})\n"
+                f"   Run: pip install --upgrade data4ai\n",
+                style="dim yellow",
+            )
+    except Exception:
+        # Silently fail - don't interrupt user workflow
+        pass
 
 
 @app.callback()
@@ -45,12 +86,22 @@ def callback(
         is_eager=True,
     ),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
+    no_update_check: bool = typer.Option(
+        False,
+        "--no-update-check",
+        help="Skip checking for updates",
+        envvar="DATA4AI_NO_UPDATE_CHECK",
+    ),
 ):
     """Data4AI - Generate high-quality datasets for LLM training."""
     if verbose:
         setup_logging("DEBUG")
     else:
         setup_logging("INFO")
+
+    # Periodic update check (non-blocking)
+    if not no_update_check:
+        _check_for_updates_background()
 
 
 @app.command()
