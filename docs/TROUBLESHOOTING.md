@@ -204,7 +204,7 @@ echo 'OPENROUTER_API_KEY="your-key"' | sudo tee -a /etc/environment
 
 1. **Check the output:**
    ```bash
-   cat outputs/my-dataset/data.jsonl | head
+   cat outputs/datasets/my-dataset/data.jsonl | head
    data4ai validate --repo my-dataset
    ```
 

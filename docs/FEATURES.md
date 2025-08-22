@@ -285,4 +285,4 @@ data4ai prompt --model "deepseek/deepseek-coder" --temperature 0.1
 
 ---
 
-**Ready to get started? See [GETTING_STARTED.md](../GETTING_STARTED.md) for setup instructions!**
+**Ready to get started? See [README.md](../README.md) for setup instructions!**

@@ -304,7 +304,7 @@ data4ai push --repo my-dataset --private
 ## 📦 Output Structure
 
 ```
-my-dataset/
+outputs/datasets/my-dataset/
 ├── data.jsonl          # Main dataset file (compatible with unsloth)
 ├── metadata.json       # Generation metadata and parameters
 └── README.md           # Auto-generated dataset documentation

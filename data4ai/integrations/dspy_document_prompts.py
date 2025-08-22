@@ -129,7 +129,7 @@ Ensure questions are pedagogically valuable and cover the document comprehensive
         context_prompt = f"""You are an expert educational content creator specializing in Bloom's Revised Taxonomy.
 
 DOCUMENT CONTEXT:
-{document_text[:2000]}{'...' if len(document_text) > 2000 else ''}
+{document_text[:2000]}{"..." if len(document_text) > 2000 else ""}
 
 TAXONOMY REQUIREMENTS:
 {taxonomy_instructions[taxonomy]}
@@ -140,7 +140,8 @@ Generate {count} high-quality Q&A pairs that:
 2. Follow the specified taxonomy distribution
 3. Include diverse question types
 4. Avoid repetition or similar questions
-{'5. Include source_start and source_end character offsets for evidence' if include_provenance else ''}
+{"5. Include source_start and source_end character offsets for evidence" if include_provenance else ""}
+5. Are fully self-contained and meaningful without referencing the source; never use phrases like "according to the document/video", "as shown", or "see above". Include any essential context in the question or input.
 
 For {schema_name} format, structure each example as:"""
 
@@ -195,7 +196,7 @@ Think step-by-step:
         prompt = f"""You are an expert at creating summarization training examples.
 
 DOCUMENT CONTEXT:
-{document_text[:2000]}{'...' if len(document_text) > 2000 else ''}
+{document_text[:2000]}{"..." if len(document_text) > 2000 else ""}
 
 TASK: Generate {count} diverse summarization examples for {schema_name} format.
 
@@ -217,6 +218,8 @@ REQUIREMENTS:
    - Abstractive (rephrasing in new words)
    - Structured (with sections/bullets)
 
+4. All outputs must be fully self-contained and understandable without the source. Do not reference the document/video. Do not use phrases like "as described above" or "in the document".
+
 Think step-by-step:
 1. Identify the main themes and key points
 2. Determine what type of summary would be most valuable
@@ -237,7 +240,7 @@ Return ONLY a JSON array of {count} examples in {schema_name} format."""
         prompt = f"""You are an expert at creating instructional training examples from documents.
 
 DOCUMENT CONTEXT:
-{document_text[:2000]}{'...' if len(document_text) > 2000 else ''}
+{document_text[:2000]}{"..." if len(document_text) > 2000 else ""}
 
 TASK: Generate {count} diverse instruction-following examples for {schema_name} format.
 
@@ -260,6 +263,8 @@ REQUIREMENTS:
    - Moderate (multi-step, some reasoning)
    - Complex (deep analysis, synthesis)
 
+4. Each example must be fully self-contained: do not reference the document/video or external context; include necessary context within the example.
+
 Think step-by-step:
 1. Identify key concepts and relationships in the document
 2. Map concepts to appropriate instruction types
@@ -280,7 +285,7 @@ Return ONLY a JSON array of {count} examples in {schema_name} format."""
         prompt = f"""You are an expert at creating training datasets from documents.
 
 DOCUMENT CONTEXT:
-{document_text[:2000]}{'...' if len(document_text) > 2000 else ''}
+{document_text[:2000]}{"..." if len(document_text) > 2000 else ""}
 
 TASK: Generate {count} high-quality training examples for {schema_name} format.
 
@@ -301,6 +306,7 @@ REQUIREMENTS:
    - All outputs must be grounded in the document
    - No hallucinations or unsupported claims
    - Clear, accurate, and pedagogically valuable
+   - Fully self-contained: avoid references to the source; include essential context directly in each example
 
 Think step-by-step:
 1. Survey the document's main topics and themes
@@ -341,7 +347,7 @@ Return ONLY a JSON array of {count} examples in {schema_name} format."""
         plan_prompt = f"""You are an expert at planning dataset generation from documents.
 
 DOCUMENT CONTEXT:
-{document_text[:3000]}{'...' if len(document_text) > 3000 else ''}
+{document_text[:3000]}{"..." if len(document_text) > 3000 else ""}
 
 TASK: Create a generation plan for {schema_name} dataset.
 
@@ -429,7 +435,7 @@ Return ONLY the JSON plan, no other text."""
         generate_prompt = f"""You are an expert at creating training datasets from documents.
 
 DOCUMENT CONTEXT:
-{document_text[:3000]}{'...' if len(document_text) > 3000 else ''}
+{document_text[:3000]}{"..." if len(document_text) > 3000 else ""}
 
 GENERATION PLAN:
 {section_text}

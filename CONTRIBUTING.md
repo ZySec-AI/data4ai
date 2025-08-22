@@ -1,76 +1,58 @@
-# Contributing to Data4AI
+# Contributing to Data4AI 🤝
 
-Thank you for your interest in contributing to Data4AI! This guide will help you get started with contributing to the project.
+Thanks for wanting to help make Data4AI better! Whether you're fixing bugs, adding features, or improving docs, every contribution matters.
 
-## 🚀 Getting Started
+## ⚡ Quick Start
 
-### Prerequisites
-
-- Python 3.9 or higher
+### What You Need
+- Python 3.9+
 - Git
-- OpenRouter API key (for testing generation features)
+- OpenRouter API key (for testing) - get one [here](https://openrouter.ai/keys)
 
-### Development Setup
+### Setup in 30 seconds
+```bash
+# Fork the repo on GitHub, then:
+git clone https://github.com/yourusername/data4ai.git
+cd data4ai
 
-1. **Fork and clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/data4ai.git
-   cd data4ai
-   ```
+# Install for development
+pip install -e ".[dev]"
 
-2. **Create a virtual environment**
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
+# Set up quality checks
+pre-commit install
 
-3. **Install development dependencies**
-   ```bash
-   pip install -e ".[dev,excel,hf]"
-   ```
+# Add your API key for testing
+export OPENROUTER_API_KEY="your_key_here"
+```
 
-4. **Set up pre-commit hooks**
-   ```bash
-   pre-commit install
-   ```
-
-5. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys
-   ```
+Done! You're ready to contribute 🎉
 
 ## 🧪 Testing
-
-### Running Tests
 
 ```bash
 # Run all tests
 pytest
 
 # Run with coverage
-pytest --cov=data4ai --cov-report=html
+pytest --cov=data4ai
 
-# Run specific test file
-pytest tests/test_schemas.py
-
-# Run with verbose output
-pytest -v
+# Test a specific file
+pytest tests/test_cli.py -v
 ```
 
-### Writing Tests
+## 🔄 Making Changes
 
-- Add unit tests in `tests/unit/`
-- Add integration tests in `tests/integration/`
-- Use fixtures from `tests/conftest.py`
-- Aim for >80% code coverage
+### 1. Create a branch
+```bash
+git checkout -b fix/your-feature-name
+```
 
-## 📝 Code Style
+### 2. Make your changes
+- Write clean, readable code
+- Add tests for new features
+- Update docs if needed
 
-### Formatting and Linting
-
-We use `black` for formatting and `ruff` for linting:
-
+### 3. Check quality
 ```bash
 # Format code
 black .
@@ -78,212 +60,128 @@ black .
 # Check linting
 ruff check .
 
-# Fix linting issues
-ruff check --fix .
-
-# Type checking
-mypy data4ai/
+# Run tests
+pytest
 ```
 
-### Style Guidelines
-
-- Follow [PEP 8](https://pep8.org/)
-- Use type hints for all function signatures
-- Write descriptive docstrings (Google style)
-- Keep functions focused and small
-- Use meaningful variable names
-
-### Example Code Style
-
-```python
-from typing import Optional, Dict, Any
-
-def generate_dataset(
-    description: str,
-    count: int = 100,
-    model: Optional[str] = None
-) -> Dict[str, Any]:
-    """Generate a dataset from a natural language description.
-
-    Args:
-        description: Natural language description of the dataset
-        count: Number of examples to generate
-        model: Optional model override
-
-    Returns:
-        Dictionary containing generation results
-
-    Raises:
-        ValueError: If description is empty
-        APIError: If API call fails
-    """
-    # Implementation here
-    pass
+### 4. Commit and push
+```bash
+git add .
+git commit -m "fix: describe what you fixed"
+git push origin fix/your-feature-name
 ```
 
-## 🔄 Pull Request Process
-
-### Before Submitting
-
-1. **Create a feature branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-2. **Make your changes**
-   - Write clean, documented code
-   - Add tests for new functionality
-   - Update documentation if needed
-
-3. **Run quality checks**
-   ```bash
-   # Format code
-   black .
-
-   # Lint
-   ruff check .
-
-   # Test
-   pytest
-
-   # Type check
-   mypy data4ai/
-   ```
-
-4. **Commit with clear messages**
-   ```bash
-   git commit -m "feat: add support for custom schemas"
-   ```
-
-   Use conventional commit prefixes:
-   - `feat:` New feature
-   - `fix:` Bug fix
-   - `docs:` Documentation changes
-   - `test:` Test additions/changes
-   - `refactor:` Code refactoring
-   - `chore:` Maintenance tasks
-
-### Submitting PR
-
-1. **Push your branch**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-2. **Create Pull Request**
-   - Use a clear, descriptive title
-   - Fill out the PR template
-   - Link related issues
-   - Add screenshots for UI changes
-
-3. **PR Requirements**
-   - All tests must pass
-   - Code coverage maintained or improved
-   - No linting errors
-   - Documentation updated if needed
-   - Approved by at least one maintainer
+### 5. Create Pull Request
+- Go to GitHub and create a PR
+- Fill out the description
+- Wait for review
 
 ## 🐛 Reporting Issues
 
-### Bug Reports
-
-Please include:
-- Python version (`python --version`)
+Found a bug? Please include:
+- Your Python version (`python --version`)
 - Data4AI version (`data4ai version`)
-- Operating system
-- Steps to reproduce
-- Expected vs actual behavior
-- Error messages/stack traces
-- Minimal reproducible example
+- What you were trying to do
+- What happened vs what you expected
+- Error message (if any)
 
-### Feature Requests
+## 💡 Ideas & Requests
 
-Please describe:
-- The problem you're trying to solve
-- Your proposed solution
-- Alternative solutions considered
-- Additional context or examples
+Have an idea for a new feature? Open an issue and tell us:
+- What problem you're trying to solve
+- How you think it should work
+- Why it would be useful
 
-## 📚 Documentation
+## 📝 Code Style
 
-### Adding Documentation
+We keep it simple:
+- Use `black` for formatting (runs automatically)
+- Use `ruff` for linting (runs automatically)
+- Add type hints to function signatures
+- Write docstrings for public functions
+- Keep functions small and focused
 
-- User guides go in root directory (e.g., `GETTING_STARTED.md`)
-- Technical docs go in `docs/` directory
-- Update `README.md` for major features
-- Add docstrings to all public functions/classes
-- Include code examples where helpful
+Example:
+```python
+def generate_dataset(description: str, count: int = 100) -> dict[str, Any]:
+    """Generate a dataset from a description.
+    
+    Args:
+        description: What kind of dataset to create
+        count: Number of examples to generate
+        
+    Returns:
+        Dictionary with generation results
+    """
+    # Your code here
+```
 
-### Documentation Style
+## 🤔 Types of Contributions
 
-- Use clear, concise language
-- Include code examples
-- Add screenshots for UI features
-- Keep formatting consistent
-- Test all code examples
+We welcome:
+- 🐛 **Bug fixes** - Make something work better
+- ✨ **New features** - Add cool new capabilities  
+- 📚 **Documentation** - Help others understand the code
+- 🧪 **Tests** - Make the codebase more robust
+- 🎨 **Examples** - Show people how to use features
+- 💬 **Community** - Answer questions, help users
 
-## 🏗️ Architecture Decisions
+## 📋 Good First Issues
 
-### Adding New Features
+New to the project? Look for issues labeled:
+- `good first issue` - Perfect for beginners
+- `help wanted` - We'd love help with these
+- `documentation` - Improve our docs
 
-1. **Discuss first** - Open an issue for significant changes
-2. **Follow existing patterns** - Maintain consistency with current architecture
-3. **Keep it simple** - Avoid over-engineering
-4. **Document decisions** - Add comments explaining non-obvious choices
+## 🎯 Project Priorities
 
-### Dependencies
+We're focusing on:
+1. **Stability** - Making everything work reliably
+2. **Usability** - Making it easy to use
+3. **Performance** - Making it fast
+4. **Features** - Adding cool new capabilities
 
-- Minimize new dependencies
-- Use well-maintained packages
-- Add to appropriate extras group if optional
-- Document why dependency is needed
+## 🏗️ Architecture
 
-## 🚀 Release Process
+Data4AI is organized as:
+```
+data4ai/
+├── data4ai/           # Core library
+│   ├── cli.py         # Command-line interface
+│   ├── generator.py   # Dataset generation engine
+│   ├── publisher.py   # HuggingFace publishing
+│   └── utils.py       # Shared utilities
+├── docs/             # User documentation
+├── tests/            # Test suite
+└── CONTRIBUTING.md   # This file
+```
 
-### Version Numbering
+## 💬 Getting Help
 
-We follow [Semantic Versioning](https://semver.org/):
-- MAJOR: Breaking API changes
-- MINOR: New features (backward compatible)
-- PATCH: Bug fixes
-
-### Release Checklist
-
-1. Update version in `pyproject.toml`
-2. Update `CHANGELOG.md`
-3. Run full test suite
-4. Build and check package
-5. Create git tag
-6. Push to PyPI
-
-## 💬 Communication
-
-### Getting Help
-
-- **Discord**: [Join our server](https://discord.gg/data4ai)
-- **Issues**: [GitHub Issues](https://github.com/zysec/data4ai/issues)
-- **Email**: support@zysec.ai
-
-### Code of Conduct
-
-- Be respectful and inclusive
-- Welcome newcomers
-- Provide constructive feedback
-- Focus on what's best for the community
+Stuck? Need guidance?
+- 💬 **Ask questions**: [GitHub Discussions](https://github.com/zysec-ai/data4ai/discussions)
+- 🐛 **Report bugs**: [GitHub Issues](https://github.com/zysec-ai/data4ai/issues)
+- 📧 **Email us**: [research@zysec.ai](mailto:research@zysec.ai)
 
 ## 🙏 Recognition
 
-Contributors will be:
-- Listed in `CONTRIBUTORS.md`
-- Mentioned in release notes
-- Given credit in documentation
+All contributors get:
+- Listed in release notes
+- Credit in the README
+- Our eternal gratitude! 
+
+## 🎉 Community Values
+
+We believe in:
+- **Being welcoming** - Everyone starts somewhere
+- **Being helpful** - Share knowledge freely  
+- **Being respectful** - Treat others well
+- **Being collaborative** - We build better things together
 
 ## 📄 License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree your code will be licensed under MIT (same as the project).
 
 ---
 
-**Thank you for contributing to Data4AI!** 🎉
-
-Made with ❤️ by the ZySec AI Team
+**Ready to contribute?** Fork the repo and dive in! We can't wait to see what you build. 🚀

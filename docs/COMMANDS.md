@@ -169,4 +169,4 @@ data4ai prompt --repo test --description "test" --model "openai/gpt-4o-mini"
 
 ---
 
-**For more examples, see [GETTING_STARTED.md](../GETTING_STARTED.md)**
+**For more examples, see [README.md](../README.md)**
