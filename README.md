@@ -231,9 +231,9 @@ If Data4AI helps you, please:
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🏢 About ZySecAI
+## 🏢 About ZySec AI
 
-Data4AI is developed by [ZySecAI](https://zysec.ai), a research organization focused on advancing AI safety and capabilities. We're committed to making AI development more accessible and democratic.
+ZySec AI empowers enterprises to confidently adopt AI where data sovereignty, privacy, and security are non-negotiable—helping them move beyond fragmented, siloed systems into a new era of intelligence, from data to agentic AI, on a single platform. Data4AI is developed by [ZySec AI](https://zysec.ai).
 
 ---
 

@@ -6,7 +6,7 @@ try:
     __version__ = version("data4ai")
 except Exception:
     # Fallback for development or when package is not installed
-    __version__ = "0.2.0"
+    __version__ = "0.3.0"
 
 __author__ = "ZySec AI"
 

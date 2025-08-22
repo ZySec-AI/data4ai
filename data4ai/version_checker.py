@@ -29,7 +29,7 @@ class VersionChecker:
             return __version__
         except ImportError:
             # Fallback version for development
-            return "0.2.3"
+            return "0.3.0"
 
     def _load_cache(self) -> Optional[dict]:
         """Load cached version information."""

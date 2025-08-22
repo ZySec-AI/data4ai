@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "data4ai"
-version = "0.2.3"
+version = "0.3.0"
 description = "Production-ready AI-powered dataset generation for instruction tuning and model fine-tuning"
 readme = "README.md"
 requires-python = ">=3.9"
