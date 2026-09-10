@@ -72,11 +72,11 @@ Repository = "https://github.com/zysec-ai/data4ai"
 Issues = "https://github.com/zysec-ai/data4ai/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["data4ai"]
+packages = ["src/data4ai"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/data4ai",
+    "/src/data4ai",
     "/tests",
     "/README.md",
     "/LICENSE",
@@ -147,7 +147,7 @@ ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = ["src"]
 addopts = [
     "--cov=data4ai",
     "--cov-report=term-missing",
