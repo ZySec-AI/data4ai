@@ -239,9 +239,9 @@ class TestYouTubeIntegration:
             # Mock the client's complete method
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
-            mock_response.choices[0].message.content = (
-                "## Processed Knowledge\n\nThis is processed content."
-            )
+            mock_response.choices[
+                0
+            ].message.content = "## Processed Knowledge\n\nThis is processed content."
 
             with (
                 patch.object(
