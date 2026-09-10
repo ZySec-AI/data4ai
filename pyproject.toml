@@ -50,6 +50,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Keep this extra for users who install the public package with
+# `data4ai[dev]`. The uv group below is used by local development and CI.
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
@@ -60,6 +62,21 @@ dev = [
     "types-pyyaml>=6.0.0",
     "types-requests>=2.31.0",
     "pre-commit>=3.5.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "types-pyyaml>=6.0.0",
+    "types-requests>=2.31.0",
+    "pre-commit>=3.5.0",
+    "ipython>=8.0.0",
+    "ipdb>=0.13.0",
 ]
 
 [project.scripts]
@@ -180,12 +197,6 @@ exclude_lines = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
     "@abstractmethod",
-]
-
-[tool.uv]
-dev-dependencies = [
-    "ipython>=8.0.0",
-    "ipdb>=0.13.0",
 ]
 
 [tool.uv.pip]
