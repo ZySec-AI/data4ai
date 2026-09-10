@@ -158,7 +158,9 @@ def test_session_checkpoint_manager_lifecycle(tmp_path):
     assert summary["completed_stages"] == 1
     assert summary["stages"]["extract"]["api_usage"] == {"tokens": 12}
 
-    loaded = SessionCheckpointManager("session-1", tmp_path).load_stage_checkpoint("extract")
+    loaded = SessionCheckpointManager("session-1", tmp_path).load_stage_checkpoint(
+        "extract"
+    )
     assert loaded is not None
     assert loaded.completed_items == ["one"]
 
