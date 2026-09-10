@@ -1,0 +1,14 @@
+title = "Data4AI Gitleaks configuration"
+
+# These unit tests deliberately use an exact non-functional API-key value to
+# verify that CLI output masks sensitive environment variables.  It appears in
+# existing commit history as well, so allow only this exact test fixture.
+[allowlist]
+description = "Test-only OpenRouter API key fixture"
+regexTarget = "match"
+paths = [
+  '''tests/unit/test_cli_env\.py''',
+]
+regexes = [
+  '''actual-secret-key-12345''',
+]

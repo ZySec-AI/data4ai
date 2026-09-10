@@ -233,8 +233,10 @@ ImportError: cannot import name 'generate_from_description' from 'data4ai'
 2. **Check Python path:**
    ```python
    import sys
+
    print(sys.path)
    import data4ai
+
    print(data4ai.__file__)
    ```
 

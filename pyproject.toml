@@ -50,6 +50,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Keep this extra for users who install the public package with
+# `data4ai[dev]`. The uv group below is used by local development and CI.
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
@@ -62,6 +64,21 @@ dev = [
     "pre-commit>=3.5.0",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "types-pyyaml>=6.0.0",
+    "types-requests>=2.31.0",
+    "pre-commit>=3.5.0",
+    "ipython>=8.0.0",
+    "ipdb>=0.13.0",
+]
+
 [project.scripts]
 data4ai = "data4ai.cli_wrapper:main"
 
@@ -72,11 +89,11 @@ Repository = "https://github.com/zysec-ai/data4ai"
 Issues = "https://github.com/zysec-ai/data4ai/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["data4ai"]
+packages = ["src/data4ai"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/data4ai",
+    "/src/data4ai",
     "/tests",
     "/README.md",
     "/LICENSE",
@@ -147,7 +164,7 @@ ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = ["src"]
 addopts = [
     "--cov=data4ai",
     "--cov-report=term-missing",
@@ -180,12 +197,6 @@ exclude_lines = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
     "@abstractmethod",
-]
-
-[tool.uv]
-dev-dependencies = [
-    "ipython>=8.0.0",
-    "ipdb>=0.13.0",
 ]
 
 [tool.uv.pip]
