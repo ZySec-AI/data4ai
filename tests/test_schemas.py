@@ -101,6 +101,37 @@ class TestChatMLSchema:
         )
         assert data.validate_content()
 
+    def test_chatml_from_messages_and_simplified_fields(self):
+        direct = ChatMLSchema.from_dict(
+            {
+                "messages": [
+                    {"role": "user", "content": "Question"},
+                    {"role": "assistant", "content": "Answer"},
+                ]
+            }
+        )
+        assert direct.to_jsonl_entry()["messages"][1]["content"] == "Answer"
+
+        simplified = ChatMLSchema.from_dict(
+            {
+                "system_message": "System",
+                "user_message": "Question",
+                "assistant_response": "Answer",
+            }
+        )
+        assert [turn.from_ for turn in simplified.messages] == [
+            "system",
+            "user",
+            "assistant",
+        ]
+
+        with pytest.raises(ValueError, match="cannot be empty"):
+            ChatMLSchema.from_dict({"messages": []})
+
+    def test_invalid_conversation_role(self):
+        with pytest.raises(ValidationError, match="Invalid role"):
+            ConversationTurn(from_="invalid", value="text")
+
 
 class TestSchemaRegistry:
     """Test schema registry."""
@@ -121,3 +152,18 @@ class TestSchemaRegistry:
         assert "alpaca" in schemas
         assert "chatml" in schemas
         assert len(schemas) == 2  # Only 2 schemas now
+
+    def test_register_and_validate(self):
+        class CustomSchema(AlpacaSchema):
+            pass
+
+        SchemaRegistry.register("custom", CustomSchema)
+        try:
+            assert SchemaRegistry.get("CUSTOM") is CustomSchema
+            assert SchemaRegistry.validate(
+                {"instruction": "Question", "output": "Answer"}, "custom"
+            )
+            assert not SchemaRegistry.validate({}, "custom")
+            assert not SchemaRegistry.validate({}, "missing")
+        finally:
+            SchemaRegistry._schemas.pop("custom", None)
