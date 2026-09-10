@@ -213,7 +213,7 @@ class TestEnvCommandIntegration:
             assert result.exit_code != 0
             assert "Missing environment variables" in result.output
 
-    def test_run_command_checks_env(self):
+    def test_run_command_checks_env(self, tmp_path, monkeypatch):
         """Test that run command checks environment."""
         with (
             patch.dict(os.environ, {}, clear=True),
@@ -221,12 +221,12 @@ class TestEnvCommandIntegration:
         ):
             mock_settings.openrouter_api_key = ""
 
-            # Create a dummy file
-            with self.runner.isolated_filesystem():
-                with open("test.xlsx", "w") as f:
-                    f.write("test")
+            # Run in a temporary directory without relying on Typer's removed
+            # CliRunner.isolated_filesystem helper.
+            monkeypatch.chdir(tmp_path)
+            (tmp_path / "test.xlsx").write_text("test")
 
-                result = self.runner.invoke(app, ["run", "test.xlsx", "--repo", "test"])
-                # Should fail and show environment help
-                assert result.exit_code != 0
-                assert "Missing environment variables" in result.output
+            result = self.runner.invoke(app, ["run", "test.xlsx", "--repo", "test"])
+            # Should fail and show environment help
+            assert result.exit_code != 0
+            assert "Missing environment variables" in result.output
