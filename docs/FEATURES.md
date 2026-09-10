@@ -179,7 +179,7 @@ result = generate_from_description(
     repo="tutorials",
     dataset="alpaca",
     count=100,
-    taxonomy="balanced"
+    taxonomy="balanced",
 )
 
 # Document-based generation
@@ -188,7 +188,7 @@ result = generate_from_documents(
     repo="doc-qa",
     dataset="chatml",
     count=500,
-    taxonomy="advanced"
+    taxonomy="advanced",
 )
 ```
 
@@ -196,15 +196,10 @@ result = generate_from_documents(
 ```python
 from data4ai import Data4AI
 
-ai = Data4AI(
-    openrouter_api_key="your-key",
-    hf_token="your-token"
-)
+ai = Data4AI(openrouter_api_key="your-key", hf_token="your-token")
 
 result = ai.generate_from_description(
-    description="Educational content",
-    repo="education",
-    count=200
+    description="Educational content", repo="education", count=200
 )
 
 ai.publish_to_huggingface(repo="education", private=False)

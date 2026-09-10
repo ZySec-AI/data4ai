@@ -80,7 +80,7 @@ result = generate_from_description(
     description="Create 10 questions and answers about Python programming",
     repo="my-first-dataset",
     dataset="alpaca",
-    count=10
+    count=10,
 )
 
 print(f"✅ Generated {result.row_count} rows")
@@ -97,7 +97,7 @@ result = generate_from_documents(
     repo="research-qa",
     dataset="chatml",
     count=100,
-    taxonomy="advanced"
+    taxonomy="advanced",
 )
 
 print(f"✅ Generated {result.row_count} Q&A pairs")
@@ -114,7 +114,7 @@ ai = Data4AI(
     openrouter_model="anthropic/claude-3-5-sonnet",
     temperature=0.8,
     hf_token="your_hf_token",
-    hf_org="YourOrg"
+    hf_org="YourOrg",
 )
 
 # Generate dataset
@@ -122,14 +122,11 @@ result = ai.generate_from_description(
     description="Create examples of Python code reviews",
     repo="python-reviews",
     dataset="alpaca",
-    count=500
+    count=500,
 )
 
 # Publish to HuggingFace
-ai.publish_to_huggingface(
-    repo="python-reviews",
-    private=True
-)
+ai.publish_to_huggingface(repo="python-reviews", private=True)
 
 print(f"📊 Schema: {result.schema}")
 print(f"🤖 Model: {result.model}")
@@ -146,20 +143,20 @@ datasets = [
         "description": "Create cooking recipe instructions",
         "repo": "cooking-recipes",
         "count": 50,
-        "taxonomy": "basic"
+        "taxonomy": "basic",
     },
     {
         "description": "Create math word problems",
         "repo": "math-problems",
         "count": 100,
-        "taxonomy": "balanced"
+        "taxonomy": "balanced",
     },
     {
         "description": "Create programming interview questions",
         "repo": "interview-qa",
         "count": 75,
-        "taxonomy": "advanced"
-    }
+        "taxonomy": "advanced",
+    },
 ]
 
 for dataset in datasets:
@@ -168,7 +165,7 @@ for dataset in datasets:
         repo=dataset["repo"],
         dataset="alpaca",
         count=dataset["count"],
-        taxonomy=dataset["taxonomy"]
+        taxonomy=dataset["taxonomy"],
     )
     print(f"✅ Generated {result.row_count} rows for {dataset['repo']}")
 ```
@@ -179,11 +176,13 @@ import os
 from data4ai import generate_from_description
 
 # Set multiple environment variables
-os.environ.update({
-    "OPENROUTER_API_KEY": "your_key_here",
-    "OPENROUTER_MODEL": "openai/gpt-4o-mini",
-    "HF_TOKEN": "your_hf_token"
-})
+os.environ.update(
+    {
+        "OPENROUTER_API_KEY": "your_key_here",
+        "OPENROUTER_MODEL": "openai/gpt-4o-mini",
+        "HF_TOKEN": "your_hf_token",
+    }
+)
 
 # Generate with custom parameters
 result = generate_from_description(
@@ -193,7 +192,7 @@ result = generate_from_description(
     count=300,
     temperature=0.8,
     taxonomy="balanced",
-    batch_size=10
+    batch_size=10,
 )
 
 print(f"✅ Generated {result.row_count} ML education examples")
@@ -209,7 +208,7 @@ result = generate_from_description(
     description="Create Python programming tutorials",
     repo="python-tutorials",
     dataset="alpaca",
-    count=100
+    count=100,
 )
 
 # Example output:
@@ -227,7 +226,7 @@ result = generate_from_description(
     description="Create customer support conversations",
     repo="support-chat",
     dataset="chatml",
-    count=200
+    count=200,
 )
 
 # Example output:
@@ -248,7 +247,7 @@ result = generate_from_description(
     description="Basic Python concepts for beginners",
     repo="python-basics",
     taxonomy="basic",
-    count=100
+    count=100,
 )
 # Generates simple recall and comprehension questions
 ```
@@ -260,7 +259,7 @@ result = generate_from_description(
     description="Advanced software architecture patterns",
     repo="architecture-advanced",
     taxonomy="advanced",
-    count=100
+    count=100,
 )
 # Generates complex analysis and design questions
 ```
@@ -272,7 +271,7 @@ result = generate_from_description(
     description="Complete programming curriculum",
     repo="programming-complete",
     taxonomy="balanced",
-    count=500
+    count=500,
 )
 # Generates varied complexity questions
 ```
@@ -297,7 +296,7 @@ else:
 models = {
     "creative": "anthropic/claude-3-5-sonnet",
     "factual": "openai/gpt-4o-mini",
-    "coding": "deepseek/deepseek-coder"
+    "coding": "deepseek/deepseek-coder",
 }
 
 # Generate creative content
@@ -306,7 +305,7 @@ result = generate_from_description(
     repo="stories",
     model=models["creative"],
     temperature=0.9,
-    count=50
+    count=50,
 )
 ```
 
@@ -317,9 +316,7 @@ from data4ai.exceptions import GenerationError, ConfigurationError
 
 try:
     result = generate_from_description(
-        description="Test generation",
-        repo="test-dataset",
-        count=10
+        description="Test generation", repo="test-dataset", count=10
     )
     print(f"✅ Success: {result.row_count} examples generated")
 
